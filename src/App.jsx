@@ -19,7 +19,7 @@ function Layout({ children }) {
 
   const navItems = [
     { path: '/', icon: Home, label: 'Home' },
-    { path: '/mains', icon: Search, label: 'Mains' },
+    { path: '/mains', icon: BookOpen, label: 'Mains' },
     { path: '/profile', icon: User, label: 'Profile' },
   ];
 
