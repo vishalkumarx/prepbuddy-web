@@ -90,14 +90,13 @@ export default function PostCard({ post, onCommentClick }) {
     }
   };
 
-  // Format the date
   const date = new Date(post.created_at).toLocaleDateString('en-US', {
     month: 'short',
     day: 'numeric',
     year: 'numeric'
   });
 
-  const attemptStr = localStorage.getItem(`attempt_${post.id}`);
+  const attemptStr = localStorage.getItem(`attempt_${UserManager.getUserId()}_${post.id}`);
   let hasAttempted = false;
   let score = 0;
   let totalMcqs = 0;

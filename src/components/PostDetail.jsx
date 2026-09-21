@@ -23,7 +23,7 @@ export default function PostDetail() {
     fetchPost();
     
     // Load local attempt status
-    const savedAttempt = localStorage.getItem(`attempt_${id}`);
+    const savedAttempt = localStorage.getItem(`attempt_${UserManager.getUserId()}_${id}`);
     if (savedAttempt) {
       setHasAttempted(true);
       try {
@@ -68,7 +68,7 @@ export default function PostDetail() {
 
   const submitAttempt = async (answers) => {
     setHasAttempted(true);
-    localStorage.setItem(`attempt_${id}`, JSON.stringify(answers));
+    localStorage.setItem(`attempt_${UserManager.getUserId()}_${id}`, JSON.stringify(answers));
 
     // Calculate score
     let score = 0;
