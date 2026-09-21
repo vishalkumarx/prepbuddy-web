@@ -97,11 +97,36 @@ export default function PostCard({ post, onCommentClick }) {
     year: 'numeric'
   });
 
+  const attemptStr = localStorage.getItem(`attempt_${post.id}`);
+  let hasAttempted = false;
+  let score = 0;
+  let totalMcqs = 0;
+  
+  if (attemptStr && post.mcqs && post.mcqs.length > 0) {
+    const actualMcqs = post.mcqs.filter(m => m.type !== 'article_link');
+    if (actualMcqs.length > 0) {
+      try {
+        const answers = JSON.parse(attemptStr);
+        if (Object.keys(answers).length === actualMcqs.length) {
+          hasAttempted = true;
+          totalMcqs = actualMcqs.length;
+          actualMcqs.forEach((mcq, idx) => {
+            if (answers[idx] === mcq.answer) {
+              score++;
+            }
+          });
+        }
+      } catch (e) {
+        console.error("Error parsing attempt:", e);
+      }
+    }
+  }
+
   const Wrapper = isMains ? 'div' : Link;
   const wrapperProps = isMains ? { className: "block" } : { to: `/post/${post.id}`, className: "block" };
 
   return (
-    <div className="bg-white p-4 mb-4 rounded-xl shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] border border-gray-100">
+    <div className="bg-white p-4 mb-4 rounded-xl shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] border border-gray-100 relative overflow-hidden">
       {/* Clickable Area */}
       <Wrapper {...wrapperProps}>
         {/* Header */}
@@ -111,9 +136,16 @@ export default function PostCard({ post, onCommentClick }) {
               V
             </div>
             <div>
-              <h3 className="font-semibold text-gray-900 leading-tight">
-                Vishal Kumar
-              </h3>
+              <div className="flex items-center gap-2">
+                <h3 className="font-semibold text-gray-900 leading-tight">
+                  Vishal Kumar
+                </h3>
+                {hasAttempted && (
+                  <span className="bg-green-50 border border-green-200 text-green-700 text-[10px] font-bold px-1.5 py-0.5 rounded-md tracking-wide flex items-center gap-1">
+                    ✓ Attempted <span className="text-green-600/70 ml-0.5">({score}/{totalMcqs})</span>
+                  </span>
+                )}
+              </div>
               <span className="text-xs text-gray-500">{date}</span>
             </div>
           </div>
