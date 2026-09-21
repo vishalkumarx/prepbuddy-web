@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ThumbsUp, MessageCircle, Share2, MoreVertical, ExternalLink, Edit2 } from 'lucide-react';
+import { ThumbsUp, MessageCircle, Share2, MoreVertical, ExternalLink, Edit2, X } from 'lucide-react';
 import { supabase } from '../supabase';
 import { UserManager } from '../utils/UserManager';
 import WebViewModal from './WebViewModal';
@@ -27,6 +27,7 @@ export default function PostCard({ post, onCommentClick }) {
   const [isLoading, setIsLoading] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showWebView, setShowWebView] = useState(false);
+  const [isImageFullScreen, setIsImageFullScreen] = useState(false);
 
   const isMains = post.tags && post.tags.some(tag => ['GS1', 'GS2', 'GS3', 'GS4', 'ESSAY'].includes(tag.toUpperCase()));
 
@@ -158,11 +159,20 @@ export default function PostCard({ post, onCommentClick }) {
         {/* Image Attachment */}
         {post.image_url && (
           <div className="mb-4 rounded-lg overflow-hidden border border-gray-100">
-            <img 
-              src={post.image_url} 
-              alt="Post attachment" 
-              className="w-full h-auto object-cover max-h-64"
-            />
+            <button 
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setIsImageFullScreen(true);
+              }}
+              className="w-full text-left block"
+            >
+              <img 
+                src={post.image_url} 
+                alt="Post attachment" 
+                className="w-full h-auto object-cover max-h-64 cursor-zoom-in"
+              />
+            </button>
           </div>
         )}
 
@@ -239,6 +249,37 @@ export default function PostCard({ post, onCommentClick }) {
           <Share2 size={20} />
         </button>
       </div>
+
+      {/* Full Screen Image Modal */}
+      {isImageFullScreen && post.image_url && (
+        <div 
+          className="fixed inset-0 z-50 bg-black/90 flex flex-col items-center justify-center animate-[fadeIn_0.2s_ease-out]"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            setIsImageFullScreen(false);
+          }}
+        >
+          <button 
+            className="absolute top-4 right-4 p-2 bg-white/10 hover:bg-white/20 rounded-full text-white transition-colors"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setIsImageFullScreen(false);
+            }}
+          >
+            <X size={24} />
+          </button>
+          <div className="w-full h-full p-4 flex items-center justify-center">
+            <img 
+              src={post.image_url} 
+              alt="Full size attachment" 
+              className="max-w-full max-h-full object-contain cursor-zoom-out"
+              onClick={(e) => e.stopPropagation()} // Let clicks on the image itself optionally zoom or just not close
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
