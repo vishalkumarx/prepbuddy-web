@@ -67,8 +67,10 @@ export default function PostCard({ post, onCommentClick }) {
     
     const shareUrl = `${window.location.origin}/post/${post.id}`;
     const shareData = {
-      title: post.headline || 'PrepBuddy Question',
-      text: post.description ? (post.description.length > 50 ? post.description.substring(0, 50) + '...' : post.description) : 'Check this out on PrepBuddy!',
+      title: isMains ? 'UPSC Mains Question' : (post.headline || 'PrepBuddy Question'),
+      text: isMains 
+        ? "Hey let's have a look at this UPSC Mains question!" 
+        : (post.description ? (post.description.length > 50 ? post.description.substring(0, 50) + '...' : post.description) : 'Check this out on PrepBuddy!'),
       url: shareUrl
     };
 
