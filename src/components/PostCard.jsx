@@ -67,10 +67,13 @@ export default function PostCard({ post, onCommentClick }) {
     year: 'numeric'
   });
 
+  const Wrapper = isMains ? 'div' : Link;
+  const wrapperProps = isMains ? { className: "block" } : { to: `/post/${post.id}`, className: "block" };
+
   return (
     <div className="bg-white p-4 mb-4 rounded-xl shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] border border-gray-100">
       {/* Clickable Area */}
-      <Link to={`/post/${post.id}`} className="block">
+      <Wrapper {...wrapperProps}>
         {/* Header */}
         <div className="flex items-start justify-between mb-3">
           <div className="flex items-center gap-3">
@@ -143,7 +146,7 @@ export default function PostCard({ post, onCommentClick }) {
             <p className="text-gray-700 text-sm whitespace-pre-wrap">{post.description}</p>
           )}
         </div>
-      </Link>
+      </Wrapper>
 
       {/* Article Link Banner */}
       {post.mcqs && post.mcqs.length > 0 && post.mcqs[0].type === 'article_link' && (
