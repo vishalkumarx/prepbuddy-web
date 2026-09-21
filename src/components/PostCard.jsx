@@ -60,6 +60,35 @@ export default function PostCard({ post, onCommentClick }) {
     }
   };
 
+  const handleShare = async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    const shareUrl = `${window.location.origin}/post/${post.id}`;
+    const shareData = {
+      title: post.headline || 'PrepBuddy Question',
+      text: post.description ? (post.description.length > 50 ? post.description.substring(0, 50) + '...' : post.description) : 'Check this out on PrepBuddy!',
+      url: shareUrl
+    };
+
+    if (navigator.share) {
+      try {
+        await navigator.share(shareData);
+      } catch (err) {
+        if (err.name !== 'AbortError') {
+          console.error('Error sharing:', err);
+        }
+      }
+    } else {
+      try {
+        await navigator.clipboard.writeText(shareUrl);
+        alert('Link copied to clipboard!');
+      } catch (err) {
+        console.error('Failed to copy link:', err);
+      }
+    }
+  };
+
   // Format the date
   const date = new Date(post.created_at).toLocaleDateString('en-US', {
     month: 'short',
@@ -203,7 +232,10 @@ export default function PostCard({ post, onCommentClick }) {
           <MessageCircle size={20} />
           <span className="text-sm font-medium">{initialCommentCount}</span>
         </button>
-        <button className="flex items-center gap-2 text-gray-500 hover:text-[#0B2457] transition-colors ml-auto">
+        <button 
+          onClick={handleShare}
+          className="flex items-center gap-2 text-gray-500 hover:text-[#0B2457] transition-colors ml-auto"
+        >
           <Share2 size={20} />
         </button>
       </div>
