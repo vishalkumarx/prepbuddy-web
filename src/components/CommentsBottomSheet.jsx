@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Send, Paperclip } from 'lucide-react';
+import { X, Send, Paperclip, FileText } from 'lucide-react';
 import { supabase } from '../supabase';
 import { UserManager } from '../utils/UserManager';
 import { formatTimeAgo } from '../utils/dateFormatter';
@@ -202,7 +202,8 @@ export default function CommentsBottomSheet({ post, onClose }) {
                               if (!url.trim()) return null;
                               if (url.endsWith('.pdf')) {
                                 return (
-                                  <a key={idx} href={url} target="_blank" rel="noopener noreferrer" className="text-blue-500 underline text-sm font-medium">
+                                  <a key={idx} href={url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 px-3 py-1.5 bg-red-50 text-red-600 border border-red-100 rounded-lg hover:bg-red-100 transition-colors w-fit text-sm font-medium">
+                                    <FileText size={16} />
                                     View PDF
                                   </a>
                                 );
