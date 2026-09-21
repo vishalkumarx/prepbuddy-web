@@ -13,6 +13,7 @@ export default function CommentsBottomSheet({ post, onClose }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [attachmentFiles, setAttachmentFiles] = useState([]);
   const [attachmentPreviews, setAttachmentPreviews] = useState([]);
+  const [replyingTo, setReplyingTo] = useState(null);
 
   useEffect(() => {
     if (post) fetchComments();
@@ -82,7 +83,8 @@ export default function CommentsBottomSheet({ post, onClose }) {
           device_id: UserManager.getUserId(),
           content: newComment.trim(),
           username: UserManager.getUsername(),
-          attachment_url: attachmentUrl
+          attachment_url: attachmentUrl,
+          parent_id: replyingTo ? replyingTo.id : null
         }])
         .select();
 
@@ -93,6 +95,7 @@ export default function CommentsBottomSheet({ post, onClose }) {
         setNewComment('');
         setAttachmentFiles([]);
         setAttachmentPreviews([]);
+        setReplyingTo(null);
       } else {
         fetchComments();
       }
@@ -134,8 +137,10 @@ export default function CommentsBottomSheet({ post, onClose }) {
     }
   };
 
-  const handleReply = (username) => {
-    setNewComment(`@${username || 'Anonymous'} `);
+  const handleReply = (comment) => {
+    const username = comment.username || 'Anonymous';
+    setReplyingTo({ id: comment.id, username });
+    setNewComment(`@${username} `);
     setTimeout(() => {
       if (inputRef.current) {
         inputRef.current.focus();
@@ -144,6 +149,93 @@ export default function CommentsBottomSheet({ post, onClose }) {
   };
 
   if (!post) return null;
+
+  const topLevelComments = comments.filter(c => !c.parent_id);
+  const repliesByParent = comments.reduce((acc, c) => {
+    if (c.parent_id) {
+      if (!acc[c.parent_id]) acc[c.parent_id] = [];
+      acc[c.parent_id].push(c);
+    }
+    return acc;
+  }, {});
+
+  const renderComment = (comment, isReply = false) => {
+    const isOwnComment = comment.device_id === UserManager.getUserId() || comment.username === UserManager.getUsername();
+    const likes = comment.prepbuddy_comment_likes || [];
+    const likesCount = likes.length;
+    const hasLiked = likes.some(like => like.device_id === UserManager.getUserId());
+
+    return (
+      <div key={comment.id} className="flex gap-3">
+        <div className={`rounded-full bg-indigo-100 flex-shrink-0 flex items-center justify-center font-bold text-primary mt-1 ${isReply ? 'w-6 h-6 text-xs' : 'w-8 h-8 text-sm'}`}>
+          {comment.username ? comment.username.charAt(0).toUpperCase() : 'U'}
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="inline-block bg-gray-50 p-3 px-4 rounded-2xl rounded-tl-sm border border-gray-100 shadow-sm">
+            <h4 className="font-semibold text-sm text-gray-900">
+              {comment.username || 'Anonymous'}
+            </h4>
+            <p className="text-sm text-gray-700 mt-0.5 whitespace-pre-wrap">{comment.content}</p>
+            
+            {/* Render Attachments */}
+            {comment.attachment_url && (
+              <div className="mt-2 flex flex-wrap gap-2">
+                {comment.attachment_url.split(',').map((url, idx) => {
+                  if (!url.trim()) return null;
+                  if (url.endsWith('.pdf')) {
+                    return (
+                      <a key={idx} href={url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 px-3 py-1.5 bg-red-50 text-red-600 border border-red-100 rounded-lg hover:bg-red-100 transition-colors w-fit text-sm font-medium">
+                        <FileText size={16} />
+                        View PDF
+                      </a>
+                    );
+                  }
+                  return (
+                    <a key={idx} href={url} target="_blank" rel="noopener noreferrer" className="block">
+                      <img 
+                        src={url} 
+                        alt="attachment" 
+                        className="w-20 h-20 object-cover rounded-lg border border-gray-200 hover:opacity-80 transition-opacity" 
+                      />
+                    </a>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+          
+          {/* Action Buttons */}
+          <div className="flex items-center gap-4 mt-1.5 px-2">
+            <button 
+              onClick={() => handleLikeComment(comment.id, hasLiked)}
+              className={`text-xs font-medium transition-colors ${hasLiked ? 'text-primary' : 'text-gray-500 hover:text-gray-700'}`}
+            >
+              {likesCount > 0 ? `${likesCount} Like${likesCount > 1 ? 's' : ''}` : 'Like'}
+            </button>
+            {!isReply && (
+              <button 
+                onClick={() => handleReply(comment)}
+                className="text-xs font-medium text-gray-500 hover:text-gray-700 transition-colors"
+              >
+                Reply
+              </button>
+            )}
+            {(isOwnComment || UserManager.isAdmin()) && (
+              <button 
+                onClick={() => handleDeleteComment(comment.id)}
+                className="text-xs font-medium text-red-500 hover:text-red-600 transition-colors"
+              >
+                Delete
+              </button>
+            )}
+            <span className="text-[10px] text-gray-400 ml-auto">
+              {formatTimeAgo(comment.created_at)}
+            </span>
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col justify-end">
@@ -176,79 +268,19 @@ export default function CommentsBottomSheet({ post, onClose }) {
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
             </div>
           ) : (
-            <div className="space-y-4">
-              {comments.map((comment) => {
-                const isOwnComment = comment.device_id === UserManager.getUserId() || comment.username === UserManager.getUsername();
-                const likes = comment.prepbuddy_comment_likes || [];
-                const likesCount = likes.length;
-                const hasLiked = likes.some(like => like.device_id === UserManager.getUserId());
-
+            <div className="space-y-5">
+              {topLevelComments.map((comment) => {
+                const replies = repliesByParent[comment.id] || [];
                 return (
-                  <div key={comment.id} className="flex gap-3">
-                    <div className="w-8 h-8 rounded-full bg-indigo-100 flex-shrink-0 flex items-center justify-center font-bold text-primary text-sm mt-1">
-                      {comment.username ? comment.username.charAt(0).toUpperCase() : 'U'}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="inline-block bg-gray-50 p-3 px-4 rounded-2xl rounded-tl-sm border border-gray-100 shadow-sm">
-                        <h4 className="font-semibold text-sm text-gray-900">
-                          {comment.username || 'Anonymous'}
-                        </h4>
-                        <p className="text-sm text-gray-700 mt-0.5 whitespace-pre-wrap">{comment.content}</p>
-                        
-                        {/* Render Attachments */}
-                        {comment.attachment_url && (
-                          <div className="mt-2 flex flex-wrap gap-2">
-                            {comment.attachment_url.split(',').map((url, idx) => {
-                              if (!url.trim()) return null;
-                              if (url.endsWith('.pdf')) {
-                                return (
-                                  <a key={idx} href={url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 px-3 py-1.5 bg-red-50 text-red-600 border border-red-100 rounded-lg hover:bg-red-100 transition-colors w-fit text-sm font-medium">
-                                    <FileText size={16} />
-                                    View PDF
-                                  </a>
-                                );
-                              }
-                              return (
-                                <a key={idx} href={url} target="_blank" rel="noopener noreferrer" className="block">
-                                  <img 
-                                    src={url} 
-                                    alt="attachment" 
-                                    className="w-20 h-20 object-cover rounded-lg border border-gray-200 hover:opacity-80 transition-opacity" 
-                                  />
-                                </a>
-                              );
-                            })}
-                          </div>
-                        )}
+                  <div key={comment.id} className="flex flex-col gap-3">
+                    {renderComment(comment, false)}
+                    
+                    {/* Replies */}
+                    {replies.length > 0 && (
+                      <div className="ml-10 border-l-2 border-gray-100 pl-4 space-y-3 mt-1">
+                        {replies.map(reply => renderComment(reply, true))}
                       </div>
-                      
-                      {/* Action Buttons */}
-                      <div className="flex items-center gap-4 mt-1.5 px-2">
-                        <button 
-                          onClick={() => handleLikeComment(comment.id, hasLiked)}
-                          className={`text-xs font-medium transition-colors ${hasLiked ? 'text-primary' : 'text-gray-500 hover:text-gray-700'}`}
-                        >
-                          {likesCount > 0 ? `${likesCount} Like${likesCount > 1 ? 's' : ''}` : 'Like'}
-                        </button>
-                        <button 
-                          onClick={() => handleReply(comment.username)}
-                          className="text-xs font-medium text-gray-500 hover:text-gray-700 transition-colors"
-                        >
-                          Reply
-                        </button>
-                        {(isOwnComment || UserManager.isAdmin()) && (
-                          <button 
-                            onClick={() => handleDeleteComment(comment.id)}
-                            className="text-xs font-medium text-red-500 hover:text-red-600 transition-colors"
-                          >
-                            Delete
-                          </button>
-                        )}
-                        <span className="text-[10px] text-gray-400 ml-auto">
-                          {formatTimeAgo(comment.created_at)}
-                        </span>
-                      </div>
-                    </div>
+                    )}
                   </div>
                 );
               })}
@@ -262,6 +294,18 @@ export default function CommentsBottomSheet({ post, onClose }) {
         {/* Comment Input */}
         <div className="w-full bg-white border-t border-gray-200 p-3 pb-safe flex flex-col shrink-0">
           
+          {replyingTo && (
+            <div className="flex items-center justify-between bg-indigo-50 px-3 py-1.5 rounded-t-lg mb-2 text-xs font-medium text-indigo-700">
+              <span>Replying to @{replyingTo.username}</span>
+              <button 
+                onClick={() => { setReplyingTo(null); setNewComment(''); }} 
+                className="hover:text-indigo-900"
+              >
+                <X size={14} />
+              </button>
+            </div>
+          )}
+
           {/* Attachment Previews */}
           {attachmentPreviews.length > 0 && (
             <div className="flex gap-2 mb-2 overflow-x-auto pb-1">
@@ -302,7 +346,7 @@ export default function CommentsBottomSheet({ post, onClose }) {
               value={newComment}
               onChange={(e) => setNewComment(e.target.value)}
               placeholder="Add a comment..."
-              className="flex-1 bg-app-bg border border-gray-200 rounded-2xl px-4 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary resize-none min-h-[40px] max-h-[100px]"
+              className={`flex-1 bg-app-bg border border-gray-200 rounded-2xl px-4 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary resize-none min-h-[40px] max-h-[100px] ${replyingTo ? 'rounded-tl-none border-t-0' : ''}`}
               rows="1"
             />
             <button
