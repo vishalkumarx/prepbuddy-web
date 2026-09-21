@@ -1,0 +1,30 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #0B2457;
+  --color-primary-light: #123A82;
+  --color-secondary: #F7C43A;
+  --color-app-bg: #F8FAFD;
+}
+
+@layer base {
+  body {
+    @apply bg-app-bg text-gray-900;
+    touch-action: manipulation;
+  }
+}
+
+@layer utilities {
+  @keyframes slideUp {
+    from {
+      transform: translateY(100%);
+    }
+    to {
+      transform: translateY(0);
+    }
+  }
+
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
