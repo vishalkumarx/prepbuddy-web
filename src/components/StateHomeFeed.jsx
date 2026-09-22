@@ -67,7 +67,7 @@ export default function StateHomeFeed() {
         </div>
       ) : (
         testSeries.map((ts) => {
-          const isSeniorAssistant = ts.title?.toLowerCase().includes('senior') || ts.title?.toLowerCase().includes('assistant') || true;
+          const showFeatures = ts.title?.toLowerCase().includes('senior') || ts.title?.toLowerCase().includes('assistant') || ts.title?.toLowerCase().includes('asi') || true;
 
           return (
             <div key={ts.id} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex flex-col">
@@ -86,7 +86,7 @@ export default function StateHomeFeed() {
                 )}
 
                 {/* Key Features List */}
-                {isSeniorAssistant && (
+                {showFeatures && (
                   <div className="my-2 pt-3 border-t border-gray-100 flex flex-col gap-2">
                     <div className="flex items-center gap-2.5 text-xs font-semibold text-gray-800 bg-blue-50/70 border border-blue-100/70 px-3 py-2 rounded-xl">
                       <div className="p-1 rounded-lg bg-[#0B2457] text-white flex-shrink-0">
