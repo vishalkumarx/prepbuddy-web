@@ -10,6 +10,7 @@ import ResourceDetail from './components/ResourceDetail';
 import UploadPost from './components/UploadPost';
 import Profile from './components/Profile';
 import AdminSessions from './components/AdminSessions';
+import UploadAIQuestions from './components/UploadAIQuestions';
 import PreparationSelector from './components/PreparationSelector';
 import StateGovLayout from './components/StateGovLayout';
 import { Home, User, BookOpen, Search, Plus, X, ShoppingBag } from 'lucide-react';
@@ -232,6 +233,7 @@ function App() {
           <Route path="/upload-resource" element={<UploadResource />} />
           <Route path="/edit-resource/:id" element={<UploadResource isEdit={true} />} />
           <Route path="/admin/sessions" element={<AdminSessions />} />
+          <Route path="/admin/upload-questions" element={<UploadAIQuestions />} />
           <Route path="/profile" element={<Profile onLogout={handleLogout} />} />
         </Routes>
       </Layout>

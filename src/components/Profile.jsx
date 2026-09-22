@@ -62,13 +62,22 @@ export default function Profile({ onLogout }) {
 
           {/* Admin Buttons */}
           {isAdmin && (
-            <Link 
-              to="/admin/sessions"
-              className="w-full py-3.5 mb-3 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold rounded-xl flex items-center justify-center gap-2 transition-colors border border-indigo-100 shadow-sm"
-            >
-              <Users size={18} />
-              View User Sessions
-            </Link>
+            <>
+              <Link 
+                to="/admin/sessions"
+                className="w-full py-3.5 mb-3 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold rounded-xl flex items-center justify-center gap-2 transition-colors border border-indigo-100 shadow-sm"
+              >
+                <Users size={18} />
+                View User Sessions
+              </Link>
+              <Link 
+                to="/admin/upload-questions"
+                className="w-full py-3.5 mb-3 bg-purple-50 hover:bg-purple-100 text-purple-700 font-bold rounded-xl flex items-center justify-center gap-2 transition-colors border border-purple-100 shadow-sm"
+              >
+                <CheckCircle size={18} />
+                Upload AI Questions
+              </Link>
+            </>
           )}
 
           {/* Reset Mode Button */}
