@@ -131,6 +131,12 @@ export default function ResourceDetail() {
         }
       }
 
+      // Check usage limit
+      if (data.max_uses !== null && (data.uses_count || 0) >= data.max_uses) {
+        setCouponStatus('invalid');
+        return;
+      }
+
       // Calculate discounted price
       let finalPrice = resource.price;
       if (data.discount_type === 'percentage') {
@@ -138,6 +144,12 @@ export default function ResourceDetail() {
       } else {
         finalPrice = Math.max(0, resource.price - data.discount_value);
       }
+
+      // Increment uses_count
+      await supabase
+        .from('prepbuddy_coupons')
+        .update({ uses_count: (data.uses_count || 0) + 1 })
+        .eq('id', data.id);
 
       setCouponData(data);
       setDiscountedPrice(Math.round(finalPrice));

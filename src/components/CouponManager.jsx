@@ -14,6 +14,7 @@ export default function CouponManager({ resourceId }) {
   const [discountValue, setDiscountValue] = useState('');
   const [scope, setScope] = useState('all');
   const [userEmail, setUserEmail] = useState('');
+  const [maxUses, setMaxUses] = useState('unlimited'); // 'unlimited' | 'once'
   const [saving, setSaving] = useState(false);
 
   const fetchCoupons = async () => {
@@ -61,6 +62,8 @@ export default function CouponManager({ resourceId }) {
         scope,
         user_email: scope === 'single_user' ? userEmail.trim().toLowerCase() : null,
         is_active: true,
+        max_uses: maxUses === 'once' ? 1 : null,
+        uses_count: 0,
       }]);
 
       if (error) throw error;
@@ -70,6 +73,7 @@ export default function CouponManager({ resourceId }) {
       setDiscountValue('');
       setScope('all');
       setUserEmail('');
+      setMaxUses('unlimited');
       setShowForm(false);
       fetchCoupons();
     } catch (err) {
@@ -222,6 +226,35 @@ export default function CouponManager({ resourceId }) {
             </div>
           )}
 
+          {/* Uses */}
+          <div>
+            <label className="text-xs font-bold text-gray-600 mb-1 block">Usage Limit</label>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setMaxUses('unlimited')}
+                className={`flex-1 py-2 rounded-xl text-xs font-bold border transition-colors ${
+                  maxUses === 'unlimited'
+                    ? 'bg-primary text-white border-primary'
+                    : 'bg-white text-gray-600 border-gray-200'
+                }`}
+              >
+                ♾️ Unlimited
+              </button>
+              <button
+                type="button"
+                onClick={() => setMaxUses('once')}
+                className={`flex-1 py-2 rounded-xl text-xs font-bold border transition-colors ${
+                  maxUses === 'once'
+                    ? 'bg-primary text-white border-primary'
+                    : 'bg-white text-gray-600 border-gray-200'
+                }`}
+              >
+                1️⃣ One-time
+              </button>
+            </div>
+          </div>
+
           <button
             type="submit"
             disabled={saving}
@@ -282,6 +315,10 @@ export default function CouponManager({ resourceId }) {
                   : `₹${coupon.discount_value} off`}
                 {' · '}
                 {coupon.scope === 'single_user' ? `👤 ${coupon.user_email}` : '🌐 All users'}
+                {' · '}
+                {coupon.max_uses === 1
+                  ? `1️⃣ One-time (${coupon.uses_count || 0} used)`
+                  : `♾️ Unlimited (${coupon.uses_count || 0} used)`}
                 {!coupon.is_active && ' · ⚪ Inactive'}
               </p>
             </div>
