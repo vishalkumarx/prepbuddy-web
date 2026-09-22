@@ -8,10 +8,15 @@ export default function Login({ onLogin }) {
   const handleGoogleLogin = async () => {
     try {
       setIsLoading(true);
+      let redirectUrl = window.location.href;
+      if (window.location.pathname === '/profile') {
+        redirectUrl = window.location.origin + '/';
+      }
+
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: window.location.href,
+          redirectTo: redirectUrl,
         },
       });
       if (error) throw error;
