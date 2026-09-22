@@ -139,7 +139,8 @@ export default function CommentsBottomSheet({ post, onClose }) {
 
   const handleReply = (comment) => {
     const username = comment.username || 'Anonymous';
-    setReplyingTo({ id: comment.id, username });
+    const parentId = comment.parent_id ? comment.parent_id : comment.id;
+    setReplyingTo({ id: parentId, username });
     setNewComment(`@${username} `);
     setTimeout(() => {
       if (inputRef.current) {
@@ -212,14 +213,12 @@ export default function CommentsBottomSheet({ post, onClose }) {
             >
               {likesCount > 0 ? `${likesCount} Like${likesCount > 1 ? 's' : ''}` : 'Like'}
             </button>
-            {!isReply && (
-              <button 
-                onClick={() => handleReply(comment)}
-                className="text-xs font-medium text-gray-500 hover:text-gray-700 transition-colors"
-              >
-                Reply
-              </button>
-            )}
+            <button 
+              onClick={() => handleReply(comment)}
+              className="text-xs font-medium text-gray-500 hover:text-gray-700 transition-colors"
+            >
+              Reply
+            </button>
             {(isOwnComment || UserManager.isAdmin()) && (
               <button 
                 onClick={() => handleDeleteComment(comment.id)}
