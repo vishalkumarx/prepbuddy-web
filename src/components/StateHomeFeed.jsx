@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabase';
-import { IndianRupee, Layers, Languages, Award } from 'lucide-react';
+import { IndianRupee, Layers, Languages, Award, Newspaper } from 'lucide-react';
 import TestimonialCarousel from './TestimonialCarousel';
 
 export default function StateHomeFeed() {
@@ -100,6 +100,13 @@ export default function StateHomeFeed() {
                         <Languages size={14} />
                       </div>
                       <span>5 Punjabi Qualifying Language Tests</span>
+                    </div>
+
+                    <div className="flex items-center gap-2.5 text-xs font-semibold text-gray-800 bg-purple-50/70 border border-purple-100/70 px-3 py-2 rounded-xl">
+                      <div className="p-1 rounded-lg bg-purple-600 text-white flex-shrink-0">
+                        <Newspaper size={14} />
+                      </div>
+                      <span>10 Current Affairs Tests</span>
                     </div>
 
                     <div className="flex items-center gap-2.5 text-xs font-semibold text-gray-800 bg-emerald-50/70 border border-emerald-100/70 px-3 py-2 rounded-xl">
