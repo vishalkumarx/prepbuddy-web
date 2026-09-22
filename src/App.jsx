@@ -182,7 +182,7 @@ function App() {
 
   // Allow public access to JSON question uploader route
   const currentPath = window.location.pathname;
-  if (currentPath === '/admin/upload-json' || currentPath === '/upload-json') {
+  if (currentPath.includes('upload-json') || currentPath.includes('upload-questions')) {
     return (
       <BrowserRouter>
         <UploadJSONQuestions />
