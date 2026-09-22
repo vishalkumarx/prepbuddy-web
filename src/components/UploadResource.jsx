@@ -67,6 +67,13 @@ export default function UploadResource() {
     const selected = e.target.files[0];
     if (selected && selected.type === 'application/pdf') {
       setFile(selected);
+      
+      // Automatically set title to file name (without extension) if title is empty
+      if (!title) {
+        const fileNameWithoutExt = selected.name.replace(/\.[^/.]+$/, "");
+        setTitle(fileNameWithoutExt);
+      }
+      
       // Generate thumbnail
       const blob = await generateThumbnail(selected);
       if (blob) {
