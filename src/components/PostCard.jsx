@@ -103,23 +103,22 @@ export default function PostCard({ post, onCommentClick }) {
   let score = 0;
   let totalMcqs = 0;
   
-  if (attemptStr && post.mcqs && post.mcqs.length > 0) {
-    const actualMcqs = post.mcqs.filter(m => m.type !== 'article_link');
-    if (actualMcqs.length > 0) {
-      try {
-        const answers = JSON.parse(attemptStr);
-        if (Object.keys(answers).length === actualMcqs.length) {
-          hasAttempted = true;
-          totalMcqs = actualMcqs.length;
-          actualMcqs.forEach((mcq, idx) => {
-            if (answers[idx] === mcq.answer) {
-              score++;
-            }
-          });
-        }
-      } catch (e) {
-        console.error("Error parsing attempt:", e);
+  const actualMcqs = (post.mcqs || []).filter(m => m.type !== 'article_link');
+  totalMcqs = actualMcqs.length;
+
+  if (attemptStr && totalMcqs > 0) {
+    try {
+      const answers = JSON.parse(attemptStr);
+      if (Object.keys(answers).length === totalMcqs) {
+        hasAttempted = true;
+        actualMcqs.forEach((mcq, idx) => {
+          if (answers[idx] === mcq.answer) {
+            score++;
+          }
+        });
       }
+    } catch (e) {
+      console.error("Error parsing attempt:", e);
     }
   }
 
