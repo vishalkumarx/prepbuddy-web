@@ -56,6 +56,11 @@ export default function StateHomeFeed() {
       {/* Testimonials Carousel */}
       <TestimonialCarousel />
 
+      {/* Section Title */}
+      <div className="pt-2 pb-1">
+        <h2 className="text-xl font-bold text-gray-900 tracking-tight">Upcoming exams</h2>
+      </div>
+
       {testSeries.length === 0 ? (
         <div className="text-center py-20 text-gray-500 bg-white rounded-2xl shadow-sm border border-gray-100">
           <p>No test series available yet.</p>
