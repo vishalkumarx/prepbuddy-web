@@ -11,14 +11,14 @@ export default function Profile({ onLogout }) {
   return (
     <div className="flex flex-col h-full bg-gray-50 pb-20">
       {/* Profile Header Background */}
-      <div className="bg-primary pt-8 pb-16 px-6 rounded-b-[2rem] shadow-md relative">
+      <div className="bg-primary pt-10 pb-24 px-6 rounded-b-[2rem] shadow-md relative">
         {/* Admin Badge */}
         {isAdmin && (
           <div className="absolute top-4 right-4 bg-secondary text-primary text-xs font-bold px-2 py-1 rounded shadow-sm border border-secondary/50">
             ADMIN
           </div>
         )}
-        <h2 className="text-white text-2xl font-bold text-center mb-2">My Profile</h2>
+        <h2 className="text-white text-2xl font-bold text-center">My Profile</h2>
       </div>
 
       {/* Profile Card Overlay */}
