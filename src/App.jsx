@@ -189,6 +189,7 @@ function App() {
   }
 
   const handleLogout = async () => {
+    window.history.replaceState(null, '', '/');
     await supabase.auth.signOut();
     UserManager.logout();
     setIsAuth(false);
