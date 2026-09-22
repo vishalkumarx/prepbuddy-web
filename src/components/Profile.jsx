@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { UserManager } from '../utils/UserManager';
-import { LogOut, User, Mail, Award, CheckCircle, Users } from 'lucide-react';
+import { LogOut, User, Mail, Award, CheckCircle, Users, Settings } from 'lucide-react';
 
 export default function Profile({ onLogout }) {
   const username = UserManager.getUsername() || 'Anonymous';
@@ -70,6 +70,18 @@ export default function Profile({ onLogout }) {
               View User Sessions
             </Link>
           )}
+
+          {/* Reset Mode Button */}
+          <button 
+            onClick={() => {
+              UserManager.clearPreparation();
+              window.location.reload();
+            }}
+            className="w-full py-3.5 mb-3 bg-gray-50 hover:bg-gray-100 text-gray-700 font-bold rounded-xl flex items-center justify-center gap-2 transition-colors border border-gray-200 shadow-sm"
+          >
+            <Settings size={18} />
+            Change Exam Goal
+          </button>
 
           {/* Logout Button */}
           <button 

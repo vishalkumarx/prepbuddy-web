@@ -10,6 +10,8 @@ import ResourceDetail from './components/ResourceDetail';
 import UploadPost from './components/UploadPost';
 import Profile from './components/Profile';
 import AdminSessions from './components/AdminSessions';
+import PreparationSelector from './components/PreparationSelector';
+import StateGovLayout from './components/StateGovLayout';
 import { Home, User, BookOpen, Search, Plus, X, ShoppingBag } from 'lucide-react';
 import { supabase } from './supabase';
 import { UserManager } from './utils/UserManager';
@@ -132,6 +134,7 @@ function Layout({ children }) {
 
 function App() {
   const [isAuth, setIsAuth] = useState(false);
+  const [preparationMode, setPreparationMode] = useState(UserManager.getPreparation());
 
   useEffect(() => {
     const trackSession = async (session) => {
@@ -195,7 +198,24 @@ function App() {
     await supabase.auth.signOut();
     UserManager.logout();
     setIsAuth(false);
+    setPreparationMode(null);
   };
+
+  if (!preparationMode) {
+    return (
+      <div className="h-[100dvh] max-w-md mx-auto bg-white shadow-xl relative overflow-hidden">
+        <PreparationSelector onSelect={setPreparationMode} />
+      </div>
+    );
+  }
+
+  if (preparationMode === 'state_gov') {
+    return (
+      <BrowserRouter>
+        <StateGovLayout onLogout={handleLogout} />
+      </BrowserRouter>
+    );
+  }
 
   return (
     <BrowserRouter>

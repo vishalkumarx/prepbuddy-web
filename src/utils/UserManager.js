@@ -49,10 +49,23 @@ export const UserManager = {
     return !!localStorage.getItem('username');
   },
 
+  getPreparation: () => {
+    return localStorage.getItem('preparation_mode'); // 'upsc' | 'state_gov' | null
+  },
+
+  setPreparation: (mode) => {
+    localStorage.setItem('preparation_mode', mode);
+  },
+
+  clearPreparation: () => {
+    localStorage.removeItem('preparation_mode');
+  },
+
   logout: () => {
     localStorage.removeItem('username');
     localStorage.removeItem('user_id');
     localStorage.removeItem('email');
     localStorage.removeItem('avatar');
+    localStorage.removeItem('preparation_mode');
   }
 };
