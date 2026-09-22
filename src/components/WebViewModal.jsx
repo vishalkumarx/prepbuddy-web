@@ -4,6 +4,15 @@ import { X, ExternalLink } from 'lucide-react';
 export default function WebViewModal({ url, onClose }) {
   if (!url) return null;
 
+  const formattedUrl = url.startsWith('http') ? url : `https://${url}`;
+  
+  let hostname = formattedUrl;
+  try {
+    hostname = new URL(formattedUrl).hostname;
+  } catch (e) {
+    console.warn("Invalid URL format:", formattedUrl);
+  }
+
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-white animate-[slideUp_0.3s_ease-out]">
       <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-white shadow-sm">
@@ -14,10 +23,10 @@ export default function WebViewModal({ url, onClose }) {
           <X size={24} />
         </button>
         <h2 className="text-sm font-semibold text-gray-800 truncate px-4">
-          {new URL(url).hostname}
+          {hostname}
         </h2>
         <a 
-          href={url} 
+          href={formattedUrl} 
           target="_blank" 
           rel="noopener noreferrer"
           className="p-2 hover:bg-gray-100 rounded-full text-indigo-600 transition-colors"
@@ -28,7 +37,7 @@ export default function WebViewModal({ url, onClose }) {
       </div>
       <div className="flex-1 bg-gray-50 relative">
         <iframe 
-          src={url} 
+          src={formattedUrl} 
           title="Inbuilt Web View"
           className="absolute inset-0 w-full h-full border-0"
           sandbox="allow-same-origin allow-scripts allow-popups allow-forms"
