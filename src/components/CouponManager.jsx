@@ -245,35 +245,45 @@ export default function CouponManager({ resourceId }) {
           </div>
         ) : (
           coupons.map((coupon) => (
-            <div key={coupon.id} className={`flex items-center gap-3 px-4 py-3 ${!coupon.is_active ? 'opacity-50' : ''}`}>
-              {/* Code */}
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <span className="font-bold text-gray-900 tracking-widest text-sm bg-gray-100 px-2 py-0.5 rounded font-mono">
-                    {coupon.code}
-                  </span>
-                  <button onClick={() => copyCode(coupon.id, coupon.code)} className="text-gray-400 hover:text-primary transition-colors">
-                    {copiedId === coupon.id ? <Check size={13} className="text-green-500" /> : <Copy size={13} />}
-                  </button>
-                </div>
-                <p className="text-[11px] text-gray-500 mt-0.5">
-                  {coupon.discount_type === 'percentage'
-                    ? `${coupon.discount_value}% off`
-                    : `₹${coupon.discount_value} off`}
-                  {' · '}
-                  {coupon.scope === 'single_user' ? `👤 ${coupon.user_email}` : '🌐 All users'}
-                </p>
-              </div>
-
-              {/* Actions */}
-              <div className="flex items-center gap-2 flex-shrink-0">
+            <div key={coupon.id} className={`px-4 py-3 border-b border-gray-50 last:border-0 ${!coupon.is_active ? 'opacity-50' : ''}`}>
+              {/* Top row: code + actions */}
+              <div className="flex items-center gap-2 mb-1">
+                <span className="font-bold text-gray-900 tracking-widest text-sm bg-gray-100 px-2 py-0.5 rounded font-mono flex-1 truncate">
+                  {coupon.code}
+                </span>
+                {/* Copy Button */}
+                <button
+                  onClick={() => copyCode(coupon.id, coupon.code)}
+                  className={`flex items-center gap-1 text-xs font-bold px-2.5 py-1.5 rounded-lg border transition-all active:scale-95 ${
+                    copiedId === coupon.id
+                      ? 'bg-green-50 text-green-600 border-green-200'
+                      : 'bg-gray-50 text-gray-600 border-gray-200 hover:bg-indigo-50 hover:text-primary hover:border-indigo-200'
+                  }`}
+                >
+                  {copiedId === coupon.id ? (
+                    <><Check size={12} /> Copied!</>
+                  ) : (
+                    <><Copy size={12} /> Copy</>
+                  )}
+                </button>
+                {/* Toggle */}
                 <button onClick={() => toggleActive(coupon)} className="text-gray-400 hover:text-primary transition-colors">
                   {coupon.is_active ? <ToggleRight size={22} className="text-green-500" /> : <ToggleLeft size={22} />}
                 </button>
+                {/* Delete */}
                 <button onClick={() => deleteCoupon(coupon.id)} className="text-gray-400 hover:text-red-500 transition-colors">
                   <Trash2 size={16} />
                 </button>
               </div>
+              {/* Bottom row: details */}
+              <p className="text-[11px] text-gray-500">
+                {coupon.discount_type === 'percentage'
+                  ? `${coupon.discount_value}% off`
+                  : `₹${coupon.discount_value} off`}
+                {' · '}
+                {coupon.scope === 'single_user' ? `👤 ${coupon.user_email}` : '🌐 All users'}
+                {!coupon.is_active && ' · ⚪ Inactive'}
+              </p>
             </div>
           ))
         )}
