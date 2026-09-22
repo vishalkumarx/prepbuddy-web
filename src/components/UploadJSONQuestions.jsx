@@ -95,15 +95,29 @@ export default function UploadJSONQuestions() {
       }
       const prompt = `Extract all multiple choice questions from the following text/JSON and format them EXACTLY as a JSON array of objects with keys: "question" (string), "options" (array of 4 string options), "answer" (the correct option text or letter), "explanation" (detailed explanation if present, else empty string), "category" ("${category}"), "subcategory" ("${subcategory}"). Return ONLY raw valid JSON array without markdown formatting like \`\`\`json. Text:\n${jsonText}`;
 
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`, {
+      // AQ. keys = new Google Auth Key format → use Bearer token in header
+      // AIza keys = legacy API key format → use ?key= query param
+      const isAQKey = apiKey.startsWith('AQ.');
+      const url = isAQKey
+        ? `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent`
+        : `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+
+      const headers = { 'Content-Type': 'application/json' };
+      if (isAQKey) headers['Authorization'] = `Bearer ${apiKey}`;
+
+      const response = await fetch(url, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({
           contents: [{ parts: [{ text: prompt }] }]
         })
       });
 
-      if (!response.ok) throw new Error(`AI Request failed: ${response.statusText}`);
+      if (!response.ok) {
+        let errBody = '';
+        try { const errJson = await response.json(); errBody = errJson?.error?.message || JSON.stringify(errJson); } catch (_) {}
+        throw new Error(`HTTP ${response.status}: ${errBody || response.statusText}`);
+      }
 
       const data = await response.json();
       let generatedText = data.candidates[0].content.parts[0].text.trim();
@@ -118,6 +132,7 @@ export default function UploadJSONQuestions() {
       setMessage({ type: 'error', text: 'AI Formatting failed: ' + err.message });
     } finally {
       setIsFormatting(false);
+
     }
   };
 
