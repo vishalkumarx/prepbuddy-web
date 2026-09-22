@@ -42,24 +42,41 @@ export default function UploadResource() {
 
     setLoading(true);
     try {
-      // 1. Upload file to Supabase Storage (bucket: store_resources)
+      // 1. Get Pre-signed URL from our Vercel Serverless Function
       const fileExt = file.name.split('.').pop();
       const fileName = `${Math.random().toString(36).substring(2)}_${Date.now()}.${fileExt}`;
       
-      const { error: uploadError } = await supabase.storage
-        .from('store_resources')
-        .upload(fileName, file);
+      const response = await fetch('/api/upload-url', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          fileName,
+          contentType: file.type,
+        }),
+      });
 
-      if (uploadError) {
-        console.error("Storage upload error:", uploadError);
-        throw new Error("Failed to upload file to storage. Did you create the 'store_resources' bucket?");
+      if (!response.ok) {
+        throw new Error('Failed to get upload URL. Are your R2 environment variables set up in Vercel?');
       }
 
-      const { data: publicUrlData } = supabase.storage
-        .from('store_resources')
-        .getPublicUrl(fileName);
+      const { signedUrl, publicUrl } = await response.json();
 
-      const fileUrl = publicUrlData.publicUrl;
+      // 2. Upload directly to Cloudflare R2
+      const uploadResponse = await fetch(signedUrl, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': file.type,
+        },
+        body: file,
+      });
+
+      if (!uploadResponse.ok) {
+        throw new Error('Failed to upload file to Cloudflare R2.');
+      }
+
+      const fileUrl = publicUrl;
 
       // 2. Insert record into prepbuddy_store
       const { error: dbError } = await supabase
