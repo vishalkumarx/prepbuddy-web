@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { ShoppingBag, FileText, Download, ExternalLink } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { ShoppingBag, FileText, Download, ExternalLink, Edit2 } from 'lucide-react';
 import { supabase } from '../supabase';
+import { UserManager } from '../utils/UserManager';
 
 export default function Store() {
   const [resources, setResources] = useState([]);
@@ -103,6 +105,14 @@ export default function Store() {
                      <p className="text-sm text-gray-600 line-clamp-2">{resource.description}</p>
                   )}
                 </div>
+                {UserManager.isAdmin() && (
+                  <Link 
+                    to={`/edit-resource/${resource.id}`}
+                    className="p-2 text-gray-400 hover:text-primary hover:bg-indigo-50 rounded-full transition-colors flex-shrink-0"
+                  >
+                    <Edit2 size={18} />
+                  </Link>
+                )}
               </div>
 
               <div className="mt-2 flex items-center justify-between border-t border-gray-50 pt-4">

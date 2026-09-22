@@ -6,6 +6,7 @@ import PostDetail from './components/PostDetail';
 import Store from './components/Store';
 import UploadMains from './components/UploadMains';
 import UploadResource from './components/UploadResource';
+import EditResource from './components/EditResource';
 import UploadPost from './components/UploadPost';
 import Profile from './components/Profile';
 import AdminSessions from './components/AdminSessions';
@@ -207,6 +208,7 @@ function App() {
           <Route path="/edit-mains/:id" element={<UploadMains isEdit={true} />} />
           <Route path="/upload-post" element={<UploadPost />} />
           <Route path="/upload-resource" element={<UploadResource />} />
+          <Route path="/edit-resource/:id" element={<UploadResource isEdit={true} />} />
           <Route path="/admin/sessions" element={<AdminSessions />} />
           <Route path="/profile" element={<Profile onLogout={handleLogout} />} />
         </Routes>

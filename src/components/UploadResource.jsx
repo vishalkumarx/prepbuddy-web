@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { supabase } from '../supabase';
 import { UserManager } from '../utils/UserManager';
 import { ArrowLeft, Upload, FileText, IndianRupee } from 'lucide-react';
@@ -11,8 +11,9 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
   import.meta.url
 ).toString();
 
-export default function UploadResource() {
+export default function UploadResource({ isEdit = false }) {
   const navigate = useNavigate();
+  const { id } = useParams();
   const fileInputRef = useRef(null);
   
   const [title, setTitle] = useState('');
@@ -23,6 +24,33 @@ export default function UploadResource() {
   const [thumbnailBlob, setThumbnailBlob] = useState(null);
   const [thumbnailDataUrl, setThumbnailDataUrl] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [existingResource, setExistingResource] = useState(null);
+
+  useEffect(() => {
+    if (isEdit && id) {
+      const fetchResource = async () => {
+        const { data, error } = await supabase
+          .from('prepbuddy_store')
+          .select('*')
+          .eq('id', id)
+          .single();
+        
+        if (data && !error) {
+          setTitle(data.title);
+          setDescription(data.description || '');
+          setPrice(data.price.toString());
+          if (data.original_price) {
+            setOriginalPrice(data.original_price.toString());
+          }
+          if (data.thumbnail_url) {
+            setThumbnailDataUrl(data.thumbnail_url);
+          }
+          setExistingResource(data);
+        }
+      };
+      fetchResource();
+    }
+  }, [isEdit, id]);
 
   // Security check: Only admins can access this page
   if (!UserManager.isAdmin()) {
@@ -91,70 +119,88 @@ export default function UploadResource() {
 
   const handleUpload = async (e) => {
     e.preventDefault();
-    if (!title.trim() || !file) {
+    if (!title.trim() || (!isEdit && !file)) {
       alert("Please provide a title and a PDF file.");
       return;
     }
 
     setLoading(true);
     try {
-      // 1. Upload file to Supabase Storage (bucket: store_resources)
-      const fileExt = file.name.split('.').pop();
-      const baseName = Math.random().toString(36).substring(2) + '_' + Date.now();
-      const fileName = `${baseName}.${fileExt}`;
-      
-      const { error: uploadError } = await supabase.storage
-        .from('store_resources')
-        .upload(fileName, file);
+      let fileUrl = isEdit ? existingResource?.file_url : null;
+      let thumbnailUrl = isEdit ? existingResource?.thumbnail_url : null;
 
-      if (uploadError) {
-        console.error("Storage upload error:", uploadError);
-        throw new Error("Failed to upload file to storage.");
-      }
-
-      const { data: publicUrlData } = supabase.storage
-        .from('store_resources')
-        .getPublicUrl(fileName);
-
-      const fileUrl = publicUrlData.publicUrl;
-
-      // 2. Upload thumbnail if available
-      let thumbnailUrl = null;
-      if (thumbnailBlob) {
-        const thumbName = `${baseName}_thumb.jpg`;
-        const { error: thumbUploadError } = await supabase.storage
+      if (file) {
+        // 1. Upload file to Supabase Storage (bucket: store_resources)
+        const fileExt = file.name.split('.').pop();
+        const baseName = Math.random().toString(36).substring(2) + '_' + Date.now();
+        const fileName = `${baseName}.${fileExt}`;
+        
+        const { error: uploadError } = await supabase.storage
           .from('store_resources')
-          .upload(thumbName, thumbnailBlob, { contentType: 'image/jpeg' });
+          .upload(fileName, file);
 
-        if (!thumbUploadError) {
-          const { data: thumbUrlData } = supabase.storage
+        if (uploadError) {
+          console.error("Storage upload error:", uploadError);
+          throw new Error("Failed to upload file to storage.");
+        }
+
+        const { data: publicUrlData } = supabase.storage
+          .from('store_resources')
+          .getPublicUrl(fileName);
+
+        fileUrl = publicUrlData.publicUrl;
+
+        // 2. Upload thumbnail if available
+        if (thumbnailBlob) {
+          const thumbName = `${baseName}_thumb.jpg`;
+          const { error: thumbUploadError } = await supabase.storage
             .from('store_resources')
-            .getPublicUrl(thumbName);
-          thumbnailUrl = thumbUrlData.publicUrl;
-        } else {
-          console.error("Thumbnail upload error:", thumbUploadError);
+            .upload(thumbName, thumbnailBlob, { contentType: 'image/jpeg' });
+
+          if (!thumbUploadError) {
+            const { data: thumbUrlData } = supabase.storage
+              .from('store_resources')
+              .getPublicUrl(thumbName);
+            thumbnailUrl = thumbUrlData.publicUrl;
+          } else {
+            console.error("Thumbnail upload error:", thumbUploadError);
+          }
         }
       }
 
-      // 3. Insert record into prepbuddy_store
-      const { error: dbError } = await supabase
-        .from('prepbuddy_store')
-        .insert([{
-          title: title.trim(),
-          description: description.trim(),
-          price: parseFloat(price) || 0,
-          original_price: parseFloat(originalPrice) || null,
-          file_url: fileUrl,
-          thumbnail_url: thumbnailUrl,
-          uploaded_by: UserManager.getUserId()
-        }]);
+      const payload = {
+        title: title.trim(),
+        description: description.trim(),
+        price: parseFloat(price) || 0,
+        original_price: parseFloat(originalPrice) || null,
+        file_url: fileUrl,
+        thumbnail_url: thumbnailUrl,
+      };
 
-      if (dbError) {
-        console.error("DB insert error:", dbError);
-        throw new Error("Failed to save resource record. Did you create the 'prepbuddy_store' table?");
+      if (isEdit) {
+        const { error: dbError } = await supabase
+          .from('prepbuddy_store')
+          .update(payload)
+          .eq('id', id);
+
+        if (dbError) {
+          console.error("DB update error:", dbError);
+          throw new Error("Failed to update resource record.");
+        }
+        alert("Resource updated successfully!");
+      } else {
+        payload.uploaded_by = UserManager.getUserId();
+        const { error: dbError } = await supabase
+          .from('prepbuddy_store')
+          .insert([payload]);
+
+        if (dbError) {
+          console.error("DB insert error:", dbError);
+          throw new Error("Failed to save resource record. Did you create the 'prepbuddy_store' table?");
+        }
+        alert("Resource uploaded successfully!");
       }
 
-      alert("Resource uploaded successfully!");
       navigate('/store');
 
     } catch (err) {
@@ -172,7 +218,7 @@ export default function UploadResource() {
         <button onClick={() => navigate(-1)} className="p-2 -ml-2 text-gray-500 hover:text-gray-900 rounded-full hover:bg-gray-100 transition-colors">
           <ArrowLeft size={24} />
         </button>
-        <h1 className="text-xl font-bold ml-2 text-primary">Upload Resource</h1>
+        <h1 className="text-xl font-bold ml-2 text-primary">{isEdit ? 'Edit Resource' : 'Upload Resource'}</h1>
       </header>
 
       {/* Upload Form */}
@@ -296,16 +342,16 @@ export default function UploadResource() {
           {/* Submit */}
           <button 
             type="submit" 
-            disabled={loading || !file || !title}
+            disabled={loading || !title || (!isEdit && !file)}
             className="w-full bg-primary hover:bg-primary-light text-white font-bold py-3.5 rounded-xl transition-all active:scale-[0.98] mt-6 shadow-md disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
           >
             {loading ? (
               <div className="flex items-center gap-2">
                 <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                <span>Uploading...</span>
+                <span>{isEdit ? 'Updating...' : 'Uploading...'}</span>
               </div>
             ) : (
-              "Publish Resource"
+              isEdit ? 'Update Resource' : 'Publish Resource'
             )}
           </button>
         </form>
