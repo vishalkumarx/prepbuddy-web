@@ -9,21 +9,6 @@ export default function AdminSessions() {
   const [sessions, setSessions] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Security check: Only admins can access this page
-  if (!UserManager.isAdmin()) {
-    return (
-      <div className="p-8 text-center text-red-500 font-bold">
-        Access Denied. Admins only.
-      </div>
-    );
-  }
-
-  useEffect(() => {
-    fetchSessions();
-    const interval = setInterval(fetchSessions, 30000); // Refresh every 30s
-    return () => clearInterval(interval);
-  }, []);
-
   const fetchSessions = async () => {
     try {
       const { data, error } = await supabase
@@ -39,6 +24,21 @@ export default function AdminSessions() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchSessions();
+    const interval = setInterval(fetchSessions, 30000); // Refresh every 30s
+    return () => clearInterval(interval);
+  }, []);
+
+  // Security check: Only admins can access this page
+  if (!UserManager.isAdmin()) {
+    return (
+      <div className="p-8 text-center text-red-500 font-bold">
+        Access Denied. Admins only.
+      </div>
+    );
+  }
 
   const ACTIVE_THRESHOLD_MS = 15 * 60 * 1000;
   const now = new Date().getTime();

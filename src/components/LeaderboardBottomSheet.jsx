@@ -6,10 +6,6 @@ export default function LeaderboardBottomSheet({ postId, onClose }) {
   const [attempts, setAttempts] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (postId) fetchLeaderboard();
-  }, [postId]);
-
   const fetchLeaderboard = async () => {
     setLoading(true);
     try {
@@ -23,12 +19,16 @@ export default function LeaderboardBottomSheet({ postId, onClose }) {
 
       if (error) throw error;
       setAttempts(data || []);
-    } catch (error) {
-      console.error("Error fetching leaderboard:", error);
+    } catch (err) {
+      console.error("Error fetching leaderboard:", err);
     } finally {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (postId) fetchLeaderboard();
+  }, [postId]);
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col justify-end">
