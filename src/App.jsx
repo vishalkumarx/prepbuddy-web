@@ -47,7 +47,7 @@ function Layout({ children }) {
     <SearchContext.Provider value={{ searchQuery, setSearchQuery }}>
       <div className="flex flex-col h-[100dvh] max-w-md mx-auto bg-app-bg shadow-xl overflow-hidden relative">
         {/* Header */}
-        <header className="bg-primary flex items-center justify-between py-3 px-4 shadow-md z-10 sticky top-0 min-h-[60px]">
+        <header className="bg-primary flex items-center justify-between py-3.5 px-4 shadow-md z-10 sticky top-0 min-h-[72px]">
           {isSearchOpen ? (
             <div className="flex items-center w-full bg-white/10 rounded-xl px-3 py-1 border border-white/20">
               <Search size={18} className="text-white/70" />
@@ -69,7 +69,7 @@ function Layout({ children }) {
           ) : (
             <>
               <div className="flex-1 flex items-center justify-center pl-6">
-                <img src="/logo.png" alt="GoalPrep" className="h-10 w-auto object-contain max-w-[200px]" />
+                <img src="/logo.png" alt="GoalPrep" className="h-14 w-auto object-contain max-w-[260px]" />
                 {isAdmin && (
                   <span className="bg-secondary/20 text-secondary text-[10px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wide border border-secondary/30 ml-2">
                     Admin
