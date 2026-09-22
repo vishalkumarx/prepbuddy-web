@@ -131,7 +131,7 @@ export default function ResourceDetail() {
                   {Math.round(((resource.original_price - resource.price) / resource.original_price) * 100)}% OFF
                 </div>
               )}
-             {/* 3D Book Container */}
+              {/* 3D Book Container */}
              <div 
                className="relative w-[120px] h-[170px] shadow-2xl rounded-sm"
                style={{
@@ -147,6 +147,10 @@ export default function ResourceDetail() {
                />
                <div className="absolute inset-y-0 left-0 w-3 bg-gradient-to-r from-black/30 via-transparent to-transparent rounded-l-sm"></div>
                <div className="absolute inset-y-0 left-0 w-0.5 bg-white/40"></div>
+               {/* Soft Copy Badge */}
+               <div className="absolute bottom-2 right-0 bg-blue-600 text-white text-[8px] font-bold px-1.5 py-0.5 rounded-l-md shadow-md tracking-wide uppercase">
+                 📄 Soft Copy
+               </div>
              </div>
           </div>
 
