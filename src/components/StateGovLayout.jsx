@@ -4,6 +4,7 @@ import { Home, User, Plus } from 'lucide-react';
 import StateHomeFeed from './StateHomeFeed';
 import Profile from './Profile';
 import UploadTestSeries from './UploadTestSeries';
+import UploadJSONQuestions from './UploadJSONQuestions';
 import { UserManager } from '../utils/UserManager';
 
 export default function StateGovLayout({ onLogout }) {
@@ -40,6 +41,7 @@ export default function StateGovLayout({ onLogout }) {
         <Routes>
           <Route path="/" element={<StateHomeFeed />} />
           <Route path="/profile" element={<Profile onLogout={onLogout} />} />
+          <Route path="/admin/upload-json" element={<UploadJSONQuestions />} />
         </Routes>
       </main>
 
