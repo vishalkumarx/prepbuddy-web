@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { ShoppingBag, FileText, Download, ExternalLink, Edit2 } from 'lucide-react';
 import { supabase } from '../supabase';
 import { UserManager } from '../utils/UserManager';
 
 export default function Store() {
+  const navigate = useNavigate();
   const [resources, setResources] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -64,7 +65,11 @@ export default function Store() {
           </div>
         ) : (
           resources.map((resource) => (
-            <div key={resource.id} className="bg-white rounded-2xl p-3 shadow-sm border border-gray-100 flex flex-col gap-2 transition-transform hover:scale-[1.02]">
+            <div 
+              key={resource.id} 
+              onClick={() => navigate(`/store/${resource.id}`)}
+              className="bg-white rounded-2xl p-3 shadow-sm border border-gray-100 flex flex-col gap-2 transition-transform hover:scale-[1.02] cursor-pointer"
+            >
               <div className="w-full bg-indigo-50/50 rounded-xl overflow-hidden mb-2 py-4 flex items-center justify-center relative aspect-[4/5]">
                 {/* Discount Banner */}
                 {resource.original_price && resource.original_price > resource.price && (
@@ -108,6 +113,7 @@ export default function Store() {
                 {UserManager.isAdmin() && (
                   <Link 
                     to={`/edit-resource/${resource.id}`}
+                    onClick={(e) => e.stopPropagation()}
                     className="p-1.5 text-gray-400 hover:text-primary hover:bg-indigo-50 rounded-full transition-colors flex-shrink-0 -mt-1 -mr-1"
                   >
                     <Edit2 size={14} />
@@ -127,7 +133,10 @@ export default function Store() {
                   </div>
                 </div>
                 <button
-                  onClick={() => handleAction(resource)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleAction(resource);
+                  }}
                   className={`flex items-center justify-center gap-1.5 w-full py-2 rounded-lg font-bold text-xs transition-colors ${
                     resource.price === 0 
                       ? 'bg-green-100 text-green-700 hover:bg-green-200' 

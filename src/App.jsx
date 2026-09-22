@@ -5,8 +5,10 @@ import Login from './components/Login';
 import PostDetail from './components/PostDetail';
 import Store from './components/Store';
 import UploadMains from './components/UploadMains';
+import UploadMains from './components/UploadMains';
 import UploadResource from './components/UploadResource';
 import EditResource from './components/EditResource';
+import ResourceDetail from './components/ResourceDetail';
 import UploadPost from './components/UploadPost';
 import Profile from './components/Profile';
 import AdminSessions from './components/AdminSessions';
@@ -203,6 +205,7 @@ function App() {
           <Route path="/" element={<Feed feedType="home" />} />
           <Route path="/mains" element={<Feed feedType="mains" />} />
           <Route path="/store" element={<Store />} />
+          <Route path="/store/:id" element={<ResourceDetail />} />
           <Route path="/post/:id" element={<PostDetail />} />
           <Route path="/upload-mains" element={<UploadMains />} />
           <Route path="/edit-mains/:id" element={<UploadMains isEdit={true} />} />
