@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabase';
 import { IndianRupee } from 'lucide-react';
+import TestimonialCarousel from './TestimonialCarousel';
 
 export default function StateHomeFeed() {
   const [testSeries, setTestSeries] = useState([]);
@@ -52,6 +53,9 @@ export default function StateHomeFeed() {
 
   return (
     <div className="p-4 space-y-4 pb-24">
+      {/* Testimonials Carousel */}
+      <TestimonialCarousel />
+
       {testSeries.length === 0 ? (
         <div className="text-center py-20 text-gray-500 bg-white rounded-2xl shadow-sm border border-gray-100">
           <p>No test series available yet.</p>
