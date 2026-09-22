@@ -68,17 +68,17 @@ function Layout({ children }) {
             </div>
           ) : (
             <>
-              <div className="flex items-center gap-2 mx-auto pl-8">
-                <img src="/logo.png" alt="GoalPrep" className="h-8 w-auto object-contain" />
+              <div className="flex-1 flex items-center justify-center pl-6">
+                <img src="/logo.png" alt="GoalPrep" className="h-10 w-auto object-contain max-w-[200px]" />
                 {isAdmin && (
-                  <span className="bg-secondary/20 text-secondary text-[10px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wide border border-secondary/30">
+                  <span className="bg-secondary/20 text-secondary text-[10px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wide border border-secondary/30 ml-2">
                     Admin
                   </span>
                 )}
               </div>
               <button 
                 onClick={() => setIsSearchOpen(true)}
-                className="p-2 -mr-2 text-white/90 hover:text-white rounded-full hover:bg-white/10 transition-colors"
+                className="p-2 -mr-1 text-white/90 hover:text-white rounded-full hover:bg-white/10 transition-colors"
               >
                 <Search size={22} />
               </button>
