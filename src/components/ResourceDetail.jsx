@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../supabase';
-import { ArrowLeft, Download, ExternalLink, FileText } from 'lucide-react';
+import { UserManager } from '../utils/UserManager';
+import { ArrowLeft, Download, ExternalLink, FileText, Tag, CheckCircle, XCircle } from 'lucide-react';
 import * as pdfjsLib from 'pdfjs-dist';
+import CouponManager from './CouponManager';
 
 // Configure pdfjs worker
 pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
@@ -18,6 +20,12 @@ export default function ResourceDetail() {
   const [samplePages, setSamplePages] = useState([]);
   const [loadingSamples, setLoadingSamples] = useState(false);
   const [sampleError, setSampleError] = useState(null);
+
+  // Coupon state
+  const [couponCode, setCouponCode] = useState('');
+  const [couponStatus, setCouponStatus] = useState(null); // null | 'valid' | 'invalid' | 'checking'
+  const [couponData, setCouponData] = useState(null);
+  const [discountedPrice, setDiscountedPrice] = useState(null);
 
   const generateSamples = async (fileUrl) => {
     setLoadingSamples(true);
@@ -86,11 +94,65 @@ export default function ResourceDetail() {
   }, [id]);
 
   const handleAction = () => {
-    if (resource.price === 0) {
+    const finalPrice = discountedPrice !== null ? discountedPrice : resource.price;
+    if (finalPrice === 0) {
       window.open(resource.file_url, '_blank');
     } else {
-      alert(`Payment gateway coming soon for ₹${resource.price}!`);
+      alert(`Payment gateway coming soon! Price: ₹${finalPrice}`);
     }
+  };
+
+  const applyCoupon = async () => {
+    if (!couponCode.trim()) return;
+    setCouponStatus('checking');
+    setCouponData(null);
+    setDiscountedPrice(null);
+
+    try {
+      const { data, error } = await supabase
+        .from('prepbuddy_coupons')
+        .select('*')
+        .eq('resource_id', id)
+        .eq('code', couponCode.trim().toUpperCase())
+        .eq('is_active', true)
+        .single();
+
+      if (error || !data) {
+        setCouponStatus('invalid');
+        return;
+      }
+
+      // Check single user scope
+      if (data.scope === 'single_user') {
+        const userEmail = UserManager.getEmail();
+        if (!userEmail || userEmail.toLowerCase() !== data.user_email.toLowerCase()) {
+          setCouponStatus('invalid');
+          return;
+        }
+      }
+
+      // Calculate discounted price
+      let finalPrice = resource.price;
+      if (data.discount_type === 'percentage') {
+        finalPrice = resource.price - (resource.price * data.discount_value / 100);
+      } else {
+        finalPrice = Math.max(0, resource.price - data.discount_value);
+      }
+
+      setCouponData(data);
+      setDiscountedPrice(Math.round(finalPrice));
+      setCouponStatus('valid');
+    } catch (err) {
+      console.error('Coupon error:', err);
+      setCouponStatus('invalid');
+    }
+  };
+
+  const removeCoupon = () => {
+    setCouponCode('');
+    setCouponStatus(null);
+    setCouponData(null);
+    setDiscountedPrice(null);
   };
 
   if (loading) {
@@ -173,17 +235,67 @@ export default function ResourceDetail() {
           )}
         </div>
 
+        {/* Coupon Section (only for paid resources) */}
+        {resource.price > 0 && (
+          <div className="mb-4 bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+            <h3 className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-3 flex items-center gap-1.5">
+              <Tag size={12} /> Have a Coupon?
+            </h3>
+            {couponStatus === 'valid' && couponData ? (
+              <div className="flex items-center gap-3 bg-green-50 border border-green-200 rounded-xl p-3">
+                <CheckCircle size={18} className="text-green-500 flex-shrink-0" />
+                <div className="flex-1">
+                  <p className="text-sm font-bold text-green-800">{couponData.code} applied!</p>
+                  <p className="text-xs text-green-600">
+                    {couponData.discount_type === 'percentage'
+                      ? `${couponData.discount_value}% off`
+                      : `₹${couponData.discount_value} off`}
+                    {' — '}You pay <span className="font-black">₹{discountedPrice}</span>
+                  </p>
+                </div>
+                <button onClick={removeCoupon} className="text-gray-400 hover:text-red-500 transition-colors">
+                  <XCircle size={18} />
+                </button>
+              </div>
+            ) : (
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={couponCode}
+                  onChange={(e) => { setCouponCode(e.target.value.toUpperCase()); setCouponStatus(null); }}
+                  placeholder="Enter coupon code"
+                  className={`flex-1 bg-gray-50 border rounded-xl px-3 py-2.5 text-sm font-bold tracking-widest uppercase focus:outline-none focus:ring-2 focus:ring-primary transition-colors ${
+                    couponStatus === 'invalid' ? 'border-red-300 bg-red-50' : 'border-gray-200'
+                  }`}
+                />
+                <button
+                  onClick={applyCoupon}
+                  disabled={couponStatus === 'checking' || !couponCode.trim()}
+                  className="bg-primary text-white font-bold px-4 py-2.5 rounded-xl text-sm active:scale-95 transition-transform disabled:opacity-50"
+                >
+                  {couponStatus === 'checking' ? '...' : 'Apply'}
+                </button>
+              </div>
+            )}
+            {couponStatus === 'invalid' && (
+              <p className="text-xs text-red-500 mt-2 flex items-center gap-1">
+                <XCircle size={12} /> Invalid or expired coupon code.
+              </p>
+            )}
+          </div>
+        )}
+
         {/* Action Button */}
         <div className="mb-6">
           <button
             onClick={handleAction}
             className={`w-full flex items-center justify-center gap-2 py-4 rounded-xl font-bold text-lg transition-colors shadow-md active:scale-[0.98] ${
-              resource.price === 0 
-                ? 'bg-green-600 text-white hover:bg-green-700 shadow-green-600/20' 
+              (discountedPrice !== null ? discountedPrice : resource.price) === 0
+                ? 'bg-green-600 text-white hover:bg-green-700 shadow-green-600/20'
                 : 'bg-primary text-white hover:bg-primary-light shadow-primary/20'
             }`}
           >
-            {resource.price === 0 ? (
+            {(discountedPrice !== null ? discountedPrice : resource.price) === 0 ? (
               <>
                 <Download size={22} />
                 Download Now for Free
@@ -191,11 +303,16 @@ export default function ResourceDetail() {
             ) : (
               <>
                 <ExternalLink size={22} />
-                Buy Now
+                Buy Now{discountedPrice !== null ? ` — ₹${discountedPrice}` : resource.price > 0 ? ` — ₹${resource.price}` : ''}
               </>
             )}
           </button>
         </div>
+
+        {/* Admin — Coupon Manager */}
+        {UserManager.isAdmin() && (
+          <CouponManager resourceId={id} />
+        )}
 
         {/* Sample Pages */}
         <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
