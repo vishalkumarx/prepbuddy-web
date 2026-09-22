@@ -104,8 +104,8 @@ export default function Store() {
                 </div>
               </div>
               <div className="flex justify-between items-start gap-2 px-1">
-                <div className="flex-1">
-                  <h3 className="text-sm font-bold text-gray-900 leading-tight mb-1 line-clamp-2">{resource.title}</h3>
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-sm font-bold text-gray-900 leading-tight mb-1 line-clamp-2 break-words break-all">{resource.title}</h3>
                   {resource.description && (
                      <p className="text-[11px] text-gray-500 line-clamp-1">{resource.description}</p>
                   )}
