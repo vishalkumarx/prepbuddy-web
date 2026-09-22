@@ -33,6 +33,18 @@ export const UserManager = {
     localStorage.setItem('username', username);
   },
 
+  getAvatar: () => {
+    return localStorage.getItem('avatar');
+  },
+
+  setAvatar: (avatar) => {
+    if (avatar) {
+      localStorage.setItem('avatar', avatar);
+    } else {
+      localStorage.removeItem('avatar');
+    }
+  },
+
   isLoggedIn: () => {
     return !!localStorage.getItem('username');
   },
@@ -41,5 +53,6 @@ export const UserManager = {
     localStorage.removeItem('username');
     localStorage.removeItem('user_id');
     localStorage.removeItem('email');
+    localStorage.removeItem('avatar');
   }
 };

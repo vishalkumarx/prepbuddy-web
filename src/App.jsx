@@ -5,6 +5,7 @@ import Login from './components/Login';
 import PostDetail from './components/PostDetail';
 import UploadMains from './components/UploadMains';
 import UploadPost from './components/UploadPost';
+import Profile from './components/Profile';
 import { Home, User, BookOpen, Search, Plus, X } from 'lucide-react';
 import { supabase } from './supabase';
 import { UserManager } from './utils/UserManager';
@@ -132,6 +133,7 @@ function App() {
         UserManager.setUsername(session.user.user_metadata?.full_name || session.user.email);
         UserManager.setUserId(session.user.id);
         UserManager.setEmail(session.user.email);
+        UserManager.setAvatar(session.user.user_metadata?.avatar_url);
         setIsAuth(true);
       } else {
         setIsAuth(UserManager.isLoggedIn()); // Fallback for backwards compatibility if needed
@@ -144,6 +146,7 @@ function App() {
         UserManager.setUsername(session.user.user_metadata?.full_name || session.user.email);
         UserManager.setUserId(session.user.id);
         UserManager.setEmail(session.user.email);
+        UserManager.setAvatar(session.user.user_metadata?.avatar_url);
         setIsAuth(true);
       } else {
         UserManager.logout();
@@ -178,17 +181,7 @@ function App() {
           <Route path="/upload-mains" element={<UploadMains />} />
           <Route path="/edit-mains/:id" element={<UploadMains isEdit={true} />} />
           <Route path="/upload-post" element={<UploadPost />} />
-          <Route path="/profile" element={
-            <div className="p-4 text-center">
-              <h2 className="text-xl font-bold text-[#0B2457] mb-4">Profile: {UserManager.getUsername()}</h2>
-              <button 
-                onClick={handleLogout}
-                className="px-4 py-2 bg-red-100 text-red-600 rounded-lg font-bold"
-              >
-                Log Out
-              </button>
-            </div>
-          } />
+          <Route path="/profile" element={<Profile onLogout={handleLogout} />} />
         </Routes>
       </Layout>
     </BrowserRouter>
