@@ -1,8 +1,15 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../supabase';
 import { UserManager } from '../utils/UserManager';
 import { ArrowLeft, Upload, FileText, IndianRupee } from 'lucide-react';
+import * as pdfjsLib from 'pdfjs-dist';
+
+// Configure pdfjs worker
+pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
+  'pdfjs-dist/build/pdf.worker.min.mjs',
+  import.meta.url
+).toString();
 
 export default function UploadResource() {
   const navigate = useNavigate();
@@ -12,6 +19,8 @@ export default function UploadResource() {
   const [description, setDescription] = useState('');
   const [price, setPrice] = useState('0');
   const [file, setFile] = useState(null);
+  const [thumbnailBlob, setThumbnailBlob] = useState(null);
+  const [thumbnailDataUrl, setThumbnailDataUrl] = useState(null);
   const [loading, setLoading] = useState(false);
 
   // Security check: Only admins can access this page
@@ -23,13 +32,52 @@ export default function UploadResource() {
     );
   }
 
-  const handleFileChange = (e) => {
+  const generateThumbnail = async (pdfFile) => {
+    try {
+      const arrayBuffer = await pdfFile.arrayBuffer();
+      const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+      const page = await pdf.getPage(1);
+      const viewport = page.getViewport({ scale: 1.5 });
+      
+      const canvas = document.createElement('canvas');
+      const context = canvas.getContext('2d');
+      canvas.height = viewport.height;
+      canvas.width = viewport.width;
+
+      const renderContext = {
+        canvasContext: context,
+        viewport: viewport,
+      };
+      
+      await page.render(renderContext).promise;
+      
+      return new Promise((resolve) => {
+        canvas.toBlob((blob) => {
+          resolve(blob);
+        }, 'image/jpeg', 0.8);
+      });
+    } catch (err) {
+      console.error("Error generating PDF thumbnail:", err);
+      return null;
+    }
+  };
+
+  const handleFileChange = async (e) => {
     const selected = e.target.files[0];
     if (selected && selected.type === 'application/pdf') {
       setFile(selected);
+      // Generate thumbnail
+      const blob = await generateThumbnail(selected);
+      if (blob) {
+        setThumbnailBlob(blob);
+        setThumbnailDataUrl(URL.createObjectURL(blob));
+      }
     } else {
       alert('Please select a valid PDF file.');
       e.target.value = null;
+      setFile(null);
+      setThumbnailBlob(null);
+      setThumbnailDataUrl(null);
     }
   };
 
@@ -44,7 +92,8 @@ export default function UploadResource() {
     try {
       // 1. Upload file to Supabase Storage (bucket: store_resources)
       const fileExt = file.name.split('.').pop();
-      const fileName = `${Math.random().toString(36).substring(2)}_${Date.now()}.${fileExt}`;
+      const baseName = Math.random().toString(36).substring(2) + '_' + Date.now();
+      const fileName = `${baseName}.${fileExt}`;
       
       const { error: uploadError } = await supabase.storage
         .from('store_resources')
@@ -52,7 +101,7 @@ export default function UploadResource() {
 
       if (uploadError) {
         console.error("Storage upload error:", uploadError);
-        throw new Error("Failed to upload file to storage. Did you create the 'store_resources' bucket?");
+        throw new Error("Failed to upload file to storage.");
       }
 
       const { data: publicUrlData } = supabase.storage
@@ -61,7 +110,25 @@ export default function UploadResource() {
 
       const fileUrl = publicUrlData.publicUrl;
 
-      // 2. Insert record into prepbuddy_store
+      // 2. Upload thumbnail if available
+      let thumbnailUrl = null;
+      if (thumbnailBlob) {
+        const thumbName = `${baseName}_thumb.jpg`;
+        const { error: thumbUploadError } = await supabase.storage
+          .from('store_resources')
+          .upload(thumbName, thumbnailBlob, { contentType: 'image/jpeg' });
+
+        if (!thumbUploadError) {
+          const { data: thumbUrlData } = supabase.storage
+            .from('store_resources')
+            .getPublicUrl(thumbName);
+          thumbnailUrl = thumbUrlData.publicUrl;
+        } else {
+          console.error("Thumbnail upload error:", thumbUploadError);
+        }
+      }
+
+      // 3. Insert record into prepbuddy_store
       const { error: dbError } = await supabase
         .from('prepbuddy_store')
         .insert([{
@@ -69,6 +136,7 @@ export default function UploadResource() {
           description: description.trim(),
           price: parseFloat(price) || 0,
           file_url: fileUrl,
+          thumbnail_url: thumbnailUrl,
           uploaded_by: UserManager.getUserId()
         }]);
 
@@ -107,7 +175,7 @@ export default function UploadResource() {
           <div className="bg-white rounded-2xl p-3 shadow-md border border-gray-100 w-[160px]">
             <div className="w-full h-48 bg-indigo-50 rounded-xl overflow-hidden relative flex items-center justify-center">
               <img 
-                src="/book-mockup.jpg" 
+                src={thumbnailDataUrl || "/book-mockup.jpg"} 
                 alt="Resource Cover" 
                 className="w-full h-full object-cover"
               />

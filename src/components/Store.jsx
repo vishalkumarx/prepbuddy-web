@@ -63,19 +63,36 @@ export default function Store() {
         ) : (
           resources.map((resource) => (
             <div key={resource.id} className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 flex flex-col gap-3 transition-transform hover:scale-[1.02]">
-              <div className="w-full h-48 bg-indigo-50 rounded-xl overflow-hidden mb-3 relative flex items-center justify-center">
-                <img 
-                  src="/book-mockup.jpg" 
-                  alt="Resource Cover" 
-                  className="w-full h-full object-cover"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
-                <div className="absolute bottom-3 left-3 text-white">
-                  <h3 className="text-lg font-bold leading-tight">{resource.title}</h3>
+              <div className="w-full bg-indigo-50/50 rounded-xl overflow-hidden mb-3 py-6 flex items-center justify-center">
+                {/* 3D Book Container */}
+                <div 
+                  className="relative w-[140px] h-[190px] shadow-2xl rounded-sm transition-transform duration-300 hover:rotate-y-0"
+                  style={{
+                    perspective: '1000px',
+                    transformStyle: 'preserve-3d',
+                    transform: 'rotateY(-15deg) rotateX(5deg)'
+                  }}
+                >
+                  <img 
+                    src={resource.thumbnail_url || "/book-mockup.jpg"} 
+                    alt="Resource Cover" 
+                    className="w-full h-full object-cover rounded-r-md border border-gray-200 absolute inset-0 bg-white"
+                  />
+                  {/* Book Spine Overlay */}
+                  <div className="absolute inset-y-0 left-0 w-3 bg-gradient-to-r from-black/30 via-transparent to-transparent rounded-l-sm"></div>
+                  <div className="absolute inset-y-0 left-0 w-0.5 bg-white/40"></div>
+                  
+                  {/* Title Fallback Overlay (in case thumbnail fails) */}
+                  {!resource.thumbnail_url && (
+                     <div className="absolute inset-0 bg-black/40 flex items-end p-2">
+                        <h3 className="text-white text-xs font-bold leading-tight line-clamp-3">{resource.title}</h3>
+                     </div>
+                  )}
                 </div>
               </div>
               <div className="flex justify-between items-start gap-4 px-1">
                 <div className="flex-1">
+                  <h3 className="text-lg font-bold text-gray-900 leading-tight mb-1.5">{resource.title}</h3>
                   {resource.description && (
                     <p className="text-sm text-gray-600 line-clamp-2">{resource.description}</p>
                   )}
