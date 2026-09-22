@@ -70,7 +70,7 @@ export default function PostCard({ post, onCommentClick }) {
       title: isMains ? 'UPSC Mains Question' : (post.headline || 'PrepBuddy Question'),
       text: isMains 
         ? "Hey let's have a look at this UPSC Mains question!" 
-        : (post.description ? (post.description.length > 50 ? post.description.substring(0, 50) + '...' : post.description) : 'Check this out on PrepBuddy!'),
+        : "Hey let's have a look at this post on PrepBuddy!",
       url: shareUrl
     };
 
