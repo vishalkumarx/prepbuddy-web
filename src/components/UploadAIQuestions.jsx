@@ -63,13 +63,13 @@ export default function UploadAIQuestions() {
     setExtractedQuestions([]);
 
     try {
-      const apiKey = "AQ.Ab8RN6KPUqQPZmHWXj-x-FH3zuCUOrxV7GTiZGj-yiII5VsacQ";
+      const apiKey = "AQ.Ab8RN6J4r1hSX9fTpDtK9dRH-RmhPvKFie1YUXE0VFISuUvp3Q";
       if (!apiKey) {
         throw new Error("Missing VITE_GEMINI_API_KEY in .env file");
       }
 
       const genAI = new GoogleGenerativeAI(apiKey);
-      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+      const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
 
       const qPart = await fileToGenerativePart(questionImg);
       const ePart = await fileToGenerativePart(explanationImg);
