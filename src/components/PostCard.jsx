@@ -124,7 +124,7 @@ export default function PostCard({ post, onCommentClick }) {
   }
 
   const Wrapper = isMains ? 'div' : Link;
-  const wrapperProps = isMains ? { className: "block" } : { to: `/post/${post.id}`, className: "block" };
+  const wrapperProps = isMains ? { className: "block" } : { to: `/post/${post.id}`, state: { fromApp: true }, className: "block" };
 
   return (
     <div className="bg-white p-4 mb-4 rounded-xl shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] border border-gray-100 relative overflow-hidden">

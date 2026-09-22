@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { ArrowLeft, Trophy } from 'lucide-react';
 import { supabase } from '../supabase';
 import { UserManager } from '../utils/UserManager';
@@ -10,8 +10,17 @@ import LeaderboardBottomSheet from './LeaderboardBottomSheet';
 export default function PostDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const [post, setPost] = useState(null);
   const [loading, setLoading] = useState(true);
+
+  const handleBack = () => {
+    if (location.state && location.state.fromApp) {
+      navigate(-1);
+    } else {
+      navigate('/', { replace: true });
+    }
+  };
   const [isCommentSheetOpen, setIsCommentSheetOpen] = useState(false);
   const [isLeaderboardOpen, setIsLeaderboardOpen] = useState(false);
 
@@ -107,7 +116,7 @@ export default function PostDetail() {
   if (!post) {
     return (
       <div className="p-4 text-center">
-        <button onClick={() => navigate(-1)} className="text-primary font-medium flex items-center gap-2 justify-center w-full">
+        <button onClick={handleBack} className="text-primary font-medium flex items-center gap-2 justify-center w-full">
           <ArrowLeft size={20} /> Go Back
         </button>
         <p className="mt-4 text-gray-500">Post not found.</p>
@@ -123,7 +132,7 @@ export default function PostDetail() {
       {/* Header */}
       <header className="bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between sticky top-0 z-10 shadow-sm">
         <div className="flex items-center gap-3">
-          <button onClick={() => navigate(-1)} className="text-gray-600 hover:text-primary">
+          <button onClick={handleBack} className="text-gray-600 hover:text-primary">
             <ArrowLeft size={24} />
           </button>
           <h1 className="text-lg font-bold text-primary truncate max-w-[250px]">{post.headline || 'Post'}</h1>
