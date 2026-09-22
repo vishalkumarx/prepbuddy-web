@@ -11,14 +11,10 @@ export default function AdminSessions() {
 
   const fetchSessions = async () => {
     try {
-      const { data, error, status, statusText } = await supabase
+      const { data, error } = await supabase
         .from('prepbuddy_user_sessions')
         .select('*')
         .order('last_active', { ascending: false });
-
-      console.log('Sessions fetch → status:', status, statusText);
-      console.log('Sessions fetch → data:', data);
-      console.log('Sessions fetch → error:', error);
 
       if (error) throw error;
       setSessions(data || []);
@@ -31,8 +27,22 @@ export default function AdminSessions() {
 
   useEffect(() => {
     fetchSessions();
-    const interval = setInterval(fetchSessions, 30000); // Refresh every 30s
-    return () => clearInterval(interval);
+
+    // Real-time subscription — updates instantly when any session changes
+    const channel = supabase
+      .channel('sessions_realtime')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'prepbuddy_user_sessions' },
+        () => {
+          fetchSessions(); // Re-fetch on any INSERT, UPDATE, DELETE
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   // Security check: Only admins can access this page
