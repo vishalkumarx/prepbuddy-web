@@ -1,7 +1,7 @@
 {
   "rewrites": [
     {
-      "source": "/(.*)",
+      "source": "/((?!upload-questions\\.html|testimonials/|assets/|logo\\.png|goalprep-logo\\.png).*)",
       "destination": "/index.html"
     }
   ]

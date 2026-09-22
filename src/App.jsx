@@ -180,6 +180,16 @@ function App() {
     return () => subscription.unsubscribe();
   }, []);
 
+  // Allow public access to JSON question uploader route
+  const currentPath = window.location.pathname;
+  if (currentPath === '/admin/upload-json' || currentPath === '/upload-json') {
+    return (
+      <BrowserRouter>
+        <UploadJSONQuestions />
+      </BrowserRouter>
+    );
+  }
+
   if (!isAuth) {
     return (
       <div className="h-[100dvh] max-w-md mx-auto bg-white shadow-xl relative overflow-hidden">
