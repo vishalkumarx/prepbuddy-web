@@ -192,10 +192,10 @@ export default function UploadJSONQuestions() {
             type="password"
             value={geminiApiKey}
             onChange={(e) => setGeminiApiKey(e.target.value)}
-            placeholder="Paste your Gemini API key here (AIza...)"
+            placeholder="Paste your Gemini API key here (AIza... or AQ...)"
             className="w-full bg-white border border-amber-300 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 font-mono"
           />
-          <p className="text-xs text-amber-700">Get a free key at <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noreferrer" className="underline font-semibold">aistudio.google.com</a>. Your key is never stored.</p>
+          <p className="text-xs text-amber-700">Get a free key at <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noreferrer" className="underline font-semibold">aistudio.google.com</a>. Both <code className="bg-amber-100 px-1 rounded font-mono">AIza...</code> and new <code className="bg-amber-100 px-1 rounded font-mono">AQ...</code> key formats are supported.</p>
         </div>
         
         {/* Category & Subcategory Selectors */}
