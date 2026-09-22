@@ -220,28 +220,20 @@ export default function PostCard({ post, onCommentClick }) {
         </div>
       </Wrapper>
 
-      {/* Article Link Banner */}
       {post.mcqs && post.mcqs.length > 0 && post.mcqs[0].type === 'article_link' && (
-        <>
-          <button 
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              setShowWebView(true);
-            }}
-            className="inline-flex items-center gap-2 mb-4 px-4 py-2 bg-indigo-50 border border-indigo-100 rounded-xl text-indigo-700 hover:bg-indigo-100 transition-colors cursor-pointer text-left"
-          >
-            <span className="font-semibold text-sm">Read about this</span>
-            <ExternalLink size={16} className="text-indigo-500" />
-          </button>
-          
-          {showWebView && (
-            <WebViewModal 
-              url={post.mcqs[0].url} 
-              onClose={() => setShowWebView(false)} 
-            />
-          )}
-        </>
+        <button 
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const rawUrl = post.mcqs[0].url;
+            const formattedUrl = rawUrl.startsWith('http') ? rawUrl : `https://${rawUrl}`;
+            window.open(formattedUrl, '_blank', 'noopener,noreferrer');
+          }}
+          className="inline-flex items-center gap-2 mb-4 px-4 py-2 bg-indigo-50 border border-indigo-100 rounded-xl text-indigo-700 hover:bg-indigo-100 transition-colors cursor-pointer text-left"
+        >
+          <span className="font-semibold text-sm">Read about this</span>
+          <ExternalLink size={16} className="text-indigo-500" />
+        </button>
       )}
 
       {/* Tags */}
