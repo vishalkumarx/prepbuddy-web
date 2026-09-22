@@ -15,6 +15,28 @@ export default function CommentsBottomSheet({ post, onClose }) {
   const [attachmentPreviews, setAttachmentPreviews] = useState([]);
   const [replyingTo, setReplyingTo] = useState(null);
   const [deleteCommentId, setDeleteCommentId] = useState(null);
+  
+  // Swipe down to close logic
+  const [touchStartY, setTouchStartY] = useState(null);
+  const [touchCurrentY, setTouchCurrentY] = useState(null);
+
+  const handleTouchStart = (e) => {
+    setTouchStartY(e.touches[0].clientY);
+    setTouchCurrentY(e.touches[0].clientY);
+  };
+
+  const handleTouchMove = (e) => {
+    if (!touchStartY) return;
+    setTouchCurrentY(e.touches[0].clientY);
+  };
+
+  const handleTouchEnd = () => {
+    if (touchStartY && touchCurrentY && touchCurrentY - touchStartY > 100) {
+      onClose();
+    }
+    setTouchStartY(null);
+    setTouchCurrentY(null);
+  };
 
   useEffect(() => {
     if (post) fetchComments();
@@ -252,19 +274,35 @@ export default function CommentsBottomSheet({ post, onClose }) {
       />
       
       {/* Bottom Sheet Container */}
-      <div className="bg-white w-full max-w-md mx-auto rounded-t-3xl shadow-2xl relative flex flex-col h-[75vh] animate-[slideUp_0.3s_ease-out]">
+      <div 
+        className="bg-white w-full max-w-md mx-auto rounded-t-3xl shadow-2xl relative flex flex-col h-[75vh] animate-[slideUp_0.3s_ease-out]"
+        style={{
+          transform: touchCurrentY && touchStartY && touchCurrentY > touchStartY 
+            ? `translateY(${touchCurrentY - touchStartY}px)` 
+            : 'translateY(0)',
+          transition: touchStartY ? 'none' : 'transform 0.3s ease-out'
+        }}
+      >
         
-        {/* Drag Handle */}
-        <div className="w-full flex justify-center pt-3 pb-1" onClick={onClose}>
-          <div className="w-12 h-1.5 bg-gray-300 rounded-full" />
-        </div>
+        {/* Swipable Header Area */}
+        <div 
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+          className="cursor-grab active:cursor-grabbing"
+        >
+          {/* Drag Handle */}
+          <div className="w-full flex justify-center pt-3 pb-1" onClick={onClose}>
+            <div className="w-12 h-1.5 bg-gray-300 rounded-full" />
+          </div>
 
-        {/* Header */}
-        <div className="flex items-center justify-between px-4 pb-3 border-b border-gray-100">
-          <h2 className="text-lg font-bold text-primary text-center w-full">Comments</h2>
-          <button onClick={onClose} className="absolute right-4 text-gray-500 hover:text-gray-800 bg-gray-100 p-1 rounded-full">
-            <X size={20} />
-          </button>
+          {/* Header */}
+          <div className="flex items-center justify-between px-4 pb-3 border-b border-gray-100">
+            <h2 className="text-lg font-bold text-primary text-center w-full">Comments</h2>
+            <button onClick={onClose} className="absolute right-4 text-gray-500 hover:text-gray-800 bg-gray-100 p-1 rounded-full">
+              <X size={20} />
+            </button>
+          </div>
         </div>
 
         {/* Comments List */}
