@@ -3,10 +3,12 @@ import { BrowserRouter, Routes, Route, Link, useLocation, useNavigate } from 're
 import Feed from './components/Feed';
 import Login from './components/Login';
 import PostDetail from './components/PostDetail';
+import Store from './components/Store';
 import UploadMains from './components/UploadMains';
+import UploadResource from './components/UploadResource';
 import UploadPost from './components/UploadPost';
 import Profile from './components/Profile';
-import { Home, User, BookOpen, Search, Plus, X } from 'lucide-react';
+import { Home, User, BookOpen, Search, Plus, X, ShoppingBag } from 'lucide-react';
 import { supabase } from './supabase';
 import { UserManager } from './utils/UserManager';
 
@@ -21,14 +23,17 @@ function Layout({ children }) {
   const navItems = [
     { path: '/', icon: Home, label: 'Home' },
     { path: '/mains', icon: BookOpen, label: 'Mains' },
+    { path: '/store', icon: ShoppingBag, label: 'Store' },
     { path: '/profile', icon: User, label: 'Profile' },
   ];
 
   const isAdmin = UserManager.isAdmin();
-  const showFab = isAdmin && (location.pathname === '/' || location.pathname === '/mains');
+  const showFab = isAdmin && (location.pathname === '/' || location.pathname === '/mains' || location.pathname === '/store');
   const handleFabClick = () => {
     if (location.pathname === '/mains') {
       navigate('/upload-mains');
+    } else if (location.pathname === '/store') {
+      navigate('/upload-resource');
     } else {
       navigate('/upload-post');
     }
@@ -177,10 +182,12 @@ function App() {
         <Routes>
           <Route path="/" element={<Feed feedType="home" />} />
           <Route path="/mains" element={<Feed feedType="mains" />} />
+          <Route path="/store" element={<Store />} />
           <Route path="/post/:id" element={<PostDetail />} />
           <Route path="/upload-mains" element={<UploadMains />} />
           <Route path="/edit-mains/:id" element={<UploadMains isEdit={true} />} />
           <Route path="/upload-post" element={<UploadPost />} />
+          <Route path="/upload-resource" element={<UploadResource />} />
           <Route path="/profile" element={<Profile onLogout={handleLogout} />} />
         </Routes>
       </Layout>
