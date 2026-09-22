@@ -162,9 +162,10 @@ export default function ResourceDetail() {
           </div>
 
           {resource.description && (
-             <div className="prose prose-sm prose-indigo">
-                <p className="text-gray-700 whitespace-pre-wrap">{resource.description}</p>
-             </div>
+            <div className="mt-1 mb-4">
+              <h3 className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">About this resource</h3>
+              <p className="text-gray-700 text-sm leading-relaxed whitespace-pre-wrap">{resource.description}</p>
+            </div>
           )}
         </div>
 
