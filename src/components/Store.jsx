@@ -63,15 +63,22 @@ export default function Store() {
         ) : (
           resources.map((resource) => (
             <div key={resource.id} className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 flex flex-col gap-3 transition-transform hover:scale-[1.02]">
-              <div className="flex justify-between items-start gap-4">
-                <div className="flex-1">
-                  <h3 className="text-lg font-bold text-gray-900 leading-tight">{resource.title}</h3>
-                  {resource.description && (
-                    <p className="text-sm text-gray-600 mt-1.5 line-clamp-3">{resource.description}</p>
-                  )}
+              <div className="w-full h-48 bg-indigo-50 rounded-xl overflow-hidden mb-3 relative flex items-center justify-center">
+                <img 
+                  src="/book-mockup.jpg" 
+                  alt="Resource Cover" 
+                  className="w-full h-full object-cover"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+                <div className="absolute bottom-3 left-3 text-white">
+                  <h3 className="text-lg font-bold leading-tight">{resource.title}</h3>
                 </div>
-                <div className="bg-red-50 p-3 rounded-xl flex-shrink-0">
-                  <FileText className="text-red-500" size={24} />
+              </div>
+              <div className="flex justify-between items-start gap-4 px-1">
+                <div className="flex-1">
+                  {resource.description && (
+                    <p className="text-sm text-gray-600 line-clamp-2">{resource.description}</p>
+                  )}
                 </div>
               </div>
 
