@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GoalPrep - JSON Question Uploader & Database Store</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Supabase JS CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#0B2457',
+            secondary: '#F7C43A',
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-gray-50 text-gray-900 min-h-screen pb-16 font-sans">
+
+  <!-- Header Bar -->
+  <header class="bg-[#0B2457] text-white py-4 px-6 shadow-lg sticky top-0 z-30">
+    <div className="max-w-4xl mx-auto flex items-center justify-between">
+      <div className="flex items-center gap-3">
+        <div className="w-9 h-9 rounded-xl bg-yellow-400 text-[#0B2457] flex items-center justify-center font-black text-xl shadow-md">
+          G
+        </div>
+        <div>
+          <h1 className="text-xl font-bold tracking-tight">GoalPrep JSON Question Importer</h1>
+          <p class="text-xs text-white/70">Format, Validate & Store Questions into Supabase Database</p>
+        </div>
+      </div>
+      <span class="bg-yellow-400/20 text-yellow-300 border border-yellow-400/30 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">
+        Admin Tool
+      </span>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="max-w-4xl mx-auto p-4 sm:p-6 space-y-6">
+
+    <!-- Supabase Connection Config Card -->
+    <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-200 space-y-3">
+      <h2 class="text-sm font-bold text-gray-800 uppercase tracking-wider flex items-center gap-2">
+        <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M12 5l7 7-7 7"/></svg>
+        Supabase Database Connection
+      </h2>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-xs font-semibold text-gray-600 mb-1">Supabase URL</label>
+          <input id="sbUrl" type="text" value="https://vwdmziztplmenfmuntrr.supabase.co" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs font-mono focus:outline-none focus:ring-2 focus:ring-[#0B2457]" />
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-gray-600 mb-1">Supabase Anon Key</label>
+          <input id="sbKey" type="password" value="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ3ZG16aXp0cGxtZW5mbXVudHJyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg5NDI2MTQsImV4cCI6MjEwNDUxODYxNH0.oTarfCHl3WtwMQIi6kbW6LaoidggUPwCftLjvCGocMo" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs font-mono focus:outline-none focus:ring-2 focus:ring-[#0B2457]" />
+        </div>
+      </div>
+    </div>
+
+    <!-- Exam Metadata Config -->
+    <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-200 grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div>
+        <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">Category / Exam Title</label>
+        <input id="categoryInput" type="text" value="Senior Assistant" placeholder="e.g. Senior Assistant, ASI, Punjab Police" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#0B2457]" />
+      </div>
+      <div>
+        <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">Subcategory / Subject</label>
+        <input id="subcategoryInput" type="text" value="General Knowledge" placeholder="e.g. Punjab GK, Current Affairs, Reasoning" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#0B2457]" />
+      </div>
+    </div>
+
+    <!-- JSON Input Card -->
+    <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 space-y-4">
+      <div class="flex items-center justify-between">
+        <h2 class="text-base font-bold text-gray-900 flex items-center gap-2">
+          Paste JSON Text or Questions
+        </h2>
+        <label class="text-xs font-bold text-[#0B2457] bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg cursor-pointer transition-colors border border-blue-200">
+          Upload .json File
+          <input type="file" id="fileInput" accept=".json" class="hidden" onchange="loadFile(event)" />
+        </label>
+      </div>
+
+      <textarea id="jsonInput" rows="10" oninput="parseInput()" placeholder='Paste raw JSON text or unformatted questions here...
+
+Example format:
+[
+  {
+    "question": "What is the capital of Punjab?",
+    "options": ["Chandigarh", "Amritsar", "Ludhiana", "Jalandhar"],
+    "answer": "Chandigarh",
+    "explanation": "Chandigarh serves as the shared capital of Punjab and Haryana."
+  }
+]' class="w-full bg-gray-50 border border-gray-200 rounded-xl p-4 text-xs font-mono focus:outline-none focus:ring-2 focus:ring-[#0B2457] focus:bg-white transition-all"></textarea>
+
+      <div class="flex flex-wrap items-center justify-between gap-3 pt-1">
+        <button id="aiBtn" onclick="formatWithAI()" class="bg-purple-100 hover:bg-purple-200 text-purple-900 font-bold px-4 py-2.5 rounded-xl text-xs flex items-center gap-2 transition-colors active:scale-95 shadow-sm">
+          <span>✨ Format / Extract with AI</span>
+        </button>
+
+        <span id="badgeCount" class="hidden text-xs font-bold text-emerald-700 bg-emerald-50 px-3 py-1.5 rounded-lg border border-emerald-200">
+          0 Questions Validated
+        </span>
+      </div>
+    </div>
+
+    <!-- Alert Status Box -->
+    <div id="statusBox" class="hidden p-4 rounded-xl text-sm border font-medium leading-relaxed"></div>
+
+    <!-- Questions Preview Section -->
+    <div id="previewCard" class="hidden bg-white p-6 rounded-2xl shadow-sm border border-gray-200 space-y-4">
+      <div class="flex items-center justify-between border-b border-gray-100 pb-4">
+        <h3 class="font-bold text-gray-900 text-base" id="previewTitle">Questions Preview</h3>
+        <button id="storeBtn" onclick="storeInSupabase()" class="bg-[#0B2457] hover:bg-blue-900 text-white font-bold px-6 py-3 rounded-xl text-sm flex items-center gap-2 transition-all shadow-md active:scale-95">
+          <span>☁️ Store Questions in Supabase</span>
+        </button>
+      </div>
+
+      <div id="questionsContainer" class="space-y-4 max-h-[450px] overflow-y-auto pr-1"></div>
+    </div>
+
+    <!-- SQL Setup Script Container -->
+    <div class="bg-slate-900 text-slate-100 p-6 rounded-2xl space-y-3 shadow-md">
+      <div class="flex items-center justify-between">
+        <h3 class="font-bold text-sm text-yellow-400">Database Table Setup (SQL Script)</h3>
+        <button onclick="copySql()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded-lg text-xs font-semibold border border-slate-700 transition-colors" id="copySqlBtn">
+          Copy SQL
+        </button>
+      </div>
+      <p class="text-xs text-slate-400">
+        Run this SQL in your Supabase SQL Editor to create the <code class="text-yellow-300">prepbuddy_questions</code> table if it doesn't exist yet:
+      </p>
+      <pre id="sqlSnippet" class="bg-slate-950 p-4 rounded-xl text-xs font-mono text-emerald-400 overflow-x-auto border border-slate-800">
+CREATE TABLE IF NOT EXISTS prepbuddy_questions (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    question TEXT NOT NULL,
+    options JSONB NOT NULL,
+    answer TEXT NOT NULL,
+    explanation TEXT,
+    category TEXT,
+    subcategory TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);</pre>
+    </div>
+
+  </main>
+
+  <script>
+    let parsedData = [];
+
+    function showStatus(msg, isSuccess = true) {
+      const box = document.getElementById('statusBox');
+      box.classList.remove('hidden', 'bg-emerald-50', 'text-emerald-800', 'border-emerald-200', 'bg-red-50', 'text-red-800', 'border-red-200');
+      if (isSuccess) {
+        box.classList.add('bg-emerald-50', 'text-emerald-800', 'border-emerald-200');
+      } else {
+        box.classList.add('bg-red-50', 'text-red-800', 'border-red-200');
+      }
+      box.textContent = msg;
+    }
+
+    function parseInput() {
+      const text = document.getElementById('jsonInput').value.trim();
+      const badge = document.getElementById('badgeCount');
+      const previewCard = document.getElementById('previewCard');
+      const container = document.getElementById('questionsContainer');
+
+      if (!text) {
+        badge.classList.add('hidden');
+        previewCard.classList.add('hidden');
+        parsedData = [];
+        return;
+      }
+
+      try {
+        let raw = JSON.parse(text);
+        if (!Array.isArray(raw)) {
+          if (raw.questions && Array.isArray(raw.questions)) raw = raw.questions;
+          else if (raw.mcqs && Array.isArray(raw.mcqs)) raw = raw.mcqs;
+          else raw = [raw];
+        }
+
+        const cat = document.getElementById('categoryInput').value || 'Senior Assistant';
+        const subCat = document.getElementById('subcategoryInput').value || 'General Knowledge';
+
+        parsedData = raw.map((q, idx) => ({
+          question: q.question || q.q || q.title || '',
+          options: Array.isArray(q.options) ? q.options : [q.optionA, q.optionB, q.optionC, q.optionD].filter(Boolean),
+          answer: q.answer || q.correct_answer || q.correctAnswer || q.optionA || '',
+          explanation: q.explanation || q.desc || q.solution || '',
+          category: cat,
+          subcategory: subCat
+        })).filter(q => q.question);
+
+        badge.textContent = `✓ ${parsedData.length} Question(s) Validated`;
+        badge.classList.remove('hidden');
+
+        // Render preview
+        container.innerHTML = parsedData.map((q, i) => `
+          <div class="bg-gray-50 p-4 rounded-xl border border-gray-200 text-xs space-y-2">
+            <p class="font-bold text-gray-900 text-sm">Q${i+1}. ${q.question}</p>
+            <div class="grid grid-cols-2 gap-2">
+              ${q.options.map((opt, oIdx) => `
+                <div class="p-2 rounded-lg border ${opt === q.answer ? 'bg-emerald-50 border-emerald-300 text-emerald-900 font-bold' : 'bg-white border-gray-200 text-gray-700'}">
+                  <span class="font-bold">${String.fromCharCode(65 + oIdx)}.</span> ${opt}
+                </div>
+              `).join('')}
+            </div>
+            ${q.explanation ? `<p class="text-gray-500 italic pt-1 border-t border-gray-200"><strong>Explanation:</strong> ${q.explanation}</p>` : ''}
+          </div>
+        `).join('');
+
+        previewCard.classList.remove('hidden');
+        document.getElementById('previewTitle').textContent = `Questions Preview (${parsedData.length})`;
+        showStatus(`Parsed ${parsedData.length} questions ready to upload!`, true);
+      } catch (err) {
+        badge.classList.add('hidden');
+        previewCard.classList.add('hidden');
+        showStatus('Invalid JSON format. If pasting unformatted text, click "Format with AI"!', false);
+      }
+    }
+
+    function loadFile(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (evt) => {
+        document.getElementById('jsonInput').value = evt.target.result;
+        parseInput();
+      };
+      reader.readAsText(file);
+    }
+
+    async function formatWithAI() {
+      const text = document.getElementById('jsonInput').value.trim();
+      if (!text) {
+        showStatus('Please paste question text or JSON first!', false);
+        return;
+      }
+
+      const btn = document.getElementById('aiBtn');
+      btn.disabled = true;
+      btn.textContent = 'Processing with AI...';
+
+      try {
+        const cat = document.getElementById('categoryInput').value || 'Senior Assistant';
+        const subCat = document.getElementById('subcategoryInput').value || 'General Knowledge';
+        const prompt = `Extract all multiple choice questions from the following text/JSON and format them EXACTLY as a JSON array of objects with keys: "question" (string), "options" (array of 4 string options), "answer" (the correct option text or letter), "explanation" (detailed explanation if present, else empty string), "category" ("${cat}"), "subcategory" ("${subCat}"). Return ONLY raw valid JSON array without markdown formatting like \`\`\`json. Text:\n${text}`;
+
+        const res = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=AQ.Ab8RN6KPUqQPZmHWXj-x-FH3zuCUOrxV7GTiZGj-yiII5VsacQ', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+        });
+
+        if (!res.ok) throw new Error(`AI Request failed: ${res.statusText}`);
+
+        const data = await res.json();
+        let gen = data.candidates[0].content.parts[0].text.trim();
+        if (gen.startsWith('```json')) gen = gen.replace('```json', '');
+        if (gen.startsWith('```')) gen = gen.replace('```', '');
+        if (gen.endsWith('```')) gen = gen.substring(0, gen.length - 3);
+
+        document.getElementById('jsonInput').value = gen.trim();
+        parseInput();
+      } catch (err) {
+        showStatus('AI Format failed: ' + err.message, false);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '✨ Format / Extract with AI';
+      }
+    }
+
+    async function storeInSupabase() {
+      if (parsedData.length === 0) {
+        showStatus('No valid questions to store!', false);
+        return;
+      }
+
+      const sbUrl = document.getElementById('sbUrl').value.trim();
+      const sbKey = document.getElementById('sbKey').value.trim();
+      const btn = document.getElementById('storeBtn');
+
+      if (!sbUrl || !sbKey) {
+        showStatus('Please provide your Supabase URL and Anon Key above!', false);
+        return;
+      }
+
+      btn.disabled = true;
+      btn.textContent = 'Storing in Supabase...';
+
+      try {
+        const client = supabase.createClient(sbUrl, sbKey);
+        const { data, error } = await client
+          .from('prepbuddy_questions')
+          .insert(parsedData);
+
+        if (error) {
+          if (error.code === '42P01') {
+            throw new Error('Table "prepbuddy_questions" does not exist in your Supabase database yet. Run the SQL script below in your Supabase SQL Editor!');
+          }
+          throw error;
+        }
+
+        showStatus(`🎉 Successfully stored ${parsedData.length} question(s) in Supabase database!`, true);
+        document.getElementById('jsonInput').value = '';
+        parseInput();
+      } catch (err) {
+        showStatus('Failed to store in Supabase: ' + err.message, false);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '☁️ Store Questions in Supabase';
+      }
+    }
+
+    function copySql() {
+      const sql = document.getElementById('sqlSnippet').textContent;
+      navigator.clipboard.writeText(sql);
+      const btn = document.getElementById('copySqlBtn');
+      btn.textContent = 'Copied!';
+      setTimeout(() => btn.textContent = 'Copy SQL', 2000);
+    }
+  </script>
+</body>
+</html>

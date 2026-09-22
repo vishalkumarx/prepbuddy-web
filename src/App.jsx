@@ -8,8 +8,8 @@ import UploadMains from './components/UploadMains';
 import UploadResource from './components/UploadResource';
 import ResourceDetail from './components/ResourceDetail';
 import UploadPost from './components/UploadPost';
-import Profile from './components/Profile';
 import AdminSessions from './components/AdminSessions';
+import UploadJSONQuestions from './components/UploadJSONQuestions';
 import PreparationSelector from './components/PreparationSelector';
 import StateGovLayout from './components/StateGovLayout';
 import { Home, User, BookOpen, Search, Plus, X, ShoppingBag } from 'lucide-react';
@@ -227,6 +227,7 @@ function App() {
           <Route path="/upload-resource" element={<UploadResource />} />
           <Route path="/edit-resource/:id" element={<UploadResource isEdit={true} />} />
           <Route path="/admin/sessions" element={<AdminSessions />} />
+          <Route path="/admin/upload-json" element={<UploadJSONQuestions />} />
           <Route path="/profile" element={<Profile onLogout={handleLogout} />} />
         </Routes>
       </Layout>
