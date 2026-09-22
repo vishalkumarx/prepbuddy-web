@@ -137,13 +137,14 @@ function App() {
     const trackSession = async (session) => {
       if (!session) return;
       try {
-        await supabase.from('prepbuddy_user_sessions').upsert({
+        const { data, error } = await supabase.from('prepbuddy_user_sessions').upsert({
           user_id: session.user.id,
           email: session.user.email,
           name: session.user.user_metadata?.full_name || session.user.email,
           avatar_url: session.user.user_metadata?.avatar_url,
           last_active: new Date().toISOString()
         }, { onConflict: 'user_id' });
+        console.log('trackSession upsert → data:', data, 'error:', error);
       } catch (err) {
         console.error("Error tracking session:", err);
       }

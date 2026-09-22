@@ -11,10 +11,14 @@ export default function AdminSessions() {
 
   const fetchSessions = async () => {
     try {
-      const { data, error } = await supabase
+      const { data, error, status, statusText } = await supabase
         .from('prepbuddy_user_sessions')
         .select('*')
         .order('last_active', { ascending: false });
+
+      console.log('Sessions fetch → status:', status, statusText);
+      console.log('Sessions fetch → data:', data);
+      console.log('Sessions fetch → error:', error);
 
       if (error) throw error;
       setSessions(data || []);
