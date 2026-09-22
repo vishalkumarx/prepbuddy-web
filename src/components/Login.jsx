@@ -42,8 +42,8 @@ export default function Login({ onLogin }) {
         className="w-full max-w-sm p-8 rounded-[24px] shadow-2xl border border-white/20 flex flex-col items-center backdrop-blur-md bg-white/70" 
       >
         {/* Logo Image */}
-        <div className="w-32 h-32 mb-4 drop-shadow-md">
-          <img src="/logo.png" alt="GoalPrep Logo" className="w-full h-full object-contain rounded-2xl" />
+        <div className="w-full max-w-[220px] h-16 mb-6 flex items-center justify-center bg-[#0B2457] rounded-2xl p-3 shadow-lg">
+          <img src="/logo.png" alt="GoalPrep Logo" className="w-full h-full object-contain" />
         </div>
         
         <p className="text-center text-sm font-medium mb-10 px-4" style={{ color: '#526A91' }}>
