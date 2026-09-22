@@ -62,7 +62,7 @@ export default function CouponManager({ resourceId }) {
         scope,
         user_email: scope === 'single_user' ? userEmail.trim().toLowerCase() : null,
         is_active: true,
-        max_uses: maxUses === 'once' ? 1 : null,
+        max_uses: scope === 'single_user' && maxUses === 'once' ? 1 : null,
         uses_count: 0,
       }]);
 
@@ -226,34 +226,36 @@ export default function CouponManager({ resourceId }) {
             </div>
           )}
 
-          {/* Uses */}
-          <div>
-            <label className="text-xs font-bold text-gray-600 mb-1 block">Usage Limit</label>
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={() => setMaxUses('unlimited')}
-                className={`flex-1 py-2 rounded-xl text-xs font-bold border transition-colors ${
-                  maxUses === 'unlimited'
-                    ? 'bg-primary text-white border-primary'
-                    : 'bg-white text-gray-600 border-gray-200'
-                }`}
-              >
-                ♾️ Unlimited
-              </button>
-              <button
-                type="button"
-                onClick={() => setMaxUses('once')}
-                className={`flex-1 py-2 rounded-xl text-xs font-bold border transition-colors ${
-                  maxUses === 'once'
-                    ? 'bg-primary text-white border-primary'
-                    : 'bg-white text-gray-600 border-gray-200'
-                }`}
-              >
-                1️⃣ One-time
-              </button>
+          {/* Uses — only for single user coupons */}
+          {scope === 'single_user' && (
+            <div>
+              <label className="text-xs font-bold text-gray-600 mb-1 block">Usage Limit</label>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setMaxUses('unlimited')}
+                  className={`flex-1 py-2 rounded-xl text-xs font-bold border transition-colors ${
+                    maxUses === 'unlimited'
+                      ? 'bg-primary text-white border-primary'
+                      : 'bg-white text-gray-600 border-gray-200'
+                  }`}
+                >
+                  ♾️ Unlimited
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setMaxUses('once')}
+                  className={`flex-1 py-2 rounded-xl text-xs font-bold border transition-colors ${
+                    maxUses === 'once'
+                      ? 'bg-primary text-white border-primary'
+                      : 'bg-white text-gray-600 border-gray-200'
+                  }`}
+                >
+                  1️⃣ One-time
+                </button>
+              </div>
             </div>
-          </div>
+          )}
 
           <button
             type="submit"
