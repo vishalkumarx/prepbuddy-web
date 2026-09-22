@@ -14,6 +14,7 @@ export default function CommentsBottomSheet({ post, onClose }) {
   const [attachmentFiles, setAttachmentFiles] = useState([]);
   const [attachmentPreviews, setAttachmentPreviews] = useState([]);
   const [replyingTo, setReplyingTo] = useState(null);
+  const [deleteCommentId, setDeleteCommentId] = useState(null);
 
   useEffect(() => {
     if (post) fetchComments();
@@ -124,16 +125,22 @@ export default function CommentsBottomSheet({ post, onClose }) {
     }
   };
 
-  const handleDeleteComment = async (commentId) => {
-    if (!window.confirm("Are you sure you want to delete this comment?")) return;
+  const handleDeleteClick = (commentId) => {
+    setDeleteCommentId(commentId);
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteCommentId) return;
     try {
       await supabase
         .from('prepbuddy_comments')
         .delete()
-        .eq('id', commentId);
+        .eq('id', deleteCommentId);
       fetchComments(true);
     } catch (error) {
       console.error("Error deleting comment:", error);
+    } finally {
+      setDeleteCommentId(null);
     }
   };
 
@@ -221,8 +228,8 @@ export default function CommentsBottomSheet({ post, onClose }) {
             </button>
             {(isOwnComment || UserManager.isAdmin()) && (
               <button 
-                onClick={() => handleDeleteComment(comment.id)}
-                className="text-xs font-medium text-red-500 hover:text-red-600 transition-colors"
+                onClick={() => handleDeleteClick(comment.id)}
+                className="text-xs font-medium text-red-400 hover:text-red-600 transition-colors"
               >
                 Delete
               </button>
@@ -358,6 +365,29 @@ export default function CommentsBottomSheet({ post, onClose }) {
           </div>
         </div>
       </div>
+      {/* Custom Delete Confirmation Modal */}
+      {deleteCommentId && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/50 animate-[fadeIn_0.2s_ease-out]">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl animate-[slideUp_0.2s_ease-out]">
+            <h3 className="text-lg font-bold text-gray-900 mb-2">Delete Comment?</h3>
+            <p className="text-gray-600 text-sm mb-6">Are you sure you want to delete this comment? This action cannot be undone.</p>
+            <div className="flex justify-end gap-3">
+              <button 
+                onClick={() => setDeleteCommentId(null)}
+                className="px-4 py-2 rounded-xl text-gray-600 font-medium hover:bg-gray-100 transition-colors"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={confirmDelete}
+                className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-xl font-bold transition-colors shadow-sm"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
