@@ -9,6 +9,7 @@ export default function UploadJSONQuestions() {
   const [parsedQuestions, setParsedQuestions] = useState([]);
   const [category, setCategory] = useState('Senior Assistant');
   const [subcategory, setSubcategory] = useState('General Knowledge');
+  const [geminiApiKey, setGeminiApiKey] = useState(import.meta.env.VITE_GEMINI_API_KEY || '');
   
   const [isFormatting, setIsFormatting] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
@@ -88,10 +89,13 @@ export default function UploadJSONQuestions() {
     setMessage(null);
 
     try {
-      const apiKey = import.meta.env.VITE_GEMINI_API_KEY || 'AQ.Ab8RN6KPUqQPZmHWXj-x-FH3zuCUOrxV7GTiZGj-yiII5VsacQ';
+      const apiKey = geminiApiKey.trim();
+      if (!apiKey) {
+        throw new Error('Please enter your Gemini API key above before using AI formatting!');
+      }
       const prompt = `Extract all multiple choice questions from the following text/JSON and format them EXACTLY as a JSON array of objects with keys: "question" (string), "options" (array of 4 string options), "answer" (the correct option text or letter), "explanation" (detailed explanation if present, else empty string), "category" ("${category}"), "subcategory" ("${subcategory}"). Return ONLY raw valid JSON array without markdown formatting like \`\`\`json. Text:\n${jsonText}`;
 
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${apiKey}`, {
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -178,6 +182,21 @@ export default function UploadJSONQuestions() {
       </div>
 
       <div className="p-4 max-w-3xl mx-auto space-y-6">
+
+        {/* Gemini API Key Input */}
+        <div className="bg-amber-50 border border-amber-200 p-4 rounded-2xl shadow-sm space-y-2">
+          <label className="block text-xs font-bold text-amber-800 uppercase tracking-wider">
+            🔑 Gemini API Key (required for AI formatting)
+          </label>
+          <input
+            type="password"
+            value={geminiApiKey}
+            onChange={(e) => setGeminiApiKey(e.target.value)}
+            placeholder="Paste your Gemini API key here (AIza...)"
+            className="w-full bg-white border border-amber-300 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 font-mono"
+          />
+          <p className="text-xs text-amber-700">Get a free key at <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noreferrer" className="underline font-semibold">aistudio.google.com</a>. Your key is never stored.</p>
+        </div>
         
         {/* Category & Subcategory Selectors */}
         <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm grid grid-cols-1 sm:grid-cols-2 gap-4">
