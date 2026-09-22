@@ -69,9 +69,7 @@ function Layout({ children }) {
           ) : (
             <>
               <div className="flex items-center gap-2 mx-auto pl-8">
-                <div className="bg-white px-3 py-1 rounded-lg flex items-center shadow-sm">
-                  <img src="/logo.png" alt="GoalPrep" className="h-7 w-auto object-contain" />
-                </div>
+                <img src="/logo.png" alt="GoalPrep" className="h-8 w-auto object-contain" />
                 {isAdmin && (
                   <span className="bg-secondary/20 text-secondary text-[10px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wide border border-secondary/30">
                     Admin
