@@ -78,7 +78,7 @@ export default function AdminSessions() {
         <div className="flex flex-col items-center justify-center">
           <Circle size={14} className={isActive ? "fill-green-500 text-green-500" : "fill-gray-300 text-gray-300"} />
           <span className={`text-[10px] font-bold mt-1 ${isActive ? 'text-green-600' : 'text-gray-400'}`}>
-            {isActive ? 'ACTIVE' : 'OFFLINE'}
+            {isActive ? 'ACTIVE' : 'LAST ACTIVE'}
           </span>
         </div>
       </div>
