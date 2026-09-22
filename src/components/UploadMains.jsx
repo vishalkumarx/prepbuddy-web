@@ -105,36 +105,17 @@ export default function UploadMains({ isEdit = false }) {
         const fileExt = imageFile.name.split('.').pop();
         const fileName = `${Math.random().toString(36).substring(2)}_${Date.now()}.${fileExt}`;
         
-        const response = await fetch('/api/upload-url', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            fileName,
-            contentType: imageFile.type,
-          }),
-        });
+        const { error: uploadError } = await supabase.storage
+          .from('answers')
+          .upload(fileName, imageFile);
 
-        if (!response.ok) {
-          throw new Error('Failed to get upload URL. Are your R2 environment variables set up in Vercel?');
-        }
+        if (uploadError) throw uploadError;
 
-        const { signedUrl, publicUrl } = await response.json();
+        const { data: publicUrlData } = supabase.storage
+          .from('answers')
+          .getPublicUrl(fileName);
 
-        const uploadResponse = await fetch(signedUrl, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': imageFile.type,
-          },
-          body: imageFile,
-        });
-
-        if (!uploadResponse.ok) {
-          throw new Error('Failed to upload image to Cloudflare R2.');
-        }
-
-        imageUrl = publicUrl;
+        imageUrl = publicUrlData.publicUrl;
       }
 
       const finalTags = new Set(tags);
