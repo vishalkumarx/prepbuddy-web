@@ -5,7 +5,7 @@ import { supabase } from '../supabase';
 import { UserManager } from '../utils/UserManager';
 import WebViewModal from './WebViewModal';
 
-export default function PostCard({ post, onCommentClick }) {
+export default function PostCard({ post, onCommentClick, hideAttemptButton = false }) {
   const navigate = useNavigate();
   // Extract comment count safely
   let initialCommentCount = 0;
@@ -250,7 +250,7 @@ export default function PostCard({ post, onCommentClick }) {
       )}
 
       {/* Attempt Questions Subtle Button */}
-      {!isMains && totalMcqs > 0 && (
+      {!isMains && totalMcqs > 0 && !hideAttemptButton && (
         <div className="mb-4">
           <Link 
             to={`/post/${post.id}`}

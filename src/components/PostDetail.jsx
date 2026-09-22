@@ -150,7 +150,7 @@ export default function PostDetail() {
       <div className="flex-1 overflow-y-auto pb-10">
         {/* Post Content */}
         <div className="bg-white">
-          <PostCard post={post} onCommentClick={() => setIsCommentSheetOpen(true)} />
+          <PostCard post={post} onCommentClick={() => setIsCommentSheetOpen(true)} hideAttemptButton={true} />
         </div>
 
         {/* MCQs Section */}
