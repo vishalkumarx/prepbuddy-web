@@ -49,13 +49,13 @@ export default function Store() {
       </div>
 
       {/* Resource List */}
-      <div className="px-4 space-y-4">
+      <div className="px-4 grid grid-cols-2 gap-4 mb-20">
         {loading ? (
-          <div className="flex justify-center items-center py-20">
+          <div className="col-span-2 flex justify-center items-center py-20">
             <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary"></div>
           </div>
         ) : resources.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20 text-center">
+          <div className="col-span-2 flex flex-col items-center justify-center py-20 text-center">
             <div className="bg-indigo-50 p-4 rounded-full mb-4">
               <ShoppingBag size={32} className="text-indigo-300" />
             </div>
@@ -64,17 +64,17 @@ export default function Store() {
           </div>
         ) : (
           resources.map((resource) => (
-            <div key={resource.id} className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 flex flex-col gap-3 transition-transform hover:scale-[1.02]">
-              <div className="w-full bg-indigo-50/50 rounded-xl overflow-hidden mb-3 py-6 flex items-center justify-center relative">
+            <div key={resource.id} className="bg-white rounded-2xl p-3 shadow-sm border border-gray-100 flex flex-col gap-2 transition-transform hover:scale-[1.02]">
+              <div className="w-full bg-indigo-50/50 rounded-xl overflow-hidden mb-2 py-4 flex items-center justify-center relative aspect-[4/5]">
                 {/* Discount Banner */}
                 {resource.original_price && resource.original_price > resource.price && (
-                  <div className="absolute top-3 right-3 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-md shadow-sm z-10 animate-[fadeIn_0.3s_ease-out]">
+                  <div className="absolute top-2 right-2 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded shadow-sm z-10 animate-[fadeIn_0.3s_ease-out]">
                     {Math.round(((resource.original_price - resource.price) / resource.original_price) * 100)}% OFF
                   </div>
                 )}
                 {/* 3D Book Container */}
                 <div 
-                  className="relative w-[140px] h-[190px] shadow-2xl rounded-sm transition-transform duration-300 hover:rotate-y-0"
+                  className="relative w-[90px] h-[125px] shadow-xl rounded-sm transition-transform duration-300 hover:rotate-y-0"
                   style={{
                     perspective: '1000px',
                     transformStyle: 'preserve-3d',
@@ -87,49 +87,48 @@ export default function Store() {
                     className="w-full h-full object-cover rounded-r-md border border-gray-200 absolute inset-0 bg-white"
                   />
                   {/* Book Spine Overlay */}
-                  <div className="absolute inset-y-0 left-0 w-3 bg-gradient-to-r from-black/30 via-transparent to-transparent rounded-l-sm"></div>
-                  <div className="absolute inset-y-0 left-0 w-0.5 bg-white/40"></div>
+                  <div className="absolute inset-y-0 left-0 w-2 bg-gradient-to-r from-black/30 via-transparent to-transparent rounded-l-sm"></div>
+                  <div className="absolute inset-y-0 left-0 w-[1px] bg-white/40"></div>
                   
                   {/* Title Fallback Overlay (in case thumbnail fails) */}
                   {!resource.thumbnail_url && (
-                     <div className="absolute inset-0 bg-black/40 flex items-end p-2">
-                        <h3 className="text-white text-xs font-bold leading-tight line-clamp-3">{resource.title}</h3>
+                     <div className="absolute inset-0 bg-black/40 flex items-end p-1.5">
+                        <h3 className="text-white text-[10px] font-bold leading-tight line-clamp-3">{resource.title}</h3>
                      </div>
                   )}
                 </div>
               </div>
-              <div className="flex justify-between items-start gap-4 px-1">
+              <div className="flex justify-between items-start gap-2 px-1">
                 <div className="flex-1">
-                  <h3 className="text-lg font-bold text-gray-900 leading-tight mb-1.5">{resource.title}</h3>
+                  <h3 className="text-sm font-bold text-gray-900 leading-tight mb-1 line-clamp-2">{resource.title}</h3>
                   {resource.description && (
-                     <p className="text-sm text-gray-600 line-clamp-2">{resource.description}</p>
+                     <p className="text-[11px] text-gray-500 line-clamp-1">{resource.description}</p>
                   )}
                 </div>
                 {UserManager.isAdmin() && (
                   <Link 
                     to={`/edit-resource/${resource.id}`}
-                    className="p-2 text-gray-400 hover:text-primary hover:bg-indigo-50 rounded-full transition-colors flex-shrink-0"
+                    className="p-1.5 text-gray-400 hover:text-primary hover:bg-indigo-50 rounded-full transition-colors flex-shrink-0 -mt-1 -mr-1"
                   >
-                    <Edit2 size={18} />
+                    <Edit2 size={14} />
                   </Link>
                 )}
               </div>
 
-              <div className="mt-2 flex items-center justify-between border-t border-gray-50 pt-4">
-                <div className="flex flex-col">
-                  <span className="text-xs text-gray-400 font-medium uppercase tracking-wider">Price</span>
-                  <div className="flex items-center gap-2">
-                    <span className={`text-lg font-bold ${resource.price === 0 ? 'text-green-600' : 'text-primary'}`}>
+              <div className="mt-auto flex flex-col gap-2 border-t border-gray-50 pt-2 px-1">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5">
+                    <span className={`text-sm font-bold ${resource.price === 0 ? 'text-green-600' : 'text-primary'}`}>
                       {resource.price === 0 ? 'FREE' : `₹${resource.price}`}
                     </span>
                     {resource.original_price && resource.original_price > resource.price && (
-                      <span className="text-sm text-gray-400 line-through">₹{resource.original_price}</span>
+                      <span className="text-[10px] text-gray-400 line-through">₹{resource.original_price}</span>
                     )}
                   </div>
                 </div>
                 <button
                   onClick={() => handleAction(resource)}
-                  className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-colors ${
+                  className={`flex items-center justify-center gap-1.5 w-full py-2 rounded-lg font-bold text-xs transition-colors ${
                     resource.price === 0 
                       ? 'bg-green-100 text-green-700 hover:bg-green-200' 
                       : 'bg-primary text-white hover:bg-primary-light'
@@ -137,13 +136,13 @@ export default function Store() {
                 >
                   {resource.price === 0 ? (
                     <>
-                      <Download size={16} />
-                      Download
+                      <Download size={14} />
+                      Get
                     </>
                   ) : (
                     <>
-                      <ExternalLink size={16} />
-                      Buy Now
+                      <ExternalLink size={14} />
+                      Buy
                     </>
                   )}
                 </button>
