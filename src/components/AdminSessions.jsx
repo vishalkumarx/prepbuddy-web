@@ -40,19 +40,12 @@ export default function AdminSessions() {
     }
   };
 
-  // Define active as having pinged within the last 15 minutes
   const ACTIVE_THRESHOLD_MS = 15 * 60 * 1000;
   const now = new Date().getTime();
 
-  const activeSessions = sessions.filter(
-    (s) => now - new Date(s.last_active).getTime() <= ACTIVE_THRESHOLD_MS
-  );
-  const pastSessions = sessions.filter(
-    (s) => now - new Date(s.last_active).getTime() > ACTIVE_THRESHOLD_MS
-  );
-
-  const SessionCard = ({ session, isActive }) => {
+  const SessionCard = ({ session }) => {
     const lastActiveDate = new Date(session.last_active);
+    const isActive = now - lastActiveDate.getTime() <= ACTIVE_THRESHOLD_MS;
     let timeDisplay = lastActiveDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     
     // If it's not today, show date too
@@ -85,7 +78,7 @@ export default function AdminSessions() {
         <div className="flex flex-col items-center justify-center">
           <Circle size={14} className={isActive ? "fill-green-500 text-green-500" : "fill-gray-300 text-gray-300"} />
           <span className={`text-[10px] font-bold mt-1 ${isActive ? 'text-green-600' : 'text-gray-400'}`}>
-            {isActive ? 'ACTIVE' : 'PAST'}
+            {isActive ? 'ACTIVE' : 'OFFLINE'}
           </span>
         </div>
       </div>
@@ -101,7 +94,7 @@ export default function AdminSessions() {
         </button>
         <h1 className="text-xl font-bold ml-2 text-primary flex items-center gap-2">
           <Users size={20} />
-          User Sessions
+          All Users ({sessions.length})
         </h1>
       </header>
 
@@ -111,41 +104,17 @@ export default function AdminSessions() {
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
           </div>
         ) : (
-          <>
-            {/* Active Sessions */}
-            <section>
-              <h2 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-3 flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-green-500 inline-block"></span>
-                Active Now ({activeSessions.length})
-              </h2>
-              {activeSessions.length > 0 ? (
-                activeSessions.map(session => (
-                  <SessionCard key={session.user_id} session={session} isActive={true} />
-                ))
-              ) : (
-                <div className="text-center p-6 bg-white rounded-xl border border-dashed border-gray-300 text-gray-500 text-sm">
-                  No users currently active
-                </div>
-              )}
-            </section>
-
-            {/* Past Sessions */}
-            <section>
-              <h2 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-3 flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-gray-300 inline-block"></span>
-                Past Sessions ({pastSessions.length})
-              </h2>
-              {pastSessions.length > 0 ? (
-                pastSessions.map(session => (
-                  <SessionCard key={session.user_id} session={session} isActive={false} />
-                ))
-              ) : (
-                <div className="text-center p-6 bg-white rounded-xl border border-dashed border-gray-300 text-gray-500 text-sm">
-                  No past sessions found
-                </div>
-              )}
-            </section>
-          </>
+          <section>
+            {sessions.length > 0 ? (
+              sessions.map(session => (
+                <SessionCard key={session.user_id} session={session} />
+              ))
+            ) : (
+              <div className="text-center p-6 bg-white rounded-xl border border-dashed border-gray-300 text-gray-500 text-sm">
+                No users found
+              </div>
+            )}
+          </section>
         )}
       </div>
     </div>
