@@ -101,6 +101,10 @@ export default function Store() {
                         <h3 className="text-white text-[10px] font-bold leading-tight line-clamp-3">{resource.title}</h3>
                      </div>
                   )}
+                  {/* Soft Copy Banner */}
+                  <div className="absolute top-1.5 right-0 bg-blue-600 text-white text-[8px] font-bold px-1.5 py-0.5 rounded-l-md shadow-md tracking-wide uppercase">
+                    📄 Soft Copy
+                  </div>
                 </div>
               </div>
               <div className="flex justify-between items-start gap-2 px-1">
