@@ -10,6 +10,7 @@ export default function UploadJSONQuestions() {
   const [category, setCategory] = useState('Senior Assistant');
   const [subcategory, setSubcategory] = useState('General Knowledge');
   const [geminiApiKey, setGeminiApiKey] = useState(import.meta.env.VITE_GEMINI_API_KEY || '');
+  const [geminiModel, setGeminiModel] = useState('gemini-1.5-flash');
   
   const [isFormatting, setIsFormatting] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
@@ -99,8 +100,8 @@ export default function UploadJSONQuestions() {
       // AIza keys = legacy API key format → use ?key= query param
       const isAQKey = apiKey.startsWith('AQ.');
       const url = isAQKey
-        ? `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent`
-        : `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+        ? `https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent`
+        : `https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${apiKey}`;
 
       const headers = { 'Content-Type': 'application/json' };
       if (isAQKey) headers['Authorization'] = `Bearer ${apiKey}`;
@@ -211,6 +212,19 @@ export default function UploadJSONQuestions() {
             className="w-full bg-white border border-amber-300 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 font-mono"
           />
           <p className="text-xs text-amber-700">Get a free key at <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noreferrer" className="underline font-semibold">aistudio.google.com</a>. Both <code className="bg-amber-100 px-1 rounded font-mono">AIza...</code> and new <code className="bg-amber-100 px-1 rounded font-mono">AQ...</code> key formats are supported.</p>
+          <div className="flex items-center gap-3 pt-1">
+            <label className="text-xs font-bold text-amber-800 whitespace-nowrap">Model:</label>
+            <select
+              value={geminiModel}
+              onChange={(e) => setGeminiModel(e.target.value)}
+              className="flex-1 bg-white border border-amber-300 rounded-lg px-3 py-1.5 text-xs font-mono focus:outline-none focus:ring-2 focus:ring-amber-400"
+            >
+              <option value="gemini-1.5-flash">gemini-1.5-flash (recommended)</option>
+              <option value="gemini-1.5-pro">gemini-1.5-pro</option>
+              <option value="gemini-2.0-flash">gemini-2.0-flash</option>
+              <option value="gemini-2.0-flash-exp">gemini-2.0-flash-exp</option>
+            </select>
+          </div>
         </div>
         
         {/* Category & Subcategory Selectors */}
