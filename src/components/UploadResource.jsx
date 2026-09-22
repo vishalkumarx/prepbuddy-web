@@ -178,14 +178,20 @@ export default function UploadResource({ isEdit = false }) {
       };
 
       if (isEdit) {
-        const { error: dbError } = await supabase
+        const { data: updateData, error: dbError } = await supabase
           .from('prepbuddy_store')
           .update(payload)
-          .eq('id', id);
+          .eq('id', id)
+          .select();
+
+        console.log("Update result:", updateData, "Error:", dbError);
 
         if (dbError) {
           console.error("DB update error:", dbError);
-          throw new Error("Failed to update resource record.");
+          throw new Error(`Failed to update: ${dbError.message} (code: ${dbError.code})`);
+        }
+        if (!updateData || updateData.length === 0) {
+          throw new Error("Update matched 0 rows. Check that the record ID exists and RLS policy allows updates.");
         }
         alert("Resource updated successfully!");
       } else {
