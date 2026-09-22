@@ -8,6 +8,7 @@ import UploadMains from './components/UploadMains';
 import UploadResource from './components/UploadResource';
 import ResourceDetail from './components/ResourceDetail';
 import UploadPost from './components/UploadPost';
+import Profile from './components/Profile';
 import AdminSessions from './components/AdminSessions';
 import UploadJSONQuestions from './components/UploadJSONQuestions';
 import PreparationSelector from './components/PreparationSelector';
@@ -127,6 +128,47 @@ function Layout({ children }) {
   );
 }
 
+function MainAppRoutes({ isAuth, setIsAuth, preparationMode, setPreparationMode, handleLogout }) {
+  if (!isAuth) {
+    return (
+      <div className="h-[100dvh] max-w-md mx-auto bg-white shadow-xl relative overflow-hidden">
+        <Login onLogin={() => setIsAuth(true)} />
+      </div>
+    );
+  }
+
+  if (!preparationMode) {
+    return (
+      <div className="h-[100dvh] max-w-md mx-auto bg-white shadow-xl relative overflow-hidden">
+        <PreparationSelector onSelect={setPreparationMode} />
+      </div>
+    );
+  }
+
+  if (preparationMode === 'state_gov') {
+    return <StateGovLayout onLogout={handleLogout} />;
+  }
+
+  return (
+    <Layout>
+      <Routes>
+        <Route path="/" element={<Feed feedType="home" />} />
+        <Route path="/mains" element={<Feed feedType="mains" />} />
+        <Route path="/store" element={<Store />} />
+        <Route path="/store/:id" element={<ResourceDetail />} />
+        <Route path="/post/:id" element={<PostDetail />} />
+        <Route path="/upload-mains" element={<UploadMains />} />
+        <Route path="/edit-mains/:id" element={<UploadMains isEdit={true} />} />
+        <Route path="/upload-post" element={<UploadPost />} />
+        <Route path="/upload-resource" element={<UploadResource />} />
+        <Route path="/edit-resource/:id" element={<UploadResource isEdit={true} />} />
+        <Route path="/admin/sessions" element={<AdminSessions />} />
+        <Route path="/profile" element={<Profile onLogout={handleLogout} />} />
+      </Routes>
+    </Layout>
+  );
+}
+
 function App() {
   const [isAuth, setIsAuth] = useState(false);
   const [preparationMode, setPreparationMode] = useState(UserManager.getPreparation());
@@ -135,14 +177,13 @@ function App() {
     const trackSession = async (session) => {
       if (!session) return;
       try {
-        const { data, error } = await supabase.from('prepbuddy_user_sessions').upsert({
+        await supabase.from('prepbuddy_user_sessions').upsert({
           user_id: session.user.id,
           email: session.user.email,
           name: session.user.user_metadata?.full_name || session.user.email,
           avatar_url: session.user.user_metadata?.avatar_url,
           last_active: new Date().toISOString()
         }, { onConflict: 'user_id' });
-        console.log('trackSession upsert → data:', data, 'error:', error);
       } catch (err) {
         console.error("Error tracking session:", err);
       }
@@ -158,7 +199,7 @@ function App() {
         setIsAuth(true);
         trackSession(session);
       } else {
-        setIsAuth(UserManager.isLoggedIn()); // Fallback for backwards compatibility if needed
+        setIsAuth(UserManager.isLoggedIn());
       }
     });
 
@@ -180,67 +221,34 @@ function App() {
     return () => subscription.unsubscribe();
   }, []);
 
-  // Allow public access to JSON question uploader route
-  const currentPath = window.location.pathname;
-  if (currentPath.includes('upload-json') || currentPath.includes('upload-questions')) {
-    return (
-      <BrowserRouter>
-        <UploadJSONQuestions />
-      </BrowserRouter>
-    );
-  }
-
-  if (!isAuth) {
-    return (
-      <div className="h-[100dvh] max-w-md mx-auto bg-white shadow-xl relative overflow-hidden">
-        <Login onLogin={() => setIsAuth(true)} />
-      </div>
-    );
-  }
-
   const handleLogout = async () => {
-    window.history.replaceState(null, '', '/');
     await supabase.auth.signOut();
     UserManager.logout();
     setIsAuth(false);
     setPreparationMode(null);
   };
 
-  if (!preparationMode) {
-    return (
-      <div className="h-[100dvh] max-w-md mx-auto bg-white shadow-xl relative overflow-hidden">
-        <PreparationSelector onSelect={setPreparationMode} />
-      </div>
-    );
-  }
-
-  if (preparationMode === 'state_gov') {
-    return (
-      <BrowserRouter>
-        <StateGovLayout onLogout={handleLogout} />
-      </BrowserRouter>
-    );
-  }
-
   return (
     <BrowserRouter>
-      <Layout>
-        <Routes>
-          <Route path="/" element={<Feed feedType="home" />} />
-          <Route path="/mains" element={<Feed feedType="mains" />} />
-          <Route path="/store" element={<Store />} />
-          <Route path="/store/:id" element={<ResourceDetail />} />
-          <Route path="/post/:id" element={<PostDetail />} />
-          <Route path="/upload-mains" element={<UploadMains />} />
-          <Route path="/edit-mains/:id" element={<UploadMains isEdit={true} />} />
-          <Route path="/upload-post" element={<UploadPost />} />
-          <Route path="/upload-resource" element={<UploadResource />} />
-          <Route path="/edit-resource/:id" element={<UploadResource isEdit={true} />} />
-          <Route path="/admin/sessions" element={<AdminSessions />} />
-          <Route path="/admin/upload-json" element={<UploadJSONQuestions />} />
-          <Route path="/profile" element={<Profile onLogout={handleLogout} />} />
-        </Routes>
-      </Layout>
+      <Routes>
+        {/* Public Unauthenticated Admin Routes */}
+        <Route path="/admin/upload-json" element={<UploadJSONQuestions />} />
+        <Route path="/upload-json" element={<UploadJSONQuestions />} />
+
+        {/* Main Application Routes */}
+        <Route 
+          path="/*" 
+          element={
+            <MainAppRoutes 
+              isAuth={isAuth} 
+              setIsAuth={setIsAuth} 
+              preparationMode={preparationMode} 
+              setPreparationMode={setPreparationMode} 
+              handleLogout={handleLogout} 
+            />
+          } 
+        />
+      </Routes>
     </BrowserRouter>
   );
 }
