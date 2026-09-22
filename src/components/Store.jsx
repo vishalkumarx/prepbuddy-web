@@ -63,7 +63,13 @@ export default function Store() {
         ) : (
           resources.map((resource) => (
             <div key={resource.id} className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 flex flex-col gap-3 transition-transform hover:scale-[1.02]">
-              <div className="w-full bg-indigo-50/50 rounded-xl overflow-hidden mb-3 py-6 flex items-center justify-center">
+              <div className="w-full bg-indigo-50/50 rounded-xl overflow-hidden mb-3 py-6 flex items-center justify-center relative">
+                {/* Discount Banner */}
+                {resource.original_price && resource.original_price > resource.price && (
+                  <div className="absolute top-3 right-3 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-md shadow-sm z-10 animate-[fadeIn_0.3s_ease-out]">
+                    {Math.round(((resource.original_price - resource.price) / resource.original_price) * 100)}% OFF
+                  </div>
+                )}
                 {/* 3D Book Container */}
                 <div 
                   className="relative w-[140px] h-[190px] shadow-2xl rounded-sm transition-transform duration-300 hover:rotate-y-0"
@@ -94,7 +100,7 @@ export default function Store() {
                 <div className="flex-1">
                   <h3 className="text-lg font-bold text-gray-900 leading-tight mb-1.5">{resource.title}</h3>
                   {resource.description && (
-                    <p className="text-sm text-gray-600 line-clamp-2">{resource.description}</p>
+                     <p className="text-sm text-gray-600 line-clamp-2">{resource.description}</p>
                   )}
                 </div>
               </div>
@@ -102,9 +108,14 @@ export default function Store() {
               <div className="mt-2 flex items-center justify-between border-t border-gray-50 pt-4">
                 <div className="flex flex-col">
                   <span className="text-xs text-gray-400 font-medium uppercase tracking-wider">Price</span>
-                  <span className={`text-lg font-bold ${resource.price === 0 ? 'text-green-600' : 'text-primary'}`}>
-                    {resource.price === 0 ? 'FREE' : `₹${resource.price}`}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className={`text-lg font-bold ${resource.price === 0 ? 'text-green-600' : 'text-primary'}`}>
+                      {resource.price === 0 ? 'FREE' : `₹${resource.price}`}
+                    </span>
+                    {resource.original_price && resource.original_price > resource.price && (
+                      <span className="text-sm text-gray-400 line-through">₹{resource.original_price}</span>
+                    )}
+                  </div>
                 </div>
                 <button
                   onClick={() => handleAction(resource)}

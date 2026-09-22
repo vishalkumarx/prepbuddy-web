@@ -18,6 +18,7 @@ export default function UploadResource() {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [price, setPrice] = useState('0');
+  const [originalPrice, setOriginalPrice] = useState('');
   const [file, setFile] = useState(null);
   const [thumbnailBlob, setThumbnailBlob] = useState(null);
   const [thumbnailDataUrl, setThumbnailDataUrl] = useState(null);
@@ -135,6 +136,7 @@ export default function UploadResource() {
           title: title.trim(),
           description: description.trim(),
           price: parseFloat(price) || 0,
+          original_price: parseFloat(originalPrice) || null,
           file_url: fileUrl,
           thumbnail_url: thumbnailUrl,
           uploaded_by: UserManager.getUserId()
@@ -243,24 +245,45 @@ export default function UploadResource() {
             />
           </div>
 
-          {/* Price */}
-          <div>
-            <label className="block text-sm font-bold text-gray-700 mb-1.5">Price (₹)</label>
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                <IndianRupee size={16} className="text-gray-400" />
+          {/* Pricing */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-bold text-gray-700 mb-1.5">Price (₹)</label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <IndianRupee size={16} className="text-gray-400" />
+                </div>
+                <input 
+                  type="number" 
+                  value={price} 
+                  onChange={(e) => setPrice(e.target.value)} 
+                  min="0"
+                  step="1"
+                  placeholder="0 for Free"
+                  className="w-full bg-gray-50 border border-gray-200 rounded-xl pl-9 pr-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:bg-white transition-colors font-bold text-gray-900"
+                />
               </div>
-              <input 
-                type="number" 
-                value={price} 
-                onChange={(e) => setPrice(e.target.value)} 
-                min="0"
-                step="1"
-                placeholder="0 for Free"
-                className="w-full bg-gray-50 border border-gray-200 rounded-xl pl-10 pr-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:bg-white transition-colors font-bold text-gray-900"
-              />
+              <p className="text-xs text-gray-500 mt-1.5">Leave 0 to make it free.</p>
             </div>
-            <p className="text-xs text-gray-500 mt-1.5">Leave as 0 to make it a free download.</p>
+            
+            <div>
+              <label className="block text-sm font-bold text-gray-700 mb-1.5">Original Price (₹)</label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <IndianRupee size={16} className="text-gray-400" />
+                </div>
+                <input 
+                  type="number" 
+                  value={originalPrice} 
+                  onChange={(e) => setOriginalPrice(e.target.value)} 
+                  min="0"
+                  step="1"
+                  placeholder="Optional"
+                  className="w-full bg-gray-50 border border-gray-200 rounded-xl pl-9 pr-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:bg-white transition-colors"
+                />
+              </div>
+              <p className="text-xs text-gray-500 mt-1.5">Shows a discount banner.</p>
+            </div>
           </div>
 
           {/* Submit */}
