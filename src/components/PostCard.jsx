@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ThumbsUp, MessageCircle, Share2, MoreVertical, ExternalLink, Edit2, X } from 'lucide-react';
+import { ThumbsUp, MessageCircle, Share2, MoreVertical, ExternalLink, Edit2, X, ArrowRight, CheckCircle } from 'lucide-react';
 import { supabase } from '../supabase';
 import { UserManager } from '../utils/UserManager';
 import WebViewModal from './WebViewModal';
@@ -247,6 +247,30 @@ export default function PostCard({ post, onCommentClick }) {
               {tag}
             </span>
           ))}
+        </div>
+      )}
+
+      {/* Attempt Questions Subtle Button */}
+      {!isMains && totalMcqs > 0 && (
+        <div className="mb-4">
+          <Link 
+            to={`/post/${post.id}`}
+            state={{ fromApp: true }}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-gray-600 hover:text-primary hover:bg-indigo-50 hover:border-indigo-100 transition-colors cursor-pointer text-xs font-semibold shadow-sm"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {hasAttempted ? (
+              <>
+                <CheckCircle size={14} className="text-green-500" />
+                Score: {score}/{totalMcqs}
+              </>
+            ) : (
+              <>
+                Attempt Questions
+                <ArrowRight size={14} />
+              </>
+            )}
+          </Link>
         </div>
       )}
 
