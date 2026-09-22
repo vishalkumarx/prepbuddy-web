@@ -8,6 +8,7 @@ import UploadMains from './components/UploadMains';
 import UploadResource from './components/UploadResource';
 import UploadPost from './components/UploadPost';
 import Profile from './components/Profile';
+import AdminSessions from './components/AdminSessions';
 import { Home, User, BookOpen, Search, Plus, X, ShoppingBag } from 'lucide-react';
 import { supabase } from './supabase';
 import { UserManager } from './utils/UserManager';
@@ -132,6 +133,21 @@ function App() {
   const [isAuth, setIsAuth] = useState(false);
 
   useEffect(() => {
+    const trackSession = async (session) => {
+      if (!session) return;
+      try {
+        await supabase.from('prepbuddy_user_sessions').upsert({
+          user_id: session.user.id,
+          email: session.user.email,
+          name: session.user.user_metadata?.full_name || session.user.email,
+          avatar_url: session.user.user_metadata?.avatar_url,
+          last_active: new Date().toISOString()
+        }, { onConflict: 'user_id' });
+      } catch (err) {
+        console.error("Error tracking session:", err);
+      }
+    };
+
     // Check active session on load
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
@@ -140,6 +156,7 @@ function App() {
         UserManager.setEmail(session.user.email);
         UserManager.setAvatar(session.user.user_metadata?.avatar_url);
         setIsAuth(true);
+        trackSession(session);
       } else {
         setIsAuth(UserManager.isLoggedIn()); // Fallback for backwards compatibility if needed
       }
@@ -153,6 +170,7 @@ function App() {
         UserManager.setEmail(session.user.email);
         UserManager.setAvatar(session.user.user_metadata?.avatar_url);
         setIsAuth(true);
+        trackSession(session);
       } else {
         UserManager.logout();
         setIsAuth(false);
@@ -188,6 +206,7 @@ function App() {
           <Route path="/edit-mains/:id" element={<UploadMains isEdit={true} />} />
           <Route path="/upload-post" element={<UploadPost />} />
           <Route path="/upload-resource" element={<UploadResource />} />
+          <Route path="/admin/sessions" element={<AdminSessions />} />
           <Route path="/profile" element={<Profile onLogout={handleLogout} />} />
         </Routes>
       </Layout>

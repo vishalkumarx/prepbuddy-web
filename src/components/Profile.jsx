@@ -1,6 +1,7 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { UserManager } from '../utils/UserManager';
-import { LogOut, User, Mail, Award, CheckCircle } from 'lucide-react';
+import { LogOut, User, Mail, Award, CheckCircle, Users } from 'lucide-react';
 
 export default function Profile({ onLogout }) {
   const username = UserManager.getUsername() || 'Anonymous';
@@ -58,6 +59,17 @@ export default function Profile({ onLogout }) {
               <span className="text-xs font-medium text-gray-500">Learner</span>
             </div>
           </div>
+
+          {/* Admin Buttons */}
+          {isAdmin && (
+            <Link 
+              to="/admin/sessions"
+              className="w-full py-3.5 mb-3 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold rounded-xl flex items-center justify-center gap-2 transition-colors border border-indigo-100 shadow-sm"
+            >
+              <Users size={18} />
+              View User Sessions
+            </Link>
+          )}
 
           {/* Logout Button */}
           <button 
