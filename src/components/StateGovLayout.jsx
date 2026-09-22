@@ -21,16 +21,18 @@ export default function StateGovLayout({ onLogout }) {
   return (
     <div className="flex flex-col h-[100dvh] max-w-md mx-auto bg-app-bg shadow-xl overflow-hidden relative">
       {/* Header */}
-      <header className="bg-primary flex items-center justify-between py-3 px-4 shadow-md z-10 sticky top-0 min-h-[60px] relative">
-        <div className="flex-1 flex items-center justify-center pl-16">
-          <img src="/logo.png" alt="GoalPrep" className="h-10 w-auto object-contain max-w-[200px]" />
+      <header className="bg-primary flex flex-col items-center justify-center py-2.5 px-4 shadow-md z-10 sticky top-0 min-h-[64px]">
+        <div className="flex items-center justify-center gap-2">
+          <img src="/logo.png" alt="GoalPrep" className="h-9 w-auto object-contain max-w-[200px]" />
           {isAdmin && (
-            <span className="bg-secondary/20 text-secondary text-[10px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wide border border-secondary/30 ml-2">
+            <span className="bg-secondary/20 text-secondary text-[10px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wide border border-secondary/30">
               Admin
             </span>
           )}
         </div>
-        <span className="text-white/80 text-[9px] font-bold tracking-wider uppercase bg-white/10 px-2 py-0.5 rounded border border-white/10">State Govt</span>
+        <span className="text-white/80 text-[10px] font-bold tracking-widest uppercase mt-0.5">
+          State Government
+        </span>
       </header>
 
       {/* Main Content Area */}
