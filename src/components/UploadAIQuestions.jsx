@@ -7,10 +7,33 @@ export default function UploadAIQuestions() {
   const [questionImg, setQuestionImg] = useState(null);
   const [explanationImg, setExplanationImg] = useState(null);
   const [category, setCategory] = useState('');
+  const [subcategory, setSubcategory] = useState('');
+  const [existingCategories, setExistingCategories] = useState([]);
+  const [existingSubcategories, setExistingSubcategories] = useState([]);
   const [loading, setLoading] = useState(false);
   const [extractedQuestions, setExtractedQuestions] = useState([]);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
+
+  React.useEffect(() => {
+    const fetchExisting = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('prepbuddy_questions')
+          .select('category, subcategory');
+        
+        if (data) {
+          const cats = [...new Set(data.map(d => d.category).filter(Boolean))];
+          const subcats = [...new Set(data.map(d => d.subcategory).filter(Boolean))];
+          setExistingCategories(cats);
+          setExistingSubcategories(subcats);
+        }
+      } catch (err) {
+        console.error("Failed to fetch categories", err);
+      }
+    };
+    fetchExisting();
+  }, []);
 
   // Convert File to base64 for Gemini
   const fileToGenerativePart = async (file) => {
@@ -103,6 +126,7 @@ export default function UploadAIQuestions() {
     try {
       const rows = extractedQuestions.map(q => ({
         category,
+        subcategory,
         question_text: q.question_text,
         options: q.options,
         correct_answer: q.correct_answer,
@@ -120,6 +144,7 @@ export default function UploadAIQuestions() {
       setQuestionImg(null);
       setExplanationImg(null);
       setCategory('');
+      setSubcategory('');
       
       setTimeout(() => setSuccess(false), 3000);
     } catch (err) {
@@ -161,15 +186,36 @@ export default function UploadAIQuestions() {
       )}
 
       <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 space-y-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Category / Test Series Name</label>
-          <input 
-            type="text" 
-            value={category}
-            onChange={e => setCategory(e.target.value)}
-            className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
-            placeholder="e.g. UPSC Mains 2026 Test 1"
-          />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Category (e.g. UPSC)</label>
+            <input 
+              type="text" 
+              list="categories-list"
+              value={category}
+              onChange={e => setCategory(e.target.value)}
+              className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+              placeholder="Type or select a category"
+            />
+            <datalist id="categories-list">
+              {existingCategories.map(c => <option key={c} value={c} />)}
+            </datalist>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Subcategory (e.g. History Test 1)</label>
+            <input 
+              type="text" 
+              list="subcategories-list"
+              value={subcategory}
+              onChange={e => setSubcategory(e.target.value)}
+              className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+              placeholder="Type or select a subcategory"
+            />
+            <datalist id="subcategories-list">
+              {existingSubcategories.map(s => <option key={s} value={s} />)}
+            </datalist>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
