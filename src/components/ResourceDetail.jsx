@@ -150,7 +150,7 @@ export default function ResourceDetail() {
              </div>
           </div>
 
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">{resource.title}</h2>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2 break-words">{resource.title}</h2>
           
           <div className="flex items-end gap-3 mb-4 border-b border-gray-100 pb-4">
             <span className={`text-2xl font-black ${resource.price === 0 ? 'text-green-600' : 'text-primary'}`}>
