@@ -43,7 +43,7 @@ export default function Login({ onLogin }) {
       >
         {/* Logo Image */}
         <div className="w-32 h-32 mb-4 drop-shadow-md">
-          <img src="/logo.png" alt="PrepBuddy Logo" className="w-full h-full object-contain rounded-2xl" />
+          <img src="/logo.png" alt="GoalPrep Logo" className="w-full h-full object-contain rounded-2xl" />
         </div>
         
         <p className="text-center text-sm font-medium mb-10 px-4" style={{ color: '#526A91' }}>

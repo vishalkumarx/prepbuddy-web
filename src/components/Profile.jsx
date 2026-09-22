@@ -98,7 +98,7 @@ export default function Profile({ onLogout }) {
       
       {/* Footer Text */}
       <div className="mt-auto pt-8 pb-4 text-center">
-        <p className="text-xs text-gray-400 font-medium tracking-wide">PrepBuddy v1.0.0</p>
+        <p className="text-xs text-gray-400 font-medium tracking-wide">GoalPrep v1.0.0</p>
       </div>
     </div>
   );

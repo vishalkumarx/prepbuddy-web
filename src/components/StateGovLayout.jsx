@@ -22,20 +22,17 @@ export default function StateGovLayout({ onLogout }) {
     <div className="flex flex-col h-[100dvh] max-w-md mx-auto bg-app-bg shadow-xl overflow-hidden relative">
       {/* Header */}
       <header className="bg-primary flex items-center justify-between py-3 px-4 shadow-md z-10 sticky top-0 min-h-[60px]">
-        <div className="flex flex-col">
-          <h1 className="text-xl font-bold tracking-tight flex items-center gap-2">
-            <span>
-              <span className="text-white">Prep</span>
-              <span className="text-secondary">Buddy</span>
+        <div className="flex items-center gap-2">
+          <div className="bg-white px-3 py-1 rounded-lg flex items-center shadow-sm">
+            <img src="/logo.png" alt="GoalPrep" className="h-6 w-auto object-contain" />
+          </div>
+          {isAdmin && (
+            <span className="bg-secondary/20 text-secondary text-[10px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wide border border-secondary/30">
+              Admin
             </span>
-            {isAdmin && (
-              <span className="bg-secondary/20 text-secondary text-[10px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wide border border-secondary/30 relative -top-2">
-                Admin
-              </span>
-            )}
-          </h1>
-          <span className="text-white/70 text-[10px] font-medium tracking-wider uppercase">State Govt Mode</span>
+          )}
         </div>
+        <span className="text-white/80 text-[10px] font-bold tracking-wider uppercase bg-white/10 px-2.5 py-1 rounded-md border border-white/10">State Govt Mode</span>
       </header>
 
       {/* Main Content Area */}

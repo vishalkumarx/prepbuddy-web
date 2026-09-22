@@ -68,18 +68,15 @@ function Layout({ children }) {
             </div>
           ) : (
             <>
-              <div className="flex flex-col mx-auto pl-8 items-center justify-center">
-                <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
-                  <span>
-                    <span className="text-white">Prep</span>
-                    <span className="text-secondary">Buddy</span>
+              <div className="flex items-center gap-2 mx-auto pl-8">
+                <div className="bg-white px-3 py-1 rounded-lg flex items-center shadow-sm">
+                  <img src="/logo.png" alt="GoalPrep" className="h-7 w-auto object-contain" />
+                </div>
+                {isAdmin && (
+                  <span className="bg-secondary/20 text-secondary text-[10px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wide border border-secondary/30">
+                    Admin
                   </span>
-                  {isAdmin && (
-                    <span className="bg-secondary/20 text-secondary text-[10px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wide border border-secondary/30 relative -top-2">
-                      Admin
-                    </span>
-                  )}
-                </h1>
+                )}
               </div>
               <button 
                 onClick={() => setIsSearchOpen(true)}
