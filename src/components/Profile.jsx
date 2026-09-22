@@ -18,7 +18,7 @@ export default function Profile({ onLogout }) {
             ADMIN
           </div>
         )}
-        <h2 className="text-white text-2xl font-bold text-center">My Profile</h2>
+
       </div>
 
       {/* Profile Card Overlay */}
