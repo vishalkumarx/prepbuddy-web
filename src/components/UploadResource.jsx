@@ -117,6 +117,25 @@ export default function UploadResource() {
 
       {/* Upload Form */}
       <div className="p-5 flex-1 pb-24">
+        
+        {/* Live Store Preview */}
+        <div className="mb-6 flex flex-col items-center">
+          <label className="block text-sm font-bold text-gray-500 mb-3 uppercase tracking-wider">Store Preview</label>
+          <div className="bg-white rounded-2xl p-3 shadow-md border border-gray-100 w-[160px]">
+            <div className="w-full h-48 bg-indigo-50 rounded-xl overflow-hidden relative flex items-center justify-center">
+              <img 
+                src="/book-mockup.jpg" 
+                alt="Resource Cover" 
+                className="w-full h-full object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+              <div className="absolute bottom-3 left-3 text-white right-2">
+                <h3 className="text-[13px] font-bold leading-tight line-clamp-3">{title || 'Your Resource Title'}</h3>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <form onSubmit={handleUpload} className="space-y-5 bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
           
           {/* File Picker */}
