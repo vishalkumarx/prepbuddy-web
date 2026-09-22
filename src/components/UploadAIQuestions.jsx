@@ -40,7 +40,7 @@ export default function UploadAIQuestions() {
     setExtractedQuestions([]);
 
     try {
-      const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+      const apiKey = "AQ.Ab8RN6KPUqQPZmHWXj-x-FH3zuCUOrxV7GTiZGj-yiII5VsacQ";
       if (!apiKey) {
         throw new Error("Missing VITE_GEMINI_API_KEY in .env file");
       }
