@@ -19,17 +19,17 @@ export default function StateGovLayout({ onLogout }) {
   ];
 
   return (
-    <div className="flex flex-col h-[100dvh] max-w-md mx-auto bg-gray-50 shadow-xl overflow-hidden relative">
+    <div className="flex flex-col h-[100dvh] max-w-md mx-auto bg-app-bg shadow-xl overflow-hidden relative">
       {/* Header */}
-      <header className="bg-blue-600 flex items-center justify-between py-3 px-4 shadow-md z-10 sticky top-0 min-h-[60px]">
+      <header className="bg-primary flex items-center justify-between py-3 px-4 shadow-md z-10 sticky top-0 min-h-[60px]">
         <div className="flex flex-col">
           <h1 className="text-xl font-bold tracking-tight flex items-center gap-2">
             <span>
               <span className="text-white">Prep</span>
-              <span className="text-yellow-400">Buddy</span>
+              <span className="text-secondary">Buddy</span>
             </span>
             {isAdmin && (
-              <span className="bg-blue-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wide border border-blue-400">
+              <span className="bg-secondary/20 text-secondary text-[10px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wide border border-secondary/30 relative -top-2">
                 Admin
               </span>
             )}
@@ -39,7 +39,7 @@ export default function StateGovLayout({ onLogout }) {
       </header>
 
       {/* Main Content Area */}
-      <main className="flex-1 overflow-y-auto overflow-x-hidden relative scroll-smooth">
+      <main className="flex-1 overflow-y-auto overflow-x-hidden relative scroll-smooth pb-[70px]">
         <Routes>
           <Route path="/" element={<StateHomeFeed />} />
           <Route path="/profile" element={<Profile onLogout={onLogout} />} />
@@ -50,14 +50,14 @@ export default function StateGovLayout({ onLogout }) {
       {isAdmin && isHome && (
         <button
           onClick={() => setShowUploadModal(true)}
-          className="absolute bottom-24 right-5 w-14 h-14 bg-blue-600 rounded-full flex items-center justify-center shadow-lg shadow-blue-600/30 text-white active:scale-95 transition-transform z-40"
+          className="absolute bottom-24 right-6 bg-secondary text-primary p-4 rounded-2xl shadow-lg hover:bg-yellow-500 transition-all z-30 flex items-center justify-center hover:scale-105 active:scale-95"
         >
-          <Plus size={28} />
+          <Plus size={28} strokeWidth={2.5} />
         </button>
       )}
 
       {/* Bottom Navigation */}
-      <nav className="bg-white border-t border-gray-200 pb-safe pt-2 px-6 flex justify-around items-center sticky bottom-0 z-40 shadow-[0_-4px_15px_rgba(0,0,0,0.02)] min-h-[70px]">
+      <nav className="absolute bottom-0 w-full bg-white border-t border-gray-200 flex justify-around items-center h-[65px] z-40 pb-safe">
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = location.pathname === item.path || (item.path === '/' && location.pathname === '/state-home');
@@ -65,21 +65,11 @@ export default function StateGovLayout({ onLogout }) {
             <Link
               key={item.path}
               to={item.path}
-              className={`flex flex-col items-center justify-center w-16 p-2 rounded-xl transition-all duration-300 ${
-                isActive 
-                  ? 'text-blue-600 scale-110' 
-                  : 'text-gray-400 hover:text-gray-600 hover:scale-105'
-              }`}
+              className={`flex flex-col items-center justify-center w-full h-full gap-1 transition-colors
+                ${isActive ? 'text-primary' : 'text-gray-500 hover:text-gray-900'}`}
             >
-              <div className={`relative ${isActive ? 'mb-1' : 'mb-0.5'}`}>
-                <Icon size={isActive ? 24 : 22} strokeWidth={isActive ? 2.5 : 2} />
-                {isActive && (
-                  <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-1 h-1 bg-blue-600 rounded-full"></span>
-                )}
-              </div>
-              <span className={`text-[10px] ${isActive ? 'font-bold opacity-100' : 'font-medium opacity-0 h-0 overflow-hidden'}`}>
-                {item.label}
-              </span>
+              <Icon size={24} className={isActive ? 'stroke-[2.5px]' : 'stroke-2'} />
+              <span className="text-[10px] font-medium">{item.label}</span>
             </Link>
           );
         })}
