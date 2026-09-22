@@ -19,8 +19,8 @@ export default function CommentsBottomSheet({ post, onClose }) {
     if (post) fetchComments();
   }, [post]);
 
-  const fetchComments = async () => {
-    setLoading(true);
+  const fetchComments = async (silent = false) => {
+    if (!silent) setLoading(true);
     try {
       const { data, error } = await supabase
         .from('prepbuddy_comments')
@@ -33,7 +33,7 @@ export default function CommentsBottomSheet({ post, onClose }) {
     } catch (error) {
       console.error("Error fetching comments:", error);
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   };
 
@@ -97,7 +97,7 @@ export default function CommentsBottomSheet({ post, onClose }) {
         setAttachmentPreviews([]);
         setReplyingTo(null);
       } else {
-        fetchComments();
+        fetchComments(true);
       }
     } catch (error) {
       console.error("Error posting comment:", error);
@@ -118,7 +118,7 @@ export default function CommentsBottomSheet({ post, onClose }) {
           .from('prepbuddy_comment_likes')
           .insert([{ comment_id: commentId, device_id: UserManager.getUserId() }]);
       }
-      fetchComments();
+      fetchComments(true);
     } catch (error) {
       console.error("Error toggling like:", error);
     }
@@ -131,7 +131,7 @@ export default function CommentsBottomSheet({ post, onClose }) {
         .from('prepbuddy_comments')
         .delete()
         .eq('id', commentId);
-      fetchComments();
+      fetchComments(true);
     } catch (error) {
       console.error("Error deleting comment:", error);
     }
