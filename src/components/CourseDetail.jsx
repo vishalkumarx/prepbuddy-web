@@ -119,6 +119,10 @@ export default function CourseDetail() {
     return acc;
   }, {});
 
+  const totalTests = linkedTests.length;
+  const attemptedCount = linkedTests.filter(t => attempts[`${t.category}-${t.subcategory}`]).length;
+  const progressPercent = totalTests > 0 ? Math.round((attemptedCount / totalTests) * 100) : 0;
+
   return (
     <div className="flex flex-col h-[100dvh] bg-app-bg pb-[80px] overflow-y-auto">
       {/* Top Banner & Nav */}
@@ -150,17 +154,37 @@ export default function CourseDetail() {
           <h1 className="text-2xl font-black text-[#0B2457] leading-tight flex-1">
             {course.title}
           </h1>
-          <div className="bg-[#0B2457] text-white font-bold px-3 py-1.5 rounded-xl shadow-sm whitespace-nowrap flex items-center flex-shrink-0">
-            {course.price > 0 ? (
-              <>
-                <IndianRupee size={16} className="mr-0.5" />
-                {course.price}
-              </>
-            ) : (
-              'Free'
-            )}
-          </div>
+          {!isEnrolled && (
+            <div className="bg-[#0B2457] text-white font-bold px-3 py-1.5 rounded-xl shadow-sm whitespace-nowrap flex items-center flex-shrink-0 mt-1">
+              {course.price > 0 ? (
+                <>
+                  <IndianRupee size={16} className="mr-0.5" />
+                  {course.price}
+                </>
+              ) : (
+                'Free'
+              )}
+            </div>
+          )}
         </div>
+
+        {/* Progress Bar (If Enrolled) */}
+        {isEnrolled && (
+          <div className="mb-6 bg-gray-50 rounded-2xl p-4 border border-gray-100 shadow-[inset_0_2px_4px_rgba(0,0,0,0.02)]">
+            <div className="flex items-center justify-between mb-2.5">
+              <span className="text-xs font-bold text-gray-500 uppercase tracking-widest">Your Progress</span>
+              <span className="text-sm font-black text-[#0B2457]">{attemptedCount} <span className="text-gray-400 font-bold text-xs">/ {totalTests} Tests</span></span>
+            </div>
+            <div className="h-2 w-full bg-gray-200 rounded-full overflow-hidden">
+              <div 
+                className="h-full bg-emerald-500 rounded-full transition-all duration-1000 ease-out relative"
+                style={{ width: `${progressPercent}%` }}
+              >
+                <div className="absolute inset-0 bg-white/20 w-full h-full" style={{ background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent)', transform: 'skewX(-20deg)', animation: 'progress-shimmer 2s infinite' }} />
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Description */}
         {course.description && (
