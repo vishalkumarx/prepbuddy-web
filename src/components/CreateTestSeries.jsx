@@ -700,7 +700,9 @@ export default function CreateTestSeries() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
                     {options.map((opt, oIdx) => {
                       const optLetter = String.fromCharCode(65 + oIdx);
-                      const isCorrect = opt === q.answer || opt.trim() === String(q.answer).trim() || optLetter === q.answer;
+                      const safeOpt = opt || "";
+                      const safeAns = q.answer || "";
+                      const isCorrect = safeOpt === safeAns || safeOpt.trim() === String(safeAns).trim() || optLetter === safeAns;
                       return (
                       <div 
                         key={oIdx} 
@@ -756,7 +758,9 @@ export default function CreateTestSeries() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
                     {options.map((opt, oIdx) => {
                       const optLetter = String.fromCharCode(65 + oIdx);
-                      const isCorrect = opt === q.answer || opt.trim() === String(q.answer).trim() || optLetter === q.answer;
+                      const safeOpt = opt || "";
+                      const safeAns = q.answer || "";
+                      const isCorrect = safeOpt === safeAns || safeOpt.trim() === String(safeAns).trim() || optLetter === safeAns;
                       return (
                       <div 
                         key={oIdx} 
