@@ -28,6 +28,7 @@ export default function CreateTestSeries() {
   const [isLoadingQuestions, setIsLoadingQuestions] = useState(false);
   const [sidebarGroups, setSidebarGroups] = useState([]);
   const [stagedQuestions, setStagedQuestions] = useState([]);
+  const [chunkSize, setChunkSize] = useState("");
 
   useEffect(() => {
     fetchQuestions();
@@ -296,13 +297,28 @@ export default function CreateTestSeries() {
     if (stagedQuestions.length === 0) return;
     setIsUploading(true);
     try {
+      let finalQuestions = stagedQuestions;
+      
+      const size = parseInt(chunkSize, 10);
+      if (!isNaN(size) && size > 0) {
+        finalQuestions = stagedQuestions.map((q, i) => {
+          const testNum = Math.floor(i / size) + 1;
+          const formattedTestNum = String(testNum).padStart(2, '0');
+          return {
+            ...q,
+            subcategory: `${q.subcategory} - Test ${formattedTestNum}`
+          };
+        });
+      }
+      
       const { error } = await supabase
         .from('prepbuddy_questions')
-        .insert(stagedQuestions);
+        .insert(finalQuestions);
       if (error) throw error;
       
-      alert(`🎉 Successfully uploaded ${stagedQuestions.length} questions to the database!`);
+      alert(`🎉 Successfully uploaded ${finalQuestions.length} questions to the database!`);
       setStagedQuestions([]);
+      setChunkSize("");
       fetchQuestions();
       fetchSidebarGroups();
     } catch (err) {
@@ -620,9 +636,22 @@ export default function CreateTestSeries() {
         {stagedQuestions.length > 0 && (
           <div className="bg-amber-50 p-5 rounded-2xl border border-amber-200 shadow-sm space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-amber-200/60 pb-4 gap-3">
-              <h3 className="font-bold text-amber-900 text-base flex items-center gap-2">
-                Ready to Upload ({stagedQuestions.length})
-              </h3>
+              <div className="flex flex-wrap items-center gap-4">
+                <h3 className="font-bold text-amber-900 text-base flex items-center gap-2">
+                  Ready to Upload ({stagedQuestions.length})
+                </h3>
+                <div className="flex items-center gap-2 bg-white/60 px-3 py-1.5 rounded-lg border border-amber-200/60 shadow-sm">
+                  <span className="text-xs font-bold text-gray-600">Split into chunks of:</span>
+                  <input 
+                    type="number"
+                    min="1"
+                    placeholder="e.g. 50"
+                    value={chunkSize}
+                    onChange={(e) => setChunkSize(e.target.value)}
+                    className="w-16 text-sm font-bold text-amber-900 border-b border-amber-300 focus:border-amber-500 focus:outline-none text-center bg-transparent"
+                  />
+                </div>
+              </div>
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => setStagedQuestions([])}
@@ -644,9 +673,23 @@ export default function CreateTestSeries() {
             <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2">
               {stagedQuestions.map((q, idx) => {
                 const options = Array.isArray(q.options) ? q.options : (typeof q.options === 'string' ? JSON.parse(q.options) : []);
+                const size = parseInt(chunkSize, 10);
+                const isNewChunk = !isNaN(size) && size > 0 && idx % size === 0;
+                const chunkNum = isNewChunk ? Math.floor(idx / size) + 1 : null;
+                
                 return (
-                <div key={idx} className="bg-white p-4 rounded-xl border border-amber-100 space-y-3 relative group shadow-sm">
-                  <div className="absolute top-3 right-3 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                <div key={idx} className="space-y-4">
+                  {isNewChunk && (
+                    <div className="flex items-center gap-4 pt-4 pb-2">
+                      <div className="flex-1 h-px bg-amber-200"></div>
+                      <span className="text-xs font-bold text-amber-700 uppercase tracking-wider bg-amber-100 px-3 py-1 rounded-full shadow-sm">
+                        Test {String(chunkNum).padStart(2, '0')}
+                      </span>
+                      <div className="flex-1 h-px bg-amber-200"></div>
+                    </div>
+                  )}
+                  <div className="bg-white p-4 rounded-xl border border-amber-100 space-y-3 relative group shadow-sm">
+                    <div className="absolute top-3 right-3 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                     <button onClick={() => handleRemoveStaged(idx)} className="p-1.5 bg-red-50 text-red-600 border border-red-100 rounded-lg shadow-sm hover:bg-red-100 transition-colors">
                       <Trash2 size={14} />
                     </button>
@@ -677,6 +720,7 @@ export default function CreateTestSeries() {
                       <strong>Explanation:</strong> {q.explanation}
                     </p>
                   )}
+                  </div>
                 </div>
               )})}
             </div>
