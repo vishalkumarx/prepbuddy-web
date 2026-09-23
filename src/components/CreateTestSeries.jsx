@@ -139,7 +139,49 @@ export default function CreateTestSeries() {
   const handleQuestionChange = (e) => {
     const val = e.target.value;
     
-    // Auto-parse if text matches typical (a) (b) (c) (d) or (1) (2) (3) (4) formats
+    // Check if it has all 4 option markers
+    const regexA = /(?:^|\n|\s)\s*(?:\([aA1]\)|[aA1]\.)\s*/;
+    const regexB = /(?:^|\n|\s)\s*(?:\([bB2]\)|[bB2]\.)\s*/;
+    const regexC = /(?:^|\n|\s)\s*(?:\([cC3]\)|[cC3]\.)\s*/;
+    const regexD = /(?:^|\n|\s)\s*(?:\([dD4]\)|[dD4]\.)\s*/;
+    
+    const matchA = val.match(regexA);
+    const matchB = val.match(regexB);
+    const matchC = val.match(regexC);
+    const matchD = val.match(regexD);
+    
+    if (matchA && matchB && matchC && matchD) {
+      // Collect indices
+      const indices = [
+        { id: 'A', index: matchA.index, length: matchA[0].length },
+        { id: 'B', index: matchB.index, length: matchB[0].length },
+        { id: 'C', index: matchC.index, length: matchC[0].length },
+        { id: 'D', index: matchD.index, length: matchD[0].length }
+      ];
+      
+      // Sort by index to find the order they appear
+      indices.sort((a, b) => a.index - b.index);
+      
+      const qText = val.substring(0, indices[0].index).trim();
+      
+      const optionsText = {};
+      for (let i = 0; i < indices.length; i++) {
+        const current = indices[i];
+        const next = indices[i + 1];
+        const start = current.index + current.length;
+        const end = next ? next.index : val.length;
+        optionsText[current.id] = val.substring(start, end).trim();
+      }
+      
+      setQuestion(qText);
+      setOptionA(optionsText['A']);
+      setOptionB(optionsText['B']);
+      setOptionC(optionsText['C']);
+      setOptionD(optionsText['D']);
+      return;
+    }
+    
+    // Fallback to sequential regex just in case
     const regex = /([\s\S]*?)(?:^|\n|\s)\s*(?:\([aA1]\)|[aA1]\.)\s*([\s\S]*?)(?:^|\n|\s)\s*(?:\([bB2]\)|[bB2]\.)\s*([\s\S]*?)(?:^|\n|\s)\s*(?:\([cC3]\)|[cC3]\.)\s*([\s\S]*?)(?:^|\n|\s)\s*(?:\([dD4]\)|[dD4]\.)\s*([\s\S]*)/;
     const match = val.match(regex);
     
