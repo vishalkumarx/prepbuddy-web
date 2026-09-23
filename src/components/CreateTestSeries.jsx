@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../supabase';
-import { ArrowLeft, Plus, Edit2, Trash2, ListPlus, Sparkles, X, RefreshCw } from 'lucide-react';
+import { ArrowLeft, Plus, Edit2, Trash2, ListPlus, Sparkles, X, RefreshCw, Link2 } from 'lucide-react';
 
 export default function CreateTestSeries() {
   const navigate = useNavigate();
@@ -29,6 +29,18 @@ export default function CreateTestSeries() {
   const [sidebarGroups, setSidebarGroups] = useState([]);
   const [stagedChunks, setStagedChunks] = useState([]);
   const [chunkSize, setChunkSize] = useState("");
+  const [courses, setCourses] = useState([]);
+  const [linkModalGroup, setLinkModalGroup] = useState(null);
+
+  const fetchCourses = async () => {
+    try {
+      const { data, error } = await supabase.from('prepbuddy_test_series').select('*');
+      if (error) throw error;
+      setCourses(data || []);
+    } catch (err) {
+      console.error("Failed to fetch courses:", err);
+    }
+  };
 
   useEffect(() => {
     fetchQuestions();
@@ -36,6 +48,7 @@ export default function CreateTestSeries() {
 
   useEffect(() => {
     fetchSidebarGroups();
+    fetchCourses();
   }, []);
 
   const fetchSidebarGroups = async () => {
@@ -414,6 +427,35 @@ export default function CreateTestSeries() {
     }
   };
 
+  const handleToggleLink = async (course, group) => {
+    try {
+      const currentLinks = course.linked_tests || [];
+      const isLinked = currentLinks.some(l => l.category === group.category && l.subcategory === group.subcategory);
+      
+      let newLinks;
+      if (isLinked) {
+        newLinks = currentLinks.filter(l => !(l.category === group.category && l.subcategory === group.subcategory));
+      } else {
+        newLinks = [...currentLinks, { category: group.category, subcategory: group.subcategory }];
+      }
+      
+      // Optimistic update
+      setCourses(courses.map(c => c.id === course.id ? { ...c, linked_tests: newLinks } : c));
+      
+      const { error } = await supabase
+        .from('prepbuddy_test_series')
+        .update({ linked_tests: newLinks })
+        .eq('id', course.id);
+        
+      if (error) {
+        fetchCourses(); // revert on fail
+        throw error;
+      }
+    } catch (err) {
+      alert("Failed to link course: " + err.message);
+    }
+  };
+
   const handleRemoveStaged = (chunkIdx, qIdx) => {
     const updated = [...stagedChunks];
     updated[chunkIdx].questions.splice(qIdx, 1);
@@ -482,6 +524,10 @@ export default function CreateTestSeries() {
             <div className="space-y-2">
               {sidebarGroups.map((group, idx) => {
                 const isActive = group.category === category && group.subcategory === subcategory;
+                const linkedCoursesCount = courses.filter(c => 
+                  (c.linked_tests || []).some(l => l.category === group.category && l.subcategory === group.subcategory)
+                ).length;
+
                 return (
                   <div
                     key={idx}
@@ -500,21 +546,37 @@ export default function CreateTestSeries() {
                       <p className={`font-bold truncate pr-6 ${isActive ? 'text-indigo-900' : 'text-gray-800'}`}>
                         {group.category}
                       </p>
-                      <button 
-                        onClick={(e) => handleDeleteTestSeries(e, group.category, group.subcategory)}
-                        title="Delete entire test series"
-                        className="opacity-0 group-hover/sidebar:opacity-100 p-1.5 bg-white text-red-600 rounded-md shadow-sm border border-red-100 hover:bg-red-50 transition-opacity z-10"
-                      >
-                        <Trash2 size={12} />
-                      </button>
+                      <div className="opacity-0 group-hover/sidebar:opacity-100 flex items-center gap-1 z-10 transition-opacity">
+                        <button 
+                          onClick={(e) => { e.stopPropagation(); setLinkModalGroup(group); }}
+                          title="Link to Course"
+                          className="p-1.5 bg-white text-indigo-600 rounded-md shadow-sm border border-indigo-100 hover:bg-indigo-50 transition-opacity"
+                        >
+                          <Link2 size={12} />
+                        </button>
+                        <button 
+                          onClick={(e) => handleDeleteTestSeries(e, group.category, group.subcategory)}
+                          title="Delete entire test series"
+                          className="p-1.5 bg-white text-red-600 rounded-md shadow-sm border border-red-100 hover:bg-red-50 transition-opacity"
+                        >
+                          <Trash2 size={12} />
+                        </button>
+                      </div>
                     </div>
                     <div className="flex items-center justify-between mt-1">
-                      <p className={`text-xs truncate max-w-[70%] ${isActive ? 'text-indigo-600' : 'text-gray-500'}`}>
+                      <p className={`text-xs truncate max-w-[50%] ${isActive ? 'text-indigo-600' : 'text-gray-500'}`}>
                         {group.subcategory}
                       </p>
-                      <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold whitespace-nowrap ${isActive ? 'bg-indigo-100 text-indigo-700' : 'bg-gray-100 text-gray-600'}`}>
-                        {group.count} Qs
-                      </span>
+                      <div className="flex items-center gap-1">
+                        {linkedCoursesCount > 0 && (
+                          <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold whitespace-nowrap ${isActive ? 'bg-indigo-200 text-indigo-800' : 'bg-indigo-100 text-indigo-700'}`}>
+                            🔗 {linkedCoursesCount}
+                          </span>
+                        )}
+                        <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold whitespace-nowrap ${isActive ? 'bg-indigo-100 text-indigo-700' : 'bg-gray-100 text-gray-600'}`}>
+                          {group.count} Qs
+                        </span>
+                      </div>
                     </div>
                   </div>
                 );
@@ -912,6 +974,52 @@ export default function CreateTestSeries() {
         )}
         </div>
       </div>
+
+      {/* Link to Course Modal */}
+      {linkModalGroup && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setLinkModalGroup(null)}></div>
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md relative z-10 max-h-[80vh] flex flex-col">
+            <div className="flex items-center justify-between p-4 border-b border-gray-100">
+              <h2 className="font-bold text-gray-900 text-lg">Link to Course</h2>
+              <button onClick={() => setLinkModalGroup(null)} className="p-2 bg-gray-100 text-gray-500 hover:bg-gray-200 rounded-full transition-colors">
+                <X size={16} />
+              </button>
+            </div>
+            <div className="p-4 bg-indigo-50 border-b border-indigo-100">
+              <p className="text-xs text-indigo-800 font-medium">Linking Test Series:</p>
+              <p className="text-sm font-bold text-indigo-900">{linkModalGroup.category} &gt; {linkModalGroup.subcategory}</p>
+            </div>
+            <div className="flex-1 overflow-y-auto p-4 space-y-3">
+              {courses.length === 0 ? (
+                <p className="text-center text-sm text-gray-500 py-8 italic">No courses found. Create one in the app first.</p>
+              ) : (
+                courses.map(course => {
+                  const isLinked = (course.linked_tests || []).some(l => l.category === linkModalGroup.category && l.subcategory === linkModalGroup.subcategory);
+                  return (
+                    <div key={course.id} className={`p-4 rounded-xl border flex items-center justify-between gap-4 ${isLinked ? 'bg-indigo-50 border-indigo-200' : 'bg-white border-gray-200'}`}>
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-bold text-sm text-gray-900 truncate">{course.title}</h4>
+                        <p className="text-xs text-gray-500 truncate">{course.description || "No description"}</p>
+                      </div>
+                      <button
+                        onClick={() => handleToggleLink(course, linkModalGroup)}
+                        className={`px-4 py-2 rounded-lg text-xs font-bold whitespace-nowrap transition-colors ${
+                          isLinked 
+                            ? 'bg-red-50 text-red-600 hover:bg-red-100 border border-red-200'
+                            : 'bg-indigo-600 text-white hover:bg-indigo-700'
+                        }`}
+                      >
+                        {isLinked ? 'Remove' : 'Add to Course'}
+                      </button>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
