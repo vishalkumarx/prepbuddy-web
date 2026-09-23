@@ -79,12 +79,7 @@ export default function Login({ onLogin }) {
           <a href="#" className="underline font-medium hover:text-[#0B2457]">Terms of Service</a> and <a href="#" className="underline font-medium hover:text-[#0B2457]">Privacy Policy</a>
         </p>
 
-        <a 
-          href="/admin/upload-json" 
-          className="mt-6 text-xs font-bold text-[#0B2457] bg-white hover:bg-gray-50 px-4 py-2.5 rounded-xl border border-gray-200 shadow-sm flex items-center gap-1.5 transition-all active:scale-95"
-        >
-          ✨ Admin Tool: Upload JSON Questions
-        </a>
+
       </div>
       
     </div>
