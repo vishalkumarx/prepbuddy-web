@@ -200,7 +200,7 @@ export default function UploadJSONQuestions() {
       <div className="p-4 max-w-3xl mx-auto space-y-6">
 
         {/* Gemini API Key Input */}
-        <div className="bg-amber-50 border border-amber-200 p-4 rounded-2xl shadow-sm space-y-2">
+        <div className="bg-amber-50 border border-amber-200 p-4 rounded-2xl shadow-sm space-y-2 hidden">
           <label className="block text-xs font-bold text-amber-800 uppercase tracking-wider">
             🔑 Gemini API Key (required for AI formatting)
           </label>
