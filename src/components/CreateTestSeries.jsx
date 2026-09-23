@@ -22,7 +22,7 @@ export default function CreateTestSeries() {
   const [jsonImportText, setJsonImportText] = useState('');
   
   const [geminiApiKey, setGeminiApiKey] = useState(import.meta.env.VITE_GEMINI_API_KEY || ('AQ.Ab8RN6Iuw' + 'ePXqAwcAk4gRvpuusfVeKQZfewTazvPNKluYDRN4A'));
-  const [geminiModel, setGeminiModel] = useState('gemini-3.5-flash');
+  const [geminiModel, setGeminiModel] = useState('gemini-3.5-flash-lite');
   const [isFormatting, setIsFormatting] = useState(false);
 
   const handleAddQuestion = (e) => {
