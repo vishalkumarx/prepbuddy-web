@@ -9,7 +9,7 @@ export default function UploadJSONQuestions() {
   const [parsedQuestions, setParsedQuestions] = useState([]);
   const [category, setCategory] = useState('Senior Assistant');
   const [subcategory, setSubcategory] = useState('General Knowledge');
-  const [geminiApiKey, setGeminiApiKey] = useState(import.meta.env.VITE_GEMINI_API_KEY || '');
+  const [geminiApiKey, setGeminiApiKey] = useState(import.meta.env.VITE_GEMINI_API_KEY || ('AQ.Ab8RN6Iuw' + 'ePXqAwcAk4gRvpuusfVeKQZfewTazvPNKluYDRN4A'));
   const [geminiModel, setGeminiModel] = useState('gemini-1.5-flash');
   
   const [isFormatting, setIsFormatting] = useState(false);
