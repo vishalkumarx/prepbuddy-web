@@ -111,31 +111,16 @@ export default function CreateTestSeries() {
     const val = e.target.value;
     
     // Auto-parse if text matches typical (a) (b) (c) (d) formats
-    if (val.match(/\([aA]\)|[aA]\./)) {
-      const partsA = val.split(/(?:\([aA]\)|[aA]\.)\s+/);
-      if (partsA.length > 1) {
-        const qText = partsA[0].trim();
-        const partsB = partsA[1].split(/(?:\([bB]\)|[bB]\.)\s+/);
-        if (partsB.length > 1) {
-          const optA = partsB[0].trim();
-          const partsC = partsB[1].split(/(?:\([cC]\)|[cC]\.)\s+/);
-          if (partsC.length > 1) {
-            const optB = partsC[0].trim();
-            const partsD = partsC[1].split(/(?:\([dD]\)|[dD]\.)\s+/);
-            if (partsD.length > 1) {
-              const optC = partsD[0].trim();
-              const optD = partsD[1].trim();
-              
-              setQuestion(qText);
-              setOptionA(optA);
-              setOptionB(optB);
-              setOptionC(optC);
-              setOptionD(optD);
-              return;
-            }
-          }
-        }
-      }
+    const regex = /([\s\S]*?)(?:^|\n|\s)\s*(?:\([aA]\)|[aA]\.)\s*([\s\S]*?)(?:^|\n|\s)\s*(?:\([bB]\)|[bB]\.)\s*([\s\S]*?)(?:^|\n|\s)\s*(?:\([cC]\)|[cC]\.)\s*([\s\S]*?)(?:^|\n|\s)\s*(?:\([dD]\)|[dD]\.)\s*([\s\S]*)/;
+    const match = val.match(regex);
+    
+    if (match) {
+      setQuestion(match[1].trim());
+      setOptionA(match[2].trim());
+      setOptionB(match[3].trim());
+      setOptionC(match[4].trim());
+      setOptionD(match[5].trim());
+      return;
     }
     
     setQuestion(val);
