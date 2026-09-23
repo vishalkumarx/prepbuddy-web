@@ -5,6 +5,7 @@ import StateHomeFeed from './StateHomeFeed';
 import Profile from './Profile';
 import UploadTestSeries from './UploadTestSeries';
 import UploadJSONQuestions from './UploadJSONQuestions';
+import CourseDetail from './CourseDetail';
 import { UserManager } from '../utils/UserManager';
 
 export default function StateGovLayout({ onLogout }) {
@@ -42,6 +43,7 @@ export default function StateGovLayout({ onLogout }) {
           <Route path="/" element={<StateHomeFeed />} />
           <Route path="/profile" element={<Profile onLogout={onLogout} />} />
           <Route path="/admin/upload-json" element={<UploadJSONQuestions />} />
+          <Route path="/course/:id" element={<CourseDetail />} />
         </Routes>
       </main>
 

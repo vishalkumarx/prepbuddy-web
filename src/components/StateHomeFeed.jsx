@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '../supabase';
 import { IndianRupee, Layers, Languages, Award, Newspaper } from 'lucide-react';
 import TestimonialCarousel from './TestimonialCarousel';
 
 export default function StateHomeFeed() {
+  const navigate = useNavigate();
   const [testSeries, setTestSeries] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -70,7 +72,11 @@ export default function StateHomeFeed() {
           const showFeatures = ts.title?.toLowerCase().includes('senior') || ts.title?.toLowerCase().includes('assistant') || ts.title?.toLowerCase().includes('asi') || true;
 
           return (
-            <div key={ts.id} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex flex-col">
+            <div 
+              key={ts.id} 
+              onClick={() => navigate(`/course/${ts.id}`)}
+              className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex flex-col cursor-pointer hover:shadow-md hover:border-indigo-100 transition-all active:scale-[0.99]"
+            >
               {ts.banner_url ? (
                 <img src={ts.banner_url} alt={ts.title} className="w-full h-48 object-cover bg-gray-100" />
               ) : (
