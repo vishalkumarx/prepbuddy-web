@@ -187,7 +187,7 @@ export default function CourseDetail() {
         )}
 
         {/* Description */}
-        {course.description && (
+        {!isEnrolled && course.description && (
           <p className="text-gray-600 text-sm leading-relaxed mb-6 whitespace-pre-wrap">
             {course.description}
           </p>
