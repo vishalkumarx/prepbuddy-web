@@ -154,6 +154,33 @@ export default function CreateTestSeries() {
   const handleQuestionChange = (e) => {
     const val = e.target.value;
     
+    // Try to parse as JSON first
+    if (val.trim().startsWith('{') || val.trim().startsWith('[')) {
+      try {
+        let data = JSON.parse(val);
+        if (Array.isArray(data)) data = data[0]; // If array pasted, just take the first one
+        if (data && typeof data === 'object') {
+          setQuestion(data.question || data.q || '');
+          const opts = Array.isArray(data.options) ? data.options : [data.optionA, data.optionB, data.optionC, data.optionD];
+          if (opts[0]) setOptionA(opts[0]);
+          if (opts[1]) setOptionB(opts[1]);
+          if (opts[2]) setOptionC(opts[2]);
+          if (opts[3]) setOptionD(opts[3]);
+          
+          let ans = data.answer || data.correct_answer || opts[0];
+          if (ans === opts[0] || String(ans).toUpperCase() === 'A') setAnswer('A');
+          else if (ans === opts[1] || String(ans).toUpperCase() === 'B') setAnswer('B');
+          else if (ans === opts[2] || String(ans).toUpperCase() === 'C') setAnswer('C');
+          else if (ans === opts[3] || String(ans).toUpperCase() === 'D') setAnswer('D');
+          
+          setExplanation(data.explanation || data.desc || '');
+          return;
+        }
+      } catch (err) {
+        // Fall back to text parsing if JSON is invalid
+      }
+    }
+    
     // Check if it has all 4 option markers
     const regexA = /(?:^|\n|\s)\s*(?:\([aA1]\)|[aA1]\.)\s*/;
     const regexB = /(?:^|\n|\s)\s*(?:\([bB2]\)|[bB2]\.)\s*/;
