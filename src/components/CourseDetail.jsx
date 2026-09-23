@@ -1,13 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../supabase';
-import { ArrowLeft, IndianRupee, Layers, FileText, CheckCircle2 } from 'lucide-react';
+import { ArrowLeft, IndianRupee, Layers, FileText, CheckCircle2, Lock, Unlock } from 'lucide-react';
+import { UserManager } from '../utils/UserManager';
 
 export default function CourseDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const userId = UserManager.getUserId();
   const [course, setCourse] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [isEnrolled, setIsEnrolled] = useState(false);
+  const [enrollLoading, setEnrollLoading] = useState(false);
 
   useEffect(() => {
     const fetchCourseDetails = async () => {
@@ -20,6 +24,21 @@ export default function CourseDetail() {
 
         if (error) throw error;
         setCourse(data);
+
+        // Check if enrolled
+        if (userId) {
+          const { data: enrollmentData } = await supabase
+            .from('prepbuddy_enrollments')
+            .select('id')
+            .eq('course_id', id)
+            .eq('user_id', userId)
+            .maybeSingle();
+            
+          if (enrollmentData) {
+            setIsEnrolled(true);
+          }
+        }
+
       } catch (err) {
         console.error('Error fetching course:', err);
       } finally {
@@ -28,7 +47,24 @@ export default function CourseDetail() {
     };
 
     fetchCourseDetails();
-  }, [id]);
+  }, [id, userId]);
+
+  const handleEnroll = async () => {
+    if (isEnrolled) return;
+    setEnrollLoading(true);
+    try {
+      const { error } = await supabase
+        .from('prepbuddy_enrollments')
+        .insert([{ user_id: userId, course_id: id }]);
+        
+      if (error) throw error;
+      setIsEnrolled(true);
+    } catch (err) {
+      alert('Error enrolling: ' + err.message);
+    } finally {
+      setEnrollLoading(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -126,16 +162,35 @@ export default function CourseDetail() {
                   <h3 className="font-bold text-gray-800 text-sm border-b border-gray-100 pb-2">{cat}</h3>
                   <div className="space-y-3">
                     {tests.map((test, idx) => (
-                      <div key={idx} className="flex items-start gap-3 p-4 bg-white rounded-2xl border border-gray-100 shadow-sm hover:border-indigo-200 transition-colors cursor-pointer group">
-                        <div className="bg-indigo-50 text-indigo-600 p-2 rounded-xl mt-0.5 group-hover:bg-indigo-600 group-hover:text-white transition-colors">
+                      <div 
+                        key={idx} 
+                        onClick={() => {
+                          if (isEnrolled) {
+                            navigate(`/test/${encodeURIComponent(test.category)}/${encodeURIComponent(test.subcategory)}`);
+                          } else {
+                            alert("Please enroll in the course first to take this test!");
+                          }
+                        }}
+                        className={`flex items-start gap-3 p-4 bg-white rounded-2xl border ${isEnrolled ? 'border-indigo-100 hover:border-indigo-300 shadow-sm cursor-pointer hover:shadow-md' : 'border-gray-100 shadow-sm opacity-80 cursor-not-allowed'} transition-all group`}
+                      >
+                        <div className={`p-2 rounded-xl mt-0.5 transition-colors ${isEnrolled ? 'bg-indigo-50 text-indigo-600 group-hover:bg-indigo-600 group-hover:text-white' : 'bg-gray-100 text-gray-400'}`}>
                           <FileText size={20} />
                         </div>
                         <div className="flex-1">
-                          <h4 className="font-bold text-gray-900 text-sm mb-0.5">{test.subcategory}</h4>
+                          <h4 className={`font-bold text-sm mb-0.5 ${isEnrolled ? 'text-gray-900 group-hover:text-indigo-900' : 'text-gray-600'}`}>{test.subcategory}</h4>
                         </div>
-                        <div className="flex items-center gap-1 text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-lg">
-                          <CheckCircle2 size={14} />
-                          Available
+                        <div className={`flex items-center gap-1 text-xs font-bold px-2 py-1 rounded-lg ${isEnrolled ? 'text-emerald-600 bg-emerald-50' : 'text-gray-500 bg-gray-100'}`}>
+                          {isEnrolled ? (
+                            <>
+                              <Unlock size={12} />
+                              Take Test
+                            </>
+                          ) : (
+                            <>
+                              <Lock size={12} />
+                              Locked
+                            </>
+                          )}
                         </div>
                       </div>
                     ))}
@@ -147,10 +202,27 @@ export default function CourseDetail() {
         </div>
       </div>
 
-      {/* Sticky Buy/Start Button (Static for now) */}
+      {/* Sticky Buy/Start Button */}
       <div className="fixed bottom-0 w-full max-w-md bg-white border-t border-gray-100 p-4 shadow-[0_-10px_20px_-10px_rgba(0,0,0,0.05)] z-50">
-        <button className="w-full bg-[#0B2457] text-white font-bold py-4 rounded-xl text-base shadow-lg hover:bg-blue-900 active:scale-[0.98] transition-all flex items-center justify-center gap-2">
-          {course.price > 0 ? 'Buy Now' : 'Enroll Now for Free'}
+        <button 
+          onClick={handleEnroll}
+          disabled={enrollLoading || isEnrolled}
+          className={`w-full font-bold py-4 rounded-xl text-base shadow-lg transition-all flex items-center justify-center gap-2 ${
+            isEnrolled 
+              ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' 
+              : 'bg-[#0B2457] text-white hover:bg-blue-900 active:scale-[0.98]'
+          }`}
+        >
+          {enrollLoading ? 'Processing...' : (
+            isEnrolled ? (
+              <>
+                <CheckCircle2 size={20} />
+                Enrolled (Select a test above to begin)
+              </>
+            ) : (
+              course.price > 0 ? 'Buy Now' : 'Enroll Now for Free'
+            )
+          )}
         </button>
       </div>
     </div>
