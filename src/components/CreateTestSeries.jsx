@@ -655,19 +655,22 @@ export default function CreateTestSeries() {
                     Q. {q.question}
                   </p>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-                    {options.map((opt, oIdx) => (
+                    {options.map((opt, oIdx) => {
+                      const optLetter = String.fromCharCode(65 + oIdx);
+                      const isCorrect = opt === q.answer || opt.trim() === String(q.answer).trim() || optLetter === q.answer;
+                      return (
                       <div 
                         key={oIdx} 
                         className={`p-2.5 rounded-lg border ${
-                          opt === q.answer 
+                          isCorrect 
                             ? 'bg-emerald-50 border-emerald-300 text-emerald-900 font-bold' 
                             : 'bg-gray-50 border-gray-200 text-gray-700'
                         }`}
                       >
-                        <span className="font-bold mr-2">{String.fromCharCode(65 + oIdx)}.</span>
+                        <span className="font-bold mr-2">{optLetter}.</span>
                         {opt}
                       </div>
-                    ))}
+                    )})}
                   </div>
                   {q.explanation && (
                     <p className="text-gray-500 italic pt-2 border-t border-gray-100 text-xs">
@@ -707,19 +710,22 @@ export default function CreateTestSeries() {
                     Q. {q.question}
                   </p>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-                    {options.map((opt, oIdx) => (
+                    {options.map((opt, oIdx) => {
+                      const optLetter = String.fromCharCode(65 + oIdx);
+                      const isCorrect = opt === q.answer || opt.trim() === String(q.answer).trim() || optLetter === q.answer;
+                      return (
                       <div 
                         key={oIdx} 
                         className={`p-2.5 rounded-lg border ${
-                          opt === q.answer 
+                          isCorrect 
                             ? 'bg-emerald-50 border-emerald-300 text-emerald-900 font-bold' 
                             : 'bg-white border-gray-200 text-gray-700'
                         }`}
                       >
-                        <span className="font-bold mr-2">{String.fromCharCode(65 + oIdx)}.</span>
+                        <span className="font-bold mr-2">{optLetter}.</span>
                         {opt}
                       </div>
-                    ))}
+                    )})}
                   </div>
                   {q.explanation && (
                     <p className="text-gray-500 italic pt-2 border-t border-gray-200 text-xs">
