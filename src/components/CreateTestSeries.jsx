@@ -454,6 +454,52 @@ export default function CreateTestSeries() {
     }
   };
 
+  const handleRenameTestSeries = async (e, groupCategory, groupSubcategory) => {
+    e.stopPropagation();
+    const newName = window.prompt("Enter new name for this test series:", groupSubcategory);
+    if (!newName || newName.trim() === '' || newName.trim() === groupSubcategory) return;
+    
+    const finalNewName = newName.trim();
+    
+    try {
+      const { error: qError } = await supabase
+        .from('prepbuddy_questions')
+        .update({ subcategory: finalNewName })
+        .eq('category', groupCategory)
+        .eq('subcategory', groupSubcategory);
+        
+      if (qError) throw qError;
+      
+      for (const course of courses) {
+        if (!course.linked_tests) continue;
+        const hasLink = course.linked_tests.some(l => l.category === groupCategory && l.subcategory === groupSubcategory);
+        if (hasLink) {
+          const updatedLinks = course.linked_tests.map(l => {
+            if (l.category === groupCategory && l.subcategory === groupSubcategory) {
+              return { ...l, subcategory: finalNewName };
+            }
+            return l;
+          });
+          
+          await supabase
+            .from('prepbuddy_test_series')
+            .update({ linked_tests: updatedLinks })
+            .eq('id', course.id);
+        }
+      }
+      
+      if (category === groupCategory && subcategory === groupSubcategory) {
+        setSubcategory(finalNewName);
+      }
+      
+      fetchSidebarGroups();
+      fetchCourses();
+      alert("Test series renamed successfully!");
+    } catch (err) {
+      alert("Failed to rename test series: " + err.message);
+    }
+  };
+
   const handleToggleLink = async (course, group) => {
     try {
       const currentLinks = course.linked_tests || [];
@@ -580,6 +626,13 @@ export default function CreateTestSeries() {
                           className="p-1.5 bg-white text-indigo-600 rounded-md shadow-sm border border-indigo-100 hover:bg-indigo-50 transition-opacity"
                         >
                           <Link2 size={12} />
+                        </button>
+                        <button 
+                          onClick={(e) => handleRenameTestSeries(e, group.category, group.subcategory)}
+                          title="Rename test series"
+                          className="p-1.5 bg-white text-gray-600 rounded-md shadow-sm border border-gray-200 hover:bg-gray-50 transition-opacity"
+                        >
+                          <Edit2 size={12} />
                         </button>
                         <button 
                           onClick={(e) => handleDeleteTestSeries(e, group.category, group.subcategory)}
