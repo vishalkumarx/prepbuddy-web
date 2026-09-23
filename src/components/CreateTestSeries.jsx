@@ -139,8 +139,8 @@ export default function CreateTestSeries() {
   const handleQuestionChange = (e) => {
     const val = e.target.value;
     
-    // Auto-parse if text matches typical (a) (b) (c) (d) formats
-    const regex = /([\s\S]*?)(?:^|\n|\s)\s*(?:\([aA]\)|[aA]\.)\s*([\s\S]*?)(?:^|\n|\s)\s*(?:\([bB]\)|[bB]\.)\s*([\s\S]*?)(?:^|\n|\s)\s*(?:\([cC]\)|[cC]\.)\s*([\s\S]*?)(?:^|\n|\s)\s*(?:\([dD]\)|[dD]\.)\s*([\s\S]*)/;
+    // Auto-parse if text matches typical (a) (b) (c) (d) or (1) (2) (3) (4) formats
+    const regex = /([\s\S]*?)(?:^|\n|\s)\s*(?:\([aA1]\)|[aA1]\.)\s*([\s\S]*?)(?:^|\n|\s)\s*(?:\([bB2]\)|[bB2]\.)\s*([\s\S]*?)(?:^|\n|\s)\s*(?:\([cC3]\)|[cC3]\.)\s*([\s\S]*?)(?:^|\n|\s)\s*(?:\([dD4]\)|[dD4]\.)\s*([\s\S]*)/;
     const match = val.match(regex);
     
     if (match) {
