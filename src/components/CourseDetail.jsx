@@ -246,25 +246,27 @@ export default function CourseDetail() {
                               <div className={`p-2 rounded-xl transition-colors shrink-0 ${isEnrolled ? 'bg-indigo-50 text-indigo-600 group-hover:bg-indigo-600 group-hover:text-white' : 'bg-gray-200 text-gray-400'}`}>
                                 <FileText size={18} />
                               </div>
-                              <div className="flex-1 min-w-0 flex flex-col justify-center h-full pt-1">
-                                <h4 className={`font-bold text-sm leading-tight truncate ${isEnrolled ? 'text-gray-900 group-hover:text-indigo-900' : 'text-gray-600'}`}>{test.subcategory}</h4>
+                              <div className="flex-1 min-w-0 flex flex-col pt-0.5">
+                                <h4 className={`font-bold text-sm leading-tight ${isEnrolled ? 'text-gray-900 group-hover:text-indigo-900' : 'text-gray-600'}`}>{test.subcategory}</h4>
+                                
+                                {!attempt && (
+                                  <div className="mt-2 flex items-center">
+                                    <div className={`flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-md shrink-0 ${isEnrolled ? 'text-emerald-700 bg-emerald-100/70' : 'text-gray-500 bg-gray-200/60'}`}>
+                                      {isEnrolled ? (
+                                        <>
+                                          <Unlock size={10} strokeWidth={3} />
+                                          TAKE TEST
+                                        </>
+                                      ) : (
+                                        <>
+                                          <Lock size={10} strokeWidth={3} />
+                                          LOCKED
+                                        </>
+                                      )}
+                                    </div>
+                                  </div>
+                                )}
                               </div>
-                              
-                              {!attempt && (
-                                <div className={`flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-md shrink-0 mt-0.5 ${isEnrolled ? 'text-emerald-700 bg-emerald-100/70' : 'text-gray-500 bg-gray-200/60'}`}>
-                                  {isEnrolled ? (
-                                    <>
-                                      <Unlock size={10} strokeWidth={3} />
-                                      TAKE TEST
-                                    </>
-                                  ) : (
-                                    <>
-                                      <Lock size={10} strokeWidth={3} />
-                                      LOCKED
-                                    </>
-                                  )}
-                                </div>
-                              )}
                             </div>
 
                             {attempt && (
