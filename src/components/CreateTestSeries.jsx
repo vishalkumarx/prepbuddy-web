@@ -390,6 +390,30 @@ export default function CreateTestSeries() {
     }
   };
 
+  const handleDeleteTestSeries = async (e, groupCategory, groupSubcategory) => {
+    e.stopPropagation();
+    if (!window.confirm(`Are you sure you want to delete the ENTIRE test series "${groupSubcategory}"? This will permanently delete all questions in it.`)) return;
+    
+    try {
+      const { error } = await supabase
+        .from('prepbuddy_questions')
+        .delete()
+        .eq('category', groupCategory)
+        .eq('subcategory', groupSubcategory);
+        
+      if (error) throw error;
+      
+      if (category === groupCategory && subcategory === groupSubcategory) {
+        setQuestionsList([]);
+      }
+      
+      fetchSidebarGroups();
+      alert(`Test series "${groupSubcategory}" deleted successfully!`);
+    } catch (err) {
+      alert("Failed to delete test series: " + err.message);
+    }
+  };
+
   const handleRemoveStaged = (chunkIdx, qIdx) => {
     const updated = [...stagedChunks];
     updated[chunkIdx].questions.splice(qIdx, 1);
@@ -459,22 +483,31 @@ export default function CreateTestSeries() {
               {sidebarGroups.map((group, idx) => {
                 const isActive = group.category === category && group.subcategory === subcategory;
                 return (
-                  <button
+                  <div
                     key={idx}
                     onClick={() => {
                       setCategory(group.category);
                       setSubcategory(group.subcategory);
                       window.scrollTo({ top: 0, behavior: 'smooth' });
                     }}
-                    className={`w-full text-left p-3 rounded-xl border text-sm transition-all ${
+                    className={`w-full group/sidebar relative cursor-pointer text-left p-3 rounded-xl border text-sm transition-all flex flex-col ${
                       isActive 
                         ? 'bg-indigo-50 border-indigo-200 shadow-sm ring-1 ring-indigo-500' 
                         : 'bg-white border-gray-100 hover:border-gray-300 hover:bg-gray-50'
                     }`}
                   >
-                    <p className={`font-bold truncate ${isActive ? 'text-indigo-900' : 'text-gray-800'}`}>
-                      {group.category}
-                    </p>
+                    <div className="flex items-start justify-between">
+                      <p className={`font-bold truncate pr-6 ${isActive ? 'text-indigo-900' : 'text-gray-800'}`}>
+                        {group.category}
+                      </p>
+                      <button 
+                        onClick={(e) => handleDeleteTestSeries(e, group.category, group.subcategory)}
+                        title="Delete entire test series"
+                        className="opacity-0 group-hover/sidebar:opacity-100 p-1.5 bg-white text-red-600 rounded-md shadow-sm border border-red-100 hover:bg-red-50 transition-opacity z-10"
+                      >
+                        <Trash2 size={12} />
+                      </button>
+                    </div>
                     <div className="flex items-center justify-between mt-1">
                       <p className={`text-xs truncate max-w-[70%] ${isActive ? 'text-indigo-600' : 'text-gray-500'}`}>
                         {group.subcategory}
@@ -483,7 +516,7 @@ export default function CreateTestSeries() {
                         {group.count} Qs
                       </span>
                     </div>
-                  </button>
+                  </div>
                 );
               })}
             </div>
