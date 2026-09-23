@@ -12,6 +12,46 @@ export default function TestTaking() {
   const [currentIdx, setCurrentIdx] = useState(0);
   const [answers, setAnswers] = useState({}); // { [questionId]: selectedOptionText }
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showExitPrompt, setShowExitPrompt] = useState(false);
+
+  const progressKey = `test_progress_${UserManager.getUserId()}_${category}_${subcategory}`;
+
+  // Handle browser back button
+  useEffect(() => {
+    const handlePopState = (e) => {
+      e.preventDefault();
+      setShowExitPrompt(true);
+      window.history.pushState(null, '', window.location.href);
+    };
+
+    window.history.pushState(null, '', window.location.href);
+    window.addEventListener('popstate', handlePopState);
+
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+    };
+  }, []);
+
+  // Load saved progress
+  useEffect(() => {
+    const saved = localStorage.getItem(progressKey);
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (parsed.answers) setAnswers(parsed.answers);
+        if (parsed.currentIdx !== undefined) setCurrentIdx(parsed.currentIdx);
+      } catch (e) {
+        console.error("Failed to parse saved progress");
+      }
+    }
+  }, [progressKey]);
+
+  // Save progress continuously
+  useEffect(() => {
+    if (questions.length > 0) {
+      localStorage.setItem(progressKey, JSON.stringify({ currentIdx, answers }));
+    }
+  }, [currentIdx, answers, questions, progressKey]);
 
   useEffect(() => {
     const fetchQuestions = async () => {
@@ -103,6 +143,9 @@ export default function TestTaking() {
         
       if (error) throw error;
       
+      // Clear saved progress on successful submission
+      localStorage.removeItem(progressKey);
+      
       // Navigate to leaderboard
       navigate(`/leaderboard/${encodeURIComponent(category)}/${encodeURIComponent(subcategory)}`, { replace: true });
     } catch (err) {
@@ -136,7 +179,7 @@ export default function TestTaking() {
     <div className="flex flex-col h-[100dvh] bg-app-bg pb-[80px]">
       {/* Header */}
       <header className="bg-primary flex items-center p-4 shadow-md z-10 sticky top-0 min-h-[58px]">
-        <button onClick={() => navigate(-1)} className="text-white hover:bg-white/10 p-1.5 rounded-full mr-3">
+        <button onClick={() => setShowExitPrompt(true)} className="text-white hover:bg-white/10 p-1.5 rounded-full mr-3">
           <ArrowLeft size={22} />
         </button>
         <div className="flex-1 overflow-hidden">
@@ -217,6 +260,32 @@ export default function TestTaking() {
           </button>
         )}
       </div>
+
+      {/* Exit Prompt Modal */}
+      {showExitPrompt && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl scale-100 animate-in zoom-in-95 duration-200">
+            <h3 className="text-xl font-black text-gray-900 mb-2">Pause Test?</h3>
+            <p className="text-sm text-gray-600 mb-6 leading-relaxed">
+              Are you sure you want to go back? Your progress and current answers are <span className="font-bold text-indigo-600">automatically saved</span>. You will resume from this exact question when you return.
+            </p>
+            <div className="flex gap-3">
+              <button 
+                onClick={() => setShowExitPrompt(false)}
+                className="flex-1 py-3 bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200 transition-colors"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={() => navigate(-2)} // Go back twice because we pushed a dummy state
+                className="flex-1 py-3 bg-[#0B2457] text-white font-bold rounded-xl shadow-md hover:bg-blue-900 transition-colors"
+              >
+                Yes, Pause
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
