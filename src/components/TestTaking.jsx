@@ -20,9 +20,15 @@ export default function TestTaking() {
   // Scroll to top when question changes
   useEffect(() => {
     if (scrollContainerRef.current) {
-      scrollContainerRef.current.scrollTo(0, 0);
+      scrollContainerRef.current.scrollTop = 0;
     }
     window.scrollTo(0, 0);
+    
+    // Also scroll the parent main container to top
+    const mainContent = document.querySelector('main');
+    if (mainContent) {
+      mainContent.scrollTop = 0;
+    }
   }, [currentIdx]);
 
   // Handle browser back button

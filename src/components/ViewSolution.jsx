@@ -28,6 +28,13 @@ export default function ViewSolution() {
       }
     };
     fetchQuestions();
+    
+    // Scroll to top
+    window.scrollTo(0, 0);
+    const mainContent = document.querySelector('main');
+    if (mainContent) {
+      mainContent.scrollTop = 0;
+    }
   }, [category, subcategory]);
 
   if (loading) {
