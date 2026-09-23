@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../supabase';
-import { ArrowLeft, Plus, Upload, CheckCircle2, ListPlus, Sparkles } from 'lucide-react';
+import { ArrowLeft, Plus, Edit2, Trash2, ListPlus, Sparkles, X, RefreshCw } from 'lucide-react';
 
 export default function CreateTestSeries() {
   const navigate = useNavigate();
@@ -24,8 +24,34 @@ export default function CreateTestSeries() {
   const [geminiApiKey, setGeminiApiKey] = useState(import.meta.env.VITE_GEMINI_API_KEY || ('AQ.Ab8RN6Iuw' + 'ePXqAwcAk4gRvpuusfVeKQZfewTazvPNKluYDRN4A'));
   const [geminiModel, setGeminiModel] = useState('gemini-3.5-flash-lite');
   const [isFormatting, setIsFormatting] = useState(false);
+  const [editingId, setEditingId] = useState(null);
+  const [isLoadingQuestions, setIsLoadingQuestions] = useState(false);
 
-  const handleAddQuestion = (e) => {
+  useEffect(() => {
+    fetchQuestions();
+  }, [category, subcategory]);
+
+  const fetchQuestions = async () => {
+    if (!category.trim() || !subcategory.trim()) return;
+    setIsLoadingQuestions(true);
+    try {
+      const { data, error } = await supabase
+        .from('prepbuddy_questions')
+        .select('*')
+        .eq('category', category)
+        .eq('subcategory', subcategory)
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      setQuestionsList(data || []);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsLoadingQuestions(false);
+    }
+  };
+
+  const handleAddQuestion = async (e) => {
     e.preventDefault();
     if (!question || !optionA || !optionB || !optionC || !optionD) {
       alert('Please fill out the question and all 4 options.');
@@ -38,7 +64,7 @@ export default function CreateTestSeries() {
     if (answer === 'C') answerText = optionC;
     if (answer === 'D') answerText = optionD;
 
-    const newQuestion = {
+    const questionData = {
       question,
       options: [optionA, optionB, optionC, optionD],
       answer: answerText,
@@ -47,19 +73,41 @@ export default function CreateTestSeries() {
       subcategory
     };
 
-    setQuestionsList([...questionsList, newQuestion]);
-    
-    // Clear form for next question
-    setQuestion('');
-    setOptionA('');
-    setOptionB('');
-    setOptionC('');
-    setOptionD('');
-    setAnswer('A');
-    setExplanation('');
+    setIsUploading(true);
+    try {
+      if (editingId) {
+        const { error } = await supabase
+          .from('prepbuddy_questions')
+          .update(questionData)
+          .eq('id', editingId);
+        if (error) throw error;
+        alert('Question updated successfully!');
+      } else {
+        const { error } = await supabase
+          .from('prepbuddy_questions')
+          .insert([questionData]);
+        if (error) throw error;
+      }
+      
+      // Clear form for next question
+      setQuestion('');
+      setOptionA('');
+      setOptionB('');
+      setOptionC('');
+      setOptionD('');
+      setAnswer('A');
+      setExplanation('');
+      setEditingId(null);
+      
+      fetchQuestions();
+    } catch (err) {
+      alert('Failed to save question: ' + err.message);
+    } finally {
+      setIsUploading(false);
+    }
   };
 
-  const handleImportJson = (overrideText = null) => {
+  const handleImportJson = async (overrideText = null) => {
     const textToParse = typeof overrideText === 'string' ? overrideText : jsonImportText;
     if (!textToParse.trim()) return;
     try {
@@ -76,10 +124,18 @@ export default function CreateTestSeries() {
             subcategory: q.subcategory || subcategory
           };
         });
-        setQuestionsList([...questionsList, ...formatted]);
-        alert(`Successfully added ${formatted.length} questions to the test!`);
+        
+        setIsUploading(true);
+        const { error } = await supabase
+          .from('prepbuddy_questions')
+          .insert(formatted);
+        if (error) throw error;
+        
+        alert(`Successfully added ${formatted.length} questions to the database!`);
+        setJsonImportText('');
+        fetchQuestions();
       } else {
-        // Single object
+        // Single object populates the form (no immediate db insertion)
         setQuestion(data.question || data.q || '');
         const opts = Array.isArray(data.options) ? data.options : [data.optionA, data.optionB, data.optionC, data.optionD];
         if (opts[0]) setOptionA(opts[0]);
@@ -94,11 +150,13 @@ export default function CreateTestSeries() {
         else if (ans === opts[3]) setAnswer('D');
         
         setExplanation(data.explanation || data.desc || '');
-        alert('Fields populated from JSON!');
+        alert('Fields populated from JSON! Click Add Question to save.');
+        setJsonImportText('');
       }
-      setJsonImportText('');
     } catch (err) {
-      alert('Invalid JSON format! Try using AI formatting if you pasted raw text.');
+      alert('Failed to import JSON: ' + (err.message || 'Invalid format'));
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -150,26 +208,32 @@ export default function CreateTestSeries() {
     }
   };
 
-  const handleUpload = async () => {
-    if (questionsList.length === 0) return;
-    setIsUploading(true);
+  const handleEditQuestion = (q) => {
+    setEditingId(q.id);
+    setQuestion(q.question);
+    if (q.options[0]) setOptionA(q.options[0]);
+    if (q.options[1]) setOptionB(q.options[1]);
+    if (q.options[2]) setOptionC(q.options[2]);
+    if (q.options[3]) setOptionD(q.options[3]);
     
-    try {
-      // In case user changed category/subcategory mid-way, ensure all questions have the latest if desired, 
-      // but keeping the ones set at time of adding is usually better.
-      const { error } = await supabase
-        .from('prepbuddy_questions')
-        .insert(questionsList);
+    if (q.answer === q.options[0]) setAnswer('A');
+    else if (q.answer === q.options[1]) setAnswer('B');
+    else if (q.answer === q.options[2]) setAnswer('C');
+    else if (q.answer === q.options[3]) setAnswer('D');
+    
+    setExplanation(q.explanation || '');
+    
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
+  const handleDeleteQuestion = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this question?")) return;
+    try {
+      const { error } = await supabase.from('prepbuddy_questions').delete().eq('id', id);
       if (error) throw error;
-      
-      alert(`🎉 Successfully uploaded ${questionsList.length} questions to the database!`);
-      setQuestionsList([]);
-    } catch (err) {
-      console.error(err);
-      alert('Failed to upload questions: ' + err.message);
-    } finally {
-      setIsUploading(false);
+      fetchQuestions();
+    } catch(err) {
+      alert("Failed to delete: " + err.message);
     }
   };
 
@@ -364,13 +428,35 @@ export default function CreateTestSeries() {
               />
             </div>
 
-            <button
-              type="submit"
-              className="w-full bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold py-3.5 rounded-xl text-sm flex items-center justify-center gap-2 transition-colors border border-indigo-200 mt-2"
-            >
-              <Plus size={18} />
-              Add Question to Test
-            </button>
+            <div className="flex gap-3 mt-2">
+              <button
+                type="submit"
+                disabled={isUploading}
+                className="flex-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold py-3.5 rounded-xl text-sm flex items-center justify-center gap-2 transition-colors border border-indigo-200 disabled:opacity-50"
+              >
+                {editingId ? <Edit2 size={18} /> : <Plus size={18} />}
+                {editingId ? (isUploading ? 'Saving...' : 'Save Changes') : (isUploading ? 'Adding...' : 'Add Question')}
+              </button>
+              {editingId && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEditingId(null);
+                    setQuestion('');
+                    setOptionA('');
+                    setOptionB('');
+                    setOptionC('');
+                    setOptionD('');
+                    setAnswer('A');
+                    setExplanation('');
+                  }}
+                  className="px-6 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-3.5 rounded-xl text-sm flex items-center justify-center gap-2 transition-colors border border-gray-300"
+                >
+                  <X size={18} />
+                  Cancel
+                </button>
+              )}
+            </div>
           </form>
         </div>
 
@@ -378,34 +464,30 @@ export default function CreateTestSeries() {
         {questionsList.length > 0 && (
           <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-gray-100 pb-4 gap-3">
-              <h3 className="font-bold text-gray-900 text-base">Questions Added: {questionsList.length}</h3>
-              <button
-                onClick={handleUpload}
-                disabled={isUploading}
-                className="bg-primary hover:bg-primary/90 text-white font-bold px-5 py-3 rounded-xl text-sm flex items-center justify-center gap-2 transition-all shadow-md active:scale-95 disabled:opacity-50"
-              >
-                {isUploading ? (
-                  <>
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    Uploading...
-                  </>
-                ) : (
-                  <>
-                    <Upload size={18} />
-                    Upload Test to Database
-                  </>
-                )}
-              </button>
+              <h3 className="font-bold text-gray-900 text-base flex items-center gap-2">
+                Questions in Database ({questionsList.length})
+                {isLoadingQuestions && <RefreshCw size={14} className="animate-spin text-gray-400" />}
+              </h3>
             </div>
 
             <div className="space-y-4 max-h-[500px] overflow-y-auto pr-2">
-              {questionsList.map((q, idx) => (
-                <div key={idx} className="bg-gray-50 p-4 rounded-xl border border-gray-200 space-y-3">
-                  <p className="font-bold text-gray-900 text-sm">
-                    Q{idx + 1}. {q.question}
+              {questionsList.map((q, idx) => {
+                const options = Array.isArray(q.options) ? q.options : (typeof q.options === 'string' ? JSON.parse(q.options) : []);
+                return (
+                <div key={q.id || idx} className="bg-gray-50 p-4 rounded-xl border border-gray-200 space-y-3 relative group">
+                  <div className="absolute top-3 right-3 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button onClick={() => handleEditQuestion(q)} className="p-1.5 bg-white text-blue-600 border border-blue-200 rounded-lg shadow-sm hover:bg-blue-50 transition-colors">
+                      <Edit2 size={14} />
+                    </button>
+                    <button onClick={() => handleDeleteQuestion(q.id)} className="p-1.5 bg-white text-red-600 border border-red-200 rounded-lg shadow-sm hover:bg-red-50 transition-colors">
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                  <p className="font-bold text-gray-900 text-sm pr-16">
+                    Q. {q.question}
                   </p>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-                    {q.options.map((opt, oIdx) => (
+                    {options.map((opt, oIdx) => (
                       <div 
                         key={oIdx} 
                         className={`p-2.5 rounded-lg border ${
@@ -425,7 +507,7 @@ export default function CreateTestSeries() {
                     </p>
                   )}
                 </div>
-              ))}
+              )})}
             </div>
           </div>
         )}
