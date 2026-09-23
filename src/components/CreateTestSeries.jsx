@@ -454,6 +454,51 @@ export default function CreateTestSeries() {
     }
   };
 
+  const handleRenameCategory = async (e, groupCategory) => {
+    e.stopPropagation();
+    const newName = window.prompt("Enter new category name (this will update ALL tests in this category):", groupCategory);
+    if (!newName || newName.trim() === '' || newName.trim() === groupCategory) return;
+    
+    const finalNewName = newName.trim();
+    
+    try {
+      const { error: qError } = await supabase
+        .from('prepbuddy_questions')
+        .update({ category: finalNewName })
+        .eq('category', groupCategory);
+        
+      if (qError) throw qError;
+      
+      for (const course of courses) {
+        if (!course.linked_tests) continue;
+        const hasLink = course.linked_tests.some(l => l.category === groupCategory);
+        if (hasLink) {
+          const updatedLinks = course.linked_tests.map(l => {
+            if (l.category === groupCategory) {
+              return { ...l, category: finalNewName };
+            }
+            return l;
+          });
+          
+          await supabase
+            .from('prepbuddy_test_series')
+            .update({ linked_tests: updatedLinks })
+            .eq('id', course.id);
+        }
+      }
+      
+      if (category === groupCategory) {
+        setCategory(finalNewName);
+      }
+      
+      fetchSidebarGroups();
+      fetchCourses();
+      alert("Category renamed successfully!");
+    } catch (err) {
+      alert("Failed to rename category: " + err.message);
+    }
+  };
+
   const handleRenameTestSeries = async (e, groupCategory, groupSubcategory) => {
     e.stopPropagation();
     const newName = window.prompt("Enter new name for this test series:", groupSubcategory);
@@ -616,9 +661,18 @@ export default function CreateTestSeries() {
                     }`}
                   >
                     <div className="flex items-start justify-between">
-                      <p className={`font-bold truncate pr-6 ${isActive ? 'text-indigo-900' : 'text-gray-800'}`}>
-                        {group.category}
-                      </p>
+                      <div className="flex items-center gap-1.5 flex-1 min-w-0 pr-2">
+                        <p className={`font-bold truncate ${isActive ? 'text-indigo-900' : 'text-gray-800'}`}>
+                          {group.category}
+                        </p>
+                        <button 
+                          onClick={(e) => handleRenameCategory(e, group.category)}
+                          className="p-1 text-gray-400 hover:text-indigo-600 transition-colors flex-shrink-0 opacity-0 group-hover/sidebar:opacity-100"
+                          title="Rename Category"
+                        >
+                          <Edit2 size={12} />
+                        </button>
+                      </div>
                       <div className="opacity-0 group-hover/sidebar:opacity-100 flex items-center gap-1 z-10 transition-opacity">
                         <button 
                           onClick={(e) => { e.stopPropagation(); setLinkModalGroup(group); }}
