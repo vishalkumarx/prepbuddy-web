@@ -50,6 +50,13 @@ export default function CourseDetail() {
   }
 
   const linkedTests = course.linked_tests || [];
+  
+  // Group tests by category
+  const grouped = linkedTests.reduce((acc, test) => {
+    if (!acc[test.category]) acc[test.category] = [];
+    acc[test.category].push(test);
+    return acc;
+  }, {});
 
   return (
     <div className="flex flex-col h-[100dvh] bg-app-bg pb-[80px] overflow-y-auto">
@@ -113,19 +120,25 @@ export default function CourseDetail() {
               <p className="text-gray-500 font-medium text-sm">No tests have been added to this course yet.</p>
             </div>
           ) : (
-            <div className="space-y-3">
-              {linkedTests.map((test, idx) => (
-                <div key={idx} className="flex items-start gap-3 p-4 bg-white rounded-2xl border border-gray-100 shadow-sm hover:border-indigo-200 transition-colors cursor-pointer group">
-                  <div className="bg-indigo-50 text-indigo-600 p-2 rounded-xl mt-0.5 group-hover:bg-indigo-600 group-hover:text-white transition-colors">
-                    <FileText size={20} />
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="font-bold text-gray-900 text-sm mb-0.5">{test.subcategory}</h3>
-                    <p className="text-xs text-gray-500 font-medium">{test.category}</p>
-                  </div>
-                  <div className="flex items-center gap-1 text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-lg">
-                    <CheckCircle2 size={14} />
-                    Available
+            <div className="space-y-6">
+              {Object.entries(grouped).map(([cat, tests]) => (
+                <div key={cat} className="space-y-3">
+                  <h3 className="font-bold text-gray-800 text-sm border-b border-gray-100 pb-2">{cat}</h3>
+                  <div className="space-y-3">
+                    {tests.map((test, idx) => (
+                      <div key={idx} className="flex items-start gap-3 p-4 bg-white rounded-2xl border border-gray-100 shadow-sm hover:border-indigo-200 transition-colors cursor-pointer group">
+                        <div className="bg-indigo-50 text-indigo-600 p-2 rounded-xl mt-0.5 group-hover:bg-indigo-600 group-hover:text-white transition-colors">
+                          <FileText size={20} />
+                        </div>
+                        <div className="flex-1">
+                          <h4 className="font-bold text-gray-900 text-sm mb-0.5">{test.subcategory}</h4>
+                        </div>
+                        <div className="flex items-center gap-1 text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-lg">
+                          <CheckCircle2 size={14} />
+                          Available
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
               ))}
