@@ -26,10 +26,38 @@ export default function CreateTestSeries() {
   const [isFormatting, setIsFormatting] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [isLoadingQuestions, setIsLoadingQuestions] = useState(false);
+  const [sidebarGroups, setSidebarGroups] = useState([]);
 
   useEffect(() => {
     fetchQuestions();
   }, [category, subcategory]);
+
+  useEffect(() => {
+    fetchSidebarGroups();
+  }, []);
+
+  const fetchSidebarGroups = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('prepbuddy_questions')
+        .select('category, subcategory');
+      
+      if (error) throw error;
+      
+      const uniqueMap = {};
+      data.forEach(item => {
+        const key = `${item.category}:::${item.subcategory}`;
+        if (!uniqueMap[key]) {
+          uniqueMap[key] = { category: item.category, subcategory: item.subcategory, count: 0 };
+        }
+        uniqueMap[key].count += 1;
+      });
+      
+      setSidebarGroups(Object.values(uniqueMap).sort((a, b) => a.category.localeCompare(b.category)));
+    } catch (err) {
+      console.error('Failed to fetch sidebar groups:', err);
+    }
+  };
 
   const fetchQuestions = async () => {
     if (!category.trim() || !subcategory.trim()) return;
@@ -100,6 +128,7 @@ export default function CreateTestSeries() {
       setEditingId(null);
       
       fetchQuestions();
+      fetchSidebarGroups();
     } catch (err) {
       alert('Failed to save question: ' + err.message);
     } finally {
@@ -153,6 +182,7 @@ export default function CreateTestSeries() {
         alert(`Successfully added ${formatted.length} questions to the database!`);
         setJsonImportText('');
         fetchQuestions();
+        fetchSidebarGroups();
       } else {
         // Single object populates the form (no immediate db insertion)
         setQuestion(data.question || data.q || '');
@@ -251,6 +281,7 @@ export default function CreateTestSeries() {
       const { error } = await supabase.from('prepbuddy_questions').delete().eq('id', id);
       if (error) throw error;
       fetchQuestions();
+      fetchSidebarGroups();
     } catch(err) {
       alert("Failed to delete: " + err.message);
     }
@@ -266,9 +297,54 @@ export default function CreateTestSeries() {
         <h1 className="text-lg font-bold">Create Test Series</h1>
       </div>
 
-      <div className="p-4 max-w-3xl mx-auto space-y-6 mt-4">
+      <div className="p-4 max-w-6xl mx-auto mt-2 flex flex-col md:flex-row gap-6 items-start">
         
-        {/* Gemini API Key Input */}
+        {/* Sidebar */}
+        <div className="w-full md:w-1/3 bg-white p-4 rounded-2xl border border-gray-200 shadow-sm sticky top-20 max-h-[85vh] overflow-y-auto">
+          <h3 className="font-bold text-gray-900 text-sm uppercase tracking-wider mb-4 border-b border-gray-100 pb-2">Your Uploaded Tests</h3>
+          
+          {sidebarGroups.length === 0 ? (
+            <p className="text-xs text-gray-500 italic">No tests found in database.</p>
+          ) : (
+            <div className="space-y-2">
+              {sidebarGroups.map((group, idx) => {
+                const isActive = group.category === category && group.subcategory === subcategory;
+                return (
+                  <button
+                    key={idx}
+                    onClick={() => {
+                      setCategory(group.category);
+                      setSubcategory(group.subcategory);
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }}
+                    className={`w-full text-left p-3 rounded-xl border text-sm transition-all ${
+                      isActive 
+                        ? 'bg-indigo-50 border-indigo-200 shadow-sm ring-1 ring-indigo-500' 
+                        : 'bg-white border-gray-100 hover:border-gray-300 hover:bg-gray-50'
+                    }`}
+                  >
+                    <p className={`font-bold truncate ${isActive ? 'text-indigo-900' : 'text-gray-800'}`}>
+                      {group.category}
+                    </p>
+                    <div className="flex items-center justify-between mt-1">
+                      <p className={`text-xs truncate max-w-[70%] ${isActive ? 'text-indigo-600' : 'text-gray-500'}`}>
+                        {group.subcategory}
+                      </p>
+                      <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold whitespace-nowrap ${isActive ? 'bg-indigo-100 text-indigo-700' : 'bg-gray-100 text-gray-600'}`}>
+                        {group.count} Qs
+                      </span>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* Main Content */}
+        <div className="w-full md:w-2/3 space-y-6">
+          
+          {/* Gemini API Key Input */}
         <div className="bg-amber-50 border border-amber-200 p-4 rounded-2xl shadow-sm space-y-2 hidden">
           <label className="block text-xs font-bold text-amber-800 uppercase tracking-wider">
             🔑 Gemini API Key (required for AI formatting)
@@ -530,7 +606,7 @@ export default function CreateTestSeries() {
             </div>
           </div>
         )}
-
+        </div>
       </div>
     </div>
   );
