@@ -27,6 +27,7 @@ export default function CreateTestSeries() {
   const [editingId, setEditingId] = useState(null);
   const [isLoadingQuestions, setIsLoadingQuestions] = useState(false);
   const [sidebarGroups, setSidebarGroups] = useState([]);
+  const [stagedQuestions, setStagedQuestions] = useState([]);
 
   useEffect(() => {
     fetchQuestions();
@@ -214,17 +215,9 @@ export default function CreateTestSeries() {
             subcategory: q.subcategory || subcategory
           };
         });
-        
-        setIsUploading(true);
-        const { error } = await supabase
-          .from('prepbuddy_questions')
-          .insert(formatted);
-        if (error) throw error;
-        
-        alert(`Successfully added ${formatted.length} questions to the database!`);
+        setStagedQuestions(formatted);
         setJsonImportText('');
-        fetchQuestions();
-        fetchSidebarGroups();
+        alert(`Successfully parsed ${formatted.length} questions! Review them below and click 'Save All to Database'.`);
       } else {
         // Single object populates the form (no immediate db insertion)
         setQuestion(data.question || data.q || '');
@@ -297,6 +290,32 @@ export default function CreateTestSeries() {
     } finally {
       setIsFormatting(false);
     }
+  };
+
+  const handleBulkUpload = async () => {
+    if (stagedQuestions.length === 0) return;
+    setIsUploading(true);
+    try {
+      const { error } = await supabase
+        .from('prepbuddy_questions')
+        .insert(stagedQuestions);
+      if (error) throw error;
+      
+      alert(`🎉 Successfully uploaded ${stagedQuestions.length} questions to the database!`);
+      setStagedQuestions([]);
+      fetchQuestions();
+      fetchSidebarGroups();
+    } catch (err) {
+      alert('Failed to upload questions: ' + err.message);
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleRemoveStaged = (index) => {
+    const updated = [...stagedQuestions];
+    updated.splice(index, 1);
+    setStagedQuestions(updated);
   };
 
   const handleEditQuestion = (q) => {
@@ -596,6 +615,70 @@ export default function CreateTestSeries() {
             </div>
           </form>
         </div>
+
+        {/* Staging Area for JSON Uploads */}
+        {stagedQuestions.length > 0 && (
+          <div className="bg-amber-50 p-5 rounded-2xl border border-amber-200 shadow-sm space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-amber-200/60 pb-4 gap-3">
+              <h3 className="font-bold text-amber-900 text-base flex items-center gap-2">
+                Ready to Upload ({stagedQuestions.length})
+              </h3>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setStagedQuestions([])}
+                  disabled={isUploading}
+                  className="px-4 py-2 bg-white text-gray-700 font-bold text-sm rounded-xl border border-gray-300 hover:bg-gray-50 transition-colors disabled:opacity-50"
+                >
+                  Clear All
+                </button>
+                <button
+                  onClick={handleBulkUpload}
+                  disabled={isUploading}
+                  className="px-5 py-2 bg-amber-500 hover:bg-amber-600 text-white font-bold text-sm rounded-xl flex items-center gap-2 transition-colors disabled:opacity-50 shadow-sm"
+                >
+                  {isUploading ? 'Uploading...' : 'Save All to Database'}
+                </button>
+              </div>
+            </div>
+
+            <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2">
+              {stagedQuestions.map((q, idx) => {
+                const options = Array.isArray(q.options) ? q.options : (typeof q.options === 'string' ? JSON.parse(q.options) : []);
+                return (
+                <div key={idx} className="bg-white p-4 rounded-xl border border-amber-100 space-y-3 relative group shadow-sm">
+                  <div className="absolute top-3 right-3 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button onClick={() => handleRemoveStaged(idx)} className="p-1.5 bg-red-50 text-red-600 border border-red-100 rounded-lg shadow-sm hover:bg-red-100 transition-colors">
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                  <p className="font-bold text-gray-900 text-sm pr-10">
+                    Q. {q.question}
+                  </p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                    {options.map((opt, oIdx) => (
+                      <div 
+                        key={oIdx} 
+                        className={`p-2.5 rounded-lg border ${
+                          opt === q.answer 
+                            ? 'bg-emerald-50 border-emerald-300 text-emerald-900 font-bold' 
+                            : 'bg-gray-50 border-gray-200 text-gray-700'
+                        }`}
+                      >
+                        <span className="font-bold mr-2">{String.fromCharCode(65 + oIdx)}.</span>
+                        {opt}
+                      </div>
+                    ))}
+                  </div>
+                  {q.explanation && (
+                    <p className="text-gray-500 italic pt-2 border-t border-gray-100 text-xs">
+                      <strong>Explanation:</strong> {q.explanation}
+                    </p>
+                  )}
+                </div>
+              )})}
+            </div>
+          </div>
+        )}
 
         {/* Preview & Upload Section */}
         {questionsList.length > 0 && (
