@@ -144,6 +144,12 @@ export default function CourseDetail() {
         >
           <ArrowLeft size={20} />
         </button>
+
+        {isEnrolled && (
+          <div className="absolute top-4 right-4 bg-emerald-500/90 backdrop-blur-md text-white font-bold text-xs px-3 py-1.5 rounded-full shadow-lg z-10 flex items-center gap-1.5 border border-emerald-400/50">
+            <CheckCircle2 size={14} /> ENROLLED
+          </div>
+        )}
       </div>
 
       {/* Main Content */}
@@ -304,28 +310,17 @@ export default function CourseDetail() {
       </div>
 
       {/* Sticky Buy/Start Button */}
-      <div className="fixed bottom-0 w-full max-w-md bg-white border-t border-gray-100 p-4 shadow-[0_-10px_20px_-10px_rgba(0,0,0,0.05)] z-50">
-        <button 
-          onClick={handleEnroll}
-          disabled={enrollLoading || isEnrolled}
-          className={`w-full font-bold py-4 rounded-xl text-base shadow-lg transition-all flex items-center justify-center gap-2 ${
-            isEnrolled 
-              ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' 
-              : 'bg-[#0B2457] text-white hover:bg-blue-900 active:scale-[0.98]'
-          }`}
-        >
-          {enrollLoading ? 'Processing...' : (
-            isEnrolled ? (
-              <>
-                <CheckCircle2 size={20} />
-                Enrolled (Select a test above to begin)
-              </>
-            ) : (
-              course.price > 0 ? 'Buy Now' : 'Enroll Now for Free'
-            )
-          )}
-        </button>
-      </div>
+      {!isEnrolled && (
+        <div className="fixed bottom-0 w-full max-w-md bg-white border-t border-gray-100 p-4 shadow-[0_-10px_20px_-10px_rgba(0,0,0,0.05)] z-50">
+          <button 
+            onClick={handleEnroll}
+            disabled={enrollLoading}
+            className="w-full font-bold py-4 rounded-xl text-base shadow-lg transition-all flex items-center justify-center gap-2 bg-[#0B2457] text-white hover:bg-blue-900 active:scale-[0.98]"
+          >
+            {enrollLoading ? 'Processing...' : (course.price > 0 ? 'Buy Now' : 'Enroll Now for Free')}
+          </button>
+        </div>
+      )}
     </div>
   );
 }

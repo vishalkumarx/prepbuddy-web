@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../supabase';
-import { IndianRupee, Layers, Languages, Award, Newspaper } from 'lucide-react';
+import { IndianRupee, Layers, Languages, Award, Newspaper, CheckCircle2 } from 'lucide-react';
 import TestimonialCarousel from './TestimonialCarousel';
+import { UserManager } from '../utils/UserManager';
 
 export default function StateHomeFeed() {
   const navigate = useNavigate();
   const [testSeries, setTestSeries] = useState([]);
+  const [enrolledIds, setEnrolledIds] = useState(new Set());
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -26,7 +28,24 @@ export default function StateHomeFeed() {
       }
     };
 
+    const fetchEnrollments = async () => {
+      const userId = UserManager.getUserId();
+      if (!userId) return;
+      try {
+        const { data } = await supabase
+          .from('prepbuddy_enrollments')
+          .select('course_id')
+          .eq('user_id', userId);
+        if (data) {
+          setEnrolledIds(new Set(data.map(d => d.course_id)));
+        }
+      } catch (err) {
+        console.error('Error fetching enrollments:', err);
+      }
+    };
+
     fetchTestSeries();
+    fetchEnrollments();
 
     // Subscribe to new test series
     const channel = supabase
@@ -77,13 +96,20 @@ export default function StateHomeFeed() {
               onClick={() => navigate(`/course/${ts.id}`)}
               className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex flex-col cursor-pointer hover:shadow-md hover:border-indigo-100 transition-all active:scale-[0.99]"
             >
-              {ts.banner_url ? (
-                <img src={ts.banner_url} alt={ts.title} className="w-full h-48 object-cover bg-gray-100" />
-              ) : (
-                <div className="w-full h-48 bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center border-b border-gray-100">
-                  <span className="text-primary/40 font-bold text-lg">{ts.title}</span>
-                </div>
-              )}
+              <div className="relative">
+                {ts.banner_url ? (
+                  <img src={ts.banner_url} alt={ts.title} className="w-full h-48 object-cover bg-gray-100" />
+                ) : (
+                  <div className="w-full h-48 bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center border-b border-gray-100">
+                    <span className="text-primary/40 font-bold text-lg">{ts.title}</span>
+                  </div>
+                )}
+                {enrolledIds.has(ts.id) && (
+                  <div className="absolute top-3 left-3 bg-emerald-500/90 backdrop-blur-md text-white font-bold text-xs px-3 py-1.5 rounded-full shadow-lg z-10 flex items-center gap-1.5 border border-emerald-400/50">
+                    <CheckCircle2 size={14} /> ENROLLED
+                  </div>
+                )}
+              </div>
               
               <div className="p-4 flex flex-col gap-2">
                 <h3 className="font-bold text-lg text-gray-900 leading-tight">{ts.title}</h3>
