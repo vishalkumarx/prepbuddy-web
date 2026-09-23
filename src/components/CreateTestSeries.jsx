@@ -914,7 +914,11 @@ export default function CreateTestSeries() {
                             const optLetter = String.fromCharCode(65 + oIdx);
                             const safeOpt = opt || "";
                             const safeAns = q.answer || "";
-                            const isCorrect = safeOpt === safeAns || safeOpt.trim() === String(safeAns).trim() || optLetter === safeAns;
+                            const isCorrect = 
+                              String(safeOpt).trim() === String(safeAns).trim() || 
+                              String(safeOpt).trim().toLowerCase() === String(safeAns).trim().toLowerCase() ||
+                              optLetter.toLowerCase() === String(safeAns).trim().toLowerCase() ||
+                              String(safeAns).trim().toUpperCase() === optLetter;
                             return (
                             <div 
                               key={oIdx} 
@@ -974,7 +978,11 @@ export default function CreateTestSeries() {
                       const optLetter = String.fromCharCode(65 + oIdx);
                       const safeOpt = opt || "";
                       const safeAns = q.answer || "";
-                      const isCorrect = safeOpt === safeAns || safeOpt.trim() === String(safeAns).trim() || optLetter === safeAns;
+                      const isCorrect = 
+                        String(safeOpt).trim() === String(safeAns).trim() || 
+                        String(safeOpt).trim().toLowerCase() === String(safeAns).trim().toLowerCase() ||
+                        optLetter.toLowerCase() === String(safeAns).trim().toLowerCase() ||
+                        String(safeAns).trim().toUpperCase() === optLetter;
                       return (
                       <div 
                         key={oIdx} 
