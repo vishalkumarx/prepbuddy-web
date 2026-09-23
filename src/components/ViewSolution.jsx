@@ -55,7 +55,7 @@ export default function ViewSolution() {
           <ArrowLeft size={22} />
         </button>
         <div className="flex-1 overflow-hidden">
-          <h1 className="text-white font-bold truncate text-sm">Solution: {decodeURIComponent(subcategory)}</h1>
+          <h1 className="text-white font-bold truncate text-sm">Solutions: {decodeURIComponent(subcategory)}</h1>
           <p className="text-white/70 text-[10px] uppercase tracking-wider truncate">{decodeURIComponent(category)}</p>
         </div>
       </header>

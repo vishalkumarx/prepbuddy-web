@@ -286,7 +286,7 @@ export default function CourseDetail() {
                                     onClick={(e) => { e.stopPropagation(); navigate(`/solution/${encodeURIComponent(test.category)}/${encodeURIComponent(test.subcategory)}`); }}
                                     className="flex-1 py-1.5 text-[10px] font-bold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-md transition-colors text-center"
                                   >
-                                    VIEW SOLUTION
+                                    VIEW SOLUTIONS
                                   </button>
                                   <button 
                                     onClick={(e) => { e.stopPropagation(); navigate(`/test/${encodeURIComponent(test.category)}/${encodeURIComponent(test.subcategory)}`); }}
