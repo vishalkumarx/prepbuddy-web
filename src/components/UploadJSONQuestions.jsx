@@ -10,7 +10,7 @@ export default function UploadJSONQuestions() {
   const [category, setCategory] = useState('Senior Assistant');
   const [subcategory, setSubcategory] = useState('General Knowledge');
   const [geminiApiKey, setGeminiApiKey] = useState(import.meta.env.VITE_GEMINI_API_KEY || ('AQ.Ab8RN6Iuw' + 'ePXqAwcAk4gRvpuusfVeKQZfewTazvPNKluYDRN4A'));
-  const [geminiModel, setGeminiModel] = useState('gemini-1.5-flash');
+  const [geminiModel, setGeminiModel] = useState('gemini-2.5-flash');
   
   const [isFormatting, setIsFormatting] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
@@ -214,10 +214,10 @@ export default function UploadJSONQuestions() {
               onChange={(e) => setGeminiModel(e.target.value)}
               className="flex-1 bg-white border border-amber-300 rounded-lg px-3 py-1.5 text-xs font-mono focus:outline-none focus:ring-2 focus:ring-amber-400"
             >
-              <option value="gemini-1.5-flash">gemini-1.5-flash (recommended)</option>
-              <option value="gemini-1.5-pro">gemini-1.5-pro</option>
-              <option value="gemini-2.0-flash">gemini-2.0-flash</option>
-              <option value="gemini-2.0-flash-exp">gemini-2.0-flash-exp</option>
+              <option value="gemini-2.5-flash">gemini-2.5-flash (recommended)</option>
+              <option value="gemini-2.5-pro">gemini-2.5-pro</option>
+              <option value="gemini-3.5-flash">gemini-3.5-flash</option>
+              <option value="gemini-3.5-flash-lite">gemini-3.5-flash-lite</option>
             </select>
           </div>
         </div>

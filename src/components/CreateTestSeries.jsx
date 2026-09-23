@@ -22,7 +22,7 @@ export default function CreateTestSeries() {
   const [jsonImportText, setJsonImportText] = useState('');
   
   const [geminiApiKey, setGeminiApiKey] = useState(import.meta.env.VITE_GEMINI_API_KEY || ('AQ.Ab8RN6Iuw' + 'ePXqAwcAk4gRvpuusfVeKQZfewTazvPNKluYDRN4A'));
-  const [geminiModel, setGeminiModel] = useState('gemini-1.5-flash');
+  const [geminiModel, setGeminiModel] = useState('gemini-2.5-flash');
   const [isFormatting, setIsFormatting] = useState(false);
 
   const handleAddQuestion = (e) => {
@@ -204,9 +204,9 @@ export default function CreateTestSeries() {
               onChange={(e) => setGeminiModel(e.target.value)}
               className="flex-1 bg-white border border-amber-300 rounded-lg px-3 py-1.5 text-xs font-mono focus:outline-none focus:ring-2 focus:ring-amber-400"
             >
-              <option value="gemini-1.5-flash">gemini-1.5-flash</option>
-              <option value="gemini-1.5-pro">gemini-1.5-pro</option>
-              <option value="gemini-2.0-flash">gemini-2.0-flash</option>
+              <option value="gemini-2.5-flash">gemini-2.5-flash</option>
+              <option value="gemini-2.5-pro">gemini-2.5-pro</option>
+              <option value="gemini-3.5-flash">gemini-3.5-flash</option>
             </select>
           </div>
         </div>
