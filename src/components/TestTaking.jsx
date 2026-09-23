@@ -13,7 +13,11 @@ export default function TestTaking() {
   const [answers, setAnswers] = useState({}); // { [questionId]: selectedOptionText }
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showExitPrompt, setShowExitPrompt] = useState(false);
+  const [showSubmitPrompt, setShowSubmitPrompt] = useState(false);
   const scrollContainerRef = useRef(null);
+
+  const attemptedCount = Object.keys(answers).length;
+  const skippedCount = questions.length - attemptedCount;
 
   const progressKey = `test_progress_${UserManager.getUserId()}_${category}_${subcategory}`;
 
@@ -256,15 +260,13 @@ export default function TestTaking() {
         
         {isLast ? (
           <button 
-            onClick={handleSubmit}
+            onClick={() => setShowSubmitPrompt(true)}
             disabled={isSubmitting}
             className="flex-1 py-3.5 rounded-xl font-bold flex items-center justify-center gap-1.5 bg-emerald-600 text-white hover:bg-emerald-700 shadow-md transition-all active:scale-95"
           >
-            {isSubmitting ? 'Submitting...' : (
-              <>
-                <CheckCircle2 size={18} /> Submit
-              </>
-            )}
+            <>
+              <CheckCircle2 size={18} /> Submit
+            </>
           </button>
         ) : (
           <button 
@@ -296,6 +298,47 @@ export default function TestTaking() {
                 className="flex-1 py-3 bg-[#0B2457] text-white font-bold rounded-xl shadow-md hover:bg-blue-900 transition-colors"
               >
                 Yes, Pause
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Submit Prompt Modal */}
+      {showSubmitPrompt && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl scale-100 animate-in zoom-in-95 duration-200">
+            <h3 className="text-xl font-black text-gray-900 mb-4">Submit Test?</h3>
+            
+            <div className="bg-gray-50 p-4 rounded-2xl mb-6 space-y-3 border border-gray-100">
+              <div className="flex justify-between items-center">
+                <span className="text-sm font-bold text-gray-600">Total Questions:</span>
+                <span className="text-sm font-black text-gray-900">{questions.length}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm font-bold text-gray-600">Attempted:</span>
+                <span className="text-sm font-black text-emerald-600">{attemptedCount}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm font-bold text-gray-600">Skipped:</span>
+                <span className="text-sm font-black text-orange-500">{skippedCount}</span>
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <button 
+                onClick={() => setShowSubmitPrompt(false)}
+                className="flex-1 py-3 bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200 transition-colors"
+                disabled={isSubmitting}
+              >
+                Review
+              </button>
+              <button 
+                onClick={handleSubmit} 
+                disabled={isSubmitting}
+                className="flex-1 py-3 bg-emerald-600 text-white font-bold rounded-xl shadow-md hover:bg-emerald-700 transition-colors flex justify-center items-center gap-1.5"
+              >
+                {isSubmitting ? 'Submitting...' : 'Yes, Submit'}
               </button>
             </div>
           </div>
