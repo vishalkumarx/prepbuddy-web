@@ -15,6 +15,7 @@ export default function TestTaking() {
   const [showExitPrompt, setShowExitPrompt] = useState(false);
   const [showSubmitPrompt, setShowSubmitPrompt] = useState(false);
   const scrollContainerRef = useRef(null);
+  const isSubmittingRef = useRef(false);
 
   const attemptedCount = Object.keys(answers).length;
   const skippedCount = questions.length - attemptedCount;
@@ -38,6 +39,7 @@ export default function TestTaking() {
   // Handle browser back button
   useEffect(() => {
     const handlePopState = (e) => {
+      if (isSubmittingRef.current) return;
       e.preventDefault();
       setShowExitPrompt(true);
       window.history.pushState(null, '', window.location.href);
@@ -141,9 +143,8 @@ export default function TestTaking() {
   };
 
   const handleSubmit = async () => {
-    if (!window.confirm("Are you sure you want to submit your test?")) return;
-    
     setIsSubmitting(true);
+    isSubmittingRef.current = true;
     const score = calculateScore();
     const userId = UserManager.getUserId();
     const username = UserManager.getUsername() || "Anonymous User";
@@ -165,11 +166,17 @@ export default function TestTaking() {
       // Clear saved progress on successful submission
       localStorage.removeItem(progressKey);
       
+      // Clean up the dummy history state we pushed for the back button
+      navigate(-1);
+      
       // Navigate to leaderboard
-      navigate(`/leaderboard/${encodeURIComponent(category)}/${encodeURIComponent(subcategory)}`, { replace: true });
+      setTimeout(() => {
+        navigate(`/leaderboard/${encodeURIComponent(category)}/${encodeURIComponent(subcategory)}`, { replace: true });
+      }, 10);
     } catch (err) {
       alert("Error submitting test: " + err.message);
       setIsSubmitting(false);
+      isSubmittingRef.current = false;
     }
   };
 
