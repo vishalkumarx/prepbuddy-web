@@ -405,15 +405,19 @@ export default function CreateTestSeries() {
   const handleEditQuestion = (q) => {
     setEditingId(q.id);
     setQuestion(q.question);
-    if (q.options[0]) setOptionA(q.options[0]);
-    if (q.options[1]) setOptionB(q.options[1]);
-    if (q.options[2]) setOptionC(q.options[2]);
-    if (q.options[3]) setOptionD(q.options[3]);
     
-    if (q.answer === q.options[0]) setAnswer('A');
-    else if (q.answer === q.options[1]) setAnswer('B');
-    else if (q.answer === q.options[2]) setAnswer('C');
-    else if (q.answer === q.options[3]) setAnswer('D');
+    const opts = Array.isArray(q.options) ? q.options : (typeof q.options === 'string' ? JSON.parse(q.options) : []);
+    
+    if (opts[0]) setOptionA(opts[0]);
+    if (opts[1]) setOptionB(opts[1]);
+    if (opts[2]) setOptionC(opts[2]);
+    if (opts[3]) setOptionD(opts[3]);
+    
+    if (q.answer === opts[0]) setAnswer('A');
+    else if (q.answer === opts[1]) setAnswer('B');
+    else if (q.answer === opts[2]) setAnswer('C');
+    else if (q.answer === opts[3]) setAnswer('D');
+    else setAnswer(q.answer);
     
     setExplanation(q.explanation || '');
     
