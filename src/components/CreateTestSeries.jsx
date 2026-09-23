@@ -107,6 +107,40 @@ export default function CreateTestSeries() {
     }
   };
 
+  const handleQuestionChange = (e) => {
+    const val = e.target.value;
+    
+    // Auto-parse if text matches typical (a) (b) (c) (d) formats
+    if (val.match(/\([aA]\)|[aA]\./)) {
+      const partsA = val.split(/(?:\([aA]\)|[aA]\.)\s+/);
+      if (partsA.length > 1) {
+        const qText = partsA[0].trim();
+        const partsB = partsA[1].split(/(?:\([bB]\)|[bB]\.)\s+/);
+        if (partsB.length > 1) {
+          const optA = partsB[0].trim();
+          const partsC = partsB[1].split(/(?:\([cC]\)|[cC]\.)\s+/);
+          if (partsC.length > 1) {
+            const optB = partsC[0].trim();
+            const partsD = partsC[1].split(/(?:\([dD]\)|[dD]\.)\s+/);
+            if (partsD.length > 1) {
+              const optC = partsD[0].trim();
+              const optD = partsD[1].trim();
+              
+              setQuestion(qText);
+              setOptionA(optA);
+              setOptionB(optB);
+              setOptionC(optC);
+              setOptionD(optD);
+              return;
+            }
+          }
+        }
+      }
+    }
+    
+    setQuestion(val);
+  };
+
   const handleImportJson = async (overrideText = null) => {
     const textToParse = typeof overrideText === 'string' ? overrideText : jsonImportText;
     if (!textToParse.trim()) return;
@@ -350,7 +384,7 @@ export default function CreateTestSeries() {
               <label className="block text-sm font-bold text-gray-700 mb-1.5">Question</label>
               <textarea
                 value={question}
-                onChange={(e) => setQuestion(e.target.value)}
+                onChange={handleQuestionChange}
                 required
                 rows={3}
                 placeholder="Enter the question text here..."
