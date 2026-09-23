@@ -454,9 +454,9 @@ export default function CreateTestSeries() {
     }
   };
 
-  const handleRenameCategory = async (e, groupCategory) => {
+  const handleRenameCategory = async (e, groupCategory, groupSubcategory) => {
     e.stopPropagation();
-    const newName = window.prompt("Enter new category name (this will update ALL tests in this category):", groupCategory);
+    const newName = window.prompt("Enter new category name for this test series:", groupCategory);
     if (!newName || newName.trim() === '' || newName.trim() === groupCategory) return;
     
     const finalNewName = newName.trim();
@@ -465,16 +465,17 @@ export default function CreateTestSeries() {
       const { error: qError } = await supabase
         .from('prepbuddy_questions')
         .update({ category: finalNewName })
-        .eq('category', groupCategory);
+        .eq('category', groupCategory)
+        .eq('subcategory', groupSubcategory);
         
       if (qError) throw qError;
       
       for (const course of courses) {
         if (!course.linked_tests) continue;
-        const hasLink = course.linked_tests.some(l => l.category === groupCategory);
+        const hasLink = course.linked_tests.some(l => l.category === groupCategory && l.subcategory === groupSubcategory);
         if (hasLink) {
           const updatedLinks = course.linked_tests.map(l => {
-            if (l.category === groupCategory) {
+            if (l.category === groupCategory && l.subcategory === groupSubcategory) {
               return { ...l, category: finalNewName };
             }
             return l;
@@ -666,7 +667,7 @@ export default function CreateTestSeries() {
                           {group.category}
                         </p>
                         <button 
-                          onClick={(e) => handleRenameCategory(e, group.category)}
+                          onClick={(e) => handleRenameCategory(e, group.category, group.subcategory)}
                           className="p-1 text-gray-400 hover:text-indigo-600 transition-colors flex-shrink-0 opacity-0 group-hover/sidebar:opacity-100"
                           title="Rename Category"
                         >
