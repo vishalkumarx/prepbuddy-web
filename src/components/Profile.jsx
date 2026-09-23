@@ -70,6 +70,13 @@ export default function Profile({ onLogout }) {
                 <Users size={18} />
                 View User Sessions
               </Link>
+              <Link 
+                to="/admin/create-test"
+                className="w-full py-3.5 mb-3 bg-teal-50 hover:bg-teal-100 text-teal-700 font-bold rounded-xl flex items-center justify-center gap-2 transition-colors border border-teal-100 shadow-sm"
+              >
+                <FileCode size={18} />
+                Create Test Series
+              </Link>
             </>
           )}
 
