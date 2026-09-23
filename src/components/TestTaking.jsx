@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../supabase';
 import { ArrowLeft, CheckCircle2, ChevronRight, ChevronLeft } from 'lucide-react';
@@ -13,8 +13,17 @@ export default function TestTaking() {
   const [answers, setAnswers] = useState({}); // { [questionId]: selectedOptionText }
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showExitPrompt, setShowExitPrompt] = useState(false);
+  const scrollContainerRef = useRef(null);
 
   const progressKey = `test_progress_${UserManager.getUserId()}_${category}_${subcategory}`;
+
+  // Scroll to top when question changes
+  useEffect(() => {
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollTo(0, 0);
+    }
+    window.scrollTo(0, 0);
+  }, [currentIdx]);
 
   // Handle browser back button
   useEffect(() => {
@@ -192,7 +201,7 @@ export default function TestTaking() {
       </header>
 
       {/* Main Content */}
-      <div className="flex-1 overflow-y-auto p-5 relative">
+      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto p-5 relative">
         <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
           <h2 className="text-lg font-bold text-gray-900 leading-snug mb-6">
             <span className="text-indigo-600 mr-2">Q{currentIdx + 1}.</span>
