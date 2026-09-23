@@ -17,6 +17,7 @@ export default function StateGovLayout({ onLogout }) {
   const isAdmin = UserManager.isAdmin();
 
   const isHome = location.pathname === '/' || location.pathname === '/state-home';
+  const showBottomNav = location.pathname === '/' || location.pathname === '/profile' || location.pathname === '/state-home';
 
   const navItems = [
     { path: '/', icon: Home, label: 'Home' },
@@ -41,7 +42,7 @@ export default function StateGovLayout({ onLogout }) {
       </header>
 
       {/* Main Content Area */}
-      <main className="flex-1 overflow-y-auto overflow-x-hidden relative scroll-smooth pb-[70px]">
+      <main className={`flex-1 overflow-y-auto overflow-x-hidden relative scroll-smooth ${showBottomNav ? 'pb-[70px]' : ''}`}>
         <Routes>
           <Route path="/" element={<StateHomeFeed />} />
           <Route path="/profile" element={<Profile onLogout={onLogout} />} />
@@ -64,23 +65,25 @@ export default function StateGovLayout({ onLogout }) {
       )}
 
       {/* Bottom Navigation */}
-      <nav className="absolute bottom-0 w-full bg-white border-t border-gray-200 flex justify-around items-center h-[65px] z-40 pb-safe">
-        {navItems.map((item) => {
-          const Icon = item.icon;
-          const isActive = location.pathname === item.path || (item.path === '/' && location.pathname === '/state-home');
-          return (
-            <Link
-              key={item.path}
-              to={item.path}
-              className={`flex flex-col items-center justify-center w-full h-full gap-1 transition-colors
-                ${isActive ? 'text-primary' : 'text-gray-500 hover:text-gray-900'}`}
-            >
-              <Icon size={24} className={isActive ? 'stroke-[2.5px]' : 'stroke-2'} />
-              <span className="text-[10px] font-medium">{item.label}</span>
-            </Link>
-          );
-        })}
-      </nav>
+      {showBottomNav && (
+        <nav className="absolute bottom-0 w-full bg-white border-t border-gray-200 flex justify-around items-center h-[65px] z-40 pb-safe">
+          {navItems.map((item) => {
+            const Icon = item.icon;
+            const isActive = location.pathname === item.path || (item.path === '/' && location.pathname === '/state-home');
+            return (
+              <Link
+                key={item.path}
+                to={item.path}
+                className={`flex flex-col items-center justify-center w-full h-full gap-1 transition-colors
+                  ${isActive ? 'text-primary' : 'text-gray-500 hover:text-gray-900'}`}
+              >
+                <Icon size={24} className={isActive ? 'stroke-[2.5px]' : 'stroke-2'} />
+                <span className="text-[10px] font-medium">{item.label}</span>
+              </Link>
+            );
+          })}
+        </nav>
+      )}
 
       {/* Modals */}
       {showUploadModal && (
