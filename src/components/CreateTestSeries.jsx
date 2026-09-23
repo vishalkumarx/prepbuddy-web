@@ -117,13 +117,8 @@ export default function CreateTestSeries() {
       }
       const prompt = `Extract all multiple choice questions from the following text/JSON and format them EXACTLY as a JSON array of objects with keys: "question" (string), "options" (array of 4 string options), "answer" (the correct option text or letter), "explanation" (detailed explanation if present, else empty string), "category" ("${category}"), "subcategory" ("${subcategory}"). Return ONLY raw valid JSON array without markdown formatting like \`\`\`json. Text:\n${jsonImportText}`;
 
-      const isAQKey = apiKey.startsWith('AQ.');
-      const url = isAQKey
-        ? `https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent`
-        : `https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${apiKey}`;
-
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${apiKey}`;
       const headers = { 'Content-Type': 'application/json' };
-      if (isAQKey) headers['Authorization'] = `Bearer ${apiKey}`;
 
       const response = await fetch(url, {
         method: 'POST',

@@ -98,13 +98,8 @@ export default function UploadJSONQuestions() {
 
       // AQ. keys = new Google Auth Key format → use Bearer token in header
       // AIza keys = legacy API key format → use ?key= query param
-      const isAQKey = apiKey.startsWith('AQ.');
-      const url = isAQKey
-        ? `https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent`
-        : `https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${apiKey}`;
-
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${apiKey}`;
       const headers = { 'Content-Type': 'application/json' };
-      if (isAQKey) headers['Authorization'] = `Bearer ${apiKey}`;
 
       const response = await fetch(url, {
         method: 'POST',
