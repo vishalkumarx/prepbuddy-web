@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../supabase';
-import { ArrowLeft, Plus, Upload, CheckCircle2, ListPlus } from 'lucide-react';
+import { ArrowLeft, Plus, Upload, CheckCircle2, ListPlus, Sparkles } from 'lucide-react';
 
 export default function CreateTestSeries() {
   const navigate = useNavigate();
@@ -20,6 +20,10 @@ export default function CreateTestSeries() {
   const [questionsList, setQuestionsList] = useState([]);
   const [isUploading, setIsUploading] = useState(false);
   const [jsonImportText, setJsonImportText] = useState('');
+  
+  const [geminiApiKey, setGeminiApiKey] = useState(import.meta.env.VITE_GEMINI_API_KEY || '');
+  const [geminiModel, setGeminiModel] = useState('gemini-1.5-flash');
+  const [isFormatting, setIsFormatting] = useState(false);
 
   const handleAddQuestion = (e) => {
     e.preventDefault();
@@ -55,10 +59,11 @@ export default function CreateTestSeries() {
     setExplanation('');
   };
 
-  const handleImportJson = () => {
-    if (!jsonImportText.trim()) return;
+  const handleImportJson = (overrideText = null) => {
+    const textToParse = typeof overrideText === 'string' ? overrideText : jsonImportText;
+    if (!textToParse.trim()) return;
     try {
-      let data = JSON.parse(jsonImportText);
+      let data = JSON.parse(textToParse);
       if (Array.isArray(data)) {
         const formatted = data.map(q => {
           const opts = Array.isArray(q.options) ? q.options : [q.optionA, q.optionB, q.optionC, q.optionD].filter(Boolean);
@@ -93,7 +98,60 @@ export default function CreateTestSeries() {
       }
       setJsonImportText('');
     } catch (err) {
-      alert('Invalid JSON format!');
+      alert('Invalid JSON format! Try using AI formatting if you pasted raw text.');
+    }
+  };
+
+  const handleAIFormat = async () => {
+    if (!jsonImportText.trim()) {
+      alert('Please paste text or JSON first!');
+      return;
+    }
+
+    setIsFormatting(true);
+
+    try {
+      const apiKey = geminiApiKey.trim();
+      if (!apiKey) {
+        throw new Error('Please enter your Gemini API key above before using AI formatting!');
+      }
+      const prompt = `Extract all multiple choice questions from the following text/JSON and format them EXACTLY as a JSON array of objects with keys: "question" (string), "options" (array of 4 string options), "answer" (the correct option text or letter), "explanation" (detailed explanation if present, else empty string), "category" ("${category}"), "subcategory" ("${subcategory}"). Return ONLY raw valid JSON array without markdown formatting like \`\`\`json. Text:\n${jsonImportText}`;
+
+      const isAQKey = apiKey.startsWith('AQ.');
+      const url = isAQKey
+        ? `https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent`
+        : `https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${apiKey}`;
+
+      const headers = { 'Content-Type': 'application/json' };
+      if (isAQKey) headers['Authorization'] = `Bearer ${apiKey}`;
+
+      const response = await fetch(url, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }]
+        })
+      });
+
+      if (!response.ok) {
+        let errBody = '';
+        try { const errJson = await response.json(); errBody = errJson?.error?.message || JSON.stringify(errJson); } catch (_) {}
+        throw new Error(`HTTP ${response.status}: ${errBody || response.statusText}`);
+      }
+
+      const data = await response.json();
+      let generatedText = data.candidates[0].content.parts[0].text.trim();
+      
+      if (generatedText.startsWith("```json")) generatedText = generatedText.replace("```json", "");
+      if (generatedText.startsWith("```")) generatedText = generatedText.replace("```", "");
+      if (generatedText.endsWith("```")) generatedText = generatedText.substring(0, generatedText.length - 3);
+
+      handleImportJson(generatedText.trim());
+    } catch (err) {
+      console.error(err);
+      alert('AI Formatting failed: ' + err.message);
+    } finally {
+      setIsFormatting(false);
     }
   };
 
@@ -132,6 +190,32 @@ export default function CreateTestSeries() {
 
       <div className="p-4 max-w-3xl mx-auto space-y-6 mt-4">
         
+        {/* Gemini API Key Input */}
+        <div className="bg-amber-50 border border-amber-200 p-4 rounded-2xl shadow-sm space-y-2">
+          <label className="block text-xs font-bold text-amber-800 uppercase tracking-wider">
+            🔑 Gemini API Key (required for AI formatting)
+          </label>
+          <input
+            type="password"
+            value={geminiApiKey}
+            onChange={(e) => setGeminiApiKey(e.target.value)}
+            placeholder="Paste your Gemini API key here"
+            className="w-full bg-white border border-amber-300 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 font-mono"
+          />
+          <div className="flex items-center gap-3 pt-1">
+            <label className="text-xs font-bold text-amber-800 whitespace-nowrap">Model:</label>
+            <select
+              value={geminiModel}
+              onChange={(e) => setGeminiModel(e.target.value)}
+              className="flex-1 bg-white border border-amber-300 rounded-lg px-3 py-1.5 text-xs font-mono focus:outline-none focus:ring-2 focus:ring-amber-400"
+            >
+              <option value="gemini-1.5-flash">gemini-1.5-flash</option>
+              <option value="gemini-1.5-pro">gemini-1.5-pro</option>
+              <option value="gemini-2.0-flash">gemini-2.0-flash</option>
+            </select>
+          </div>
+        </div>
+
         {/* Category & Subcategory */}
         <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
@@ -162,17 +246,37 @@ export default function CreateTestSeries() {
           <textarea
             value={jsonImportText}
             onChange={(e) => setJsonImportText(e.target.value)}
-            rows={3}
-            placeholder='Paste a JSON object to fill the form, or a JSON array to add directly to the test.'
+            rows={4}
+            placeholder='Paste raw JSON or unformatted text here (e.g. from a PDF or website)'
             className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-xs font-mono focus:outline-none focus:ring-2 focus:ring-primary focus:bg-white resize-y"
           />
-          <button
-            onClick={handleImportJson}
-            disabled={!jsonImportText.trim()}
-            className="w-full mt-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-2 rounded-xl text-xs transition-colors border border-slate-300 disabled:opacity-50"
-          >
-            Read JSON & Populate
-          </button>
+          
+          <div className="flex gap-2 mt-2">
+            <button
+              onClick={() => handleImportJson(null)}
+              disabled={!jsonImportText.trim() || isFormatting}
+              className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-2.5 rounded-xl text-xs transition-colors border border-slate-300 disabled:opacity-50"
+            >
+              Read Valid JSON
+            </button>
+            <button
+              onClick={handleAIFormat}
+              disabled={!jsonImportText.trim() || isFormatting}
+              className="flex-1 bg-purple-100 hover:bg-purple-200 text-purple-800 font-bold py-2.5 rounded-xl text-xs flex items-center justify-center gap-1.5 transition-colors border border-purple-200 disabled:opacity-50"
+            >
+              {isFormatting ? (
+                <>
+                  <div className="w-3.5 h-3.5 border-2 border-purple-800 border-t-transparent rounded-full animate-spin" />
+                  Formatting...
+                </>
+              ) : (
+                <>
+                  <Sparkles size={14} />
+                  Format with AI
+                </>
+              )}
+            </button>
+          </div>
         </div>
 
         {/* Add Question Form */}
