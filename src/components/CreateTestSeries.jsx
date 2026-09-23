@@ -27,7 +27,7 @@ export default function CreateTestSeries() {
   const [editingId, setEditingId] = useState(null);
   const [isLoadingQuestions, setIsLoadingQuestions] = useState(false);
   const [sidebarGroups, setSidebarGroups] = useState([]);
-  const [stagedQuestions, setStagedQuestions] = useState([]);
+  const [stagedChunks, setStagedChunks] = useState([]);
   const [chunkSize, setChunkSize] = useState("");
 
   useEffect(() => {
@@ -216,7 +216,21 @@ export default function CreateTestSeries() {
             subcategory: q.subcategory || subcategory
           };
         });
-        setStagedQuestions(formatted);
+        const size = parseInt(chunkSize, 10);
+        if (!isNaN(size) && size > 0) {
+          const newChunks = [];
+          for (let i = 0; i < formatted.length; i += size) {
+            const testNum = Math.floor(i / size) + 1;
+            newChunks.push({
+              name: `${subcategory} - Test ${String(testNum).padStart(2, '0')}`,
+              questions: formatted.slice(i, i + size)
+            });
+          }
+          setStagedChunks(newChunks);
+        } else {
+          setStagedChunks([{ name: `${subcategory} - Test 01`, questions: formatted }]);
+        }
+        
         setJsonImportText('');
         alert(`Successfully parsed ${formatted.length} questions! Review them below and click 'Save All to Database'.`);
       } else {
@@ -293,23 +307,40 @@ export default function CreateTestSeries() {
     }
   };
 
+  const handleChunkSizeChange = (e) => {
+    const newSize = e.target.value;
+    setChunkSize(newSize);
+    if (stagedChunks.length === 0) return;
+    
+    const allQs = stagedChunks.flatMap(c => c.questions);
+    const size = parseInt(newSize, 10);
+    
+    if (isNaN(size) || size <= 0) {
+      setStagedChunks([{ name: `${subcategory} - Test 01`, questions: allQs }]);
+      return;
+    }
+    
+    const newChunks = [];
+    for (let i = 0; i < allQs.length; i += size) {
+      const testNum = Math.floor(i / size) + 1;
+      newChunks.push({
+        name: `${subcategory} - Test ${String(testNum).padStart(2, '0')}`,
+        questions: allQs.slice(i, i + size)
+      });
+    }
+    setStagedChunks(newChunks);
+  };
+
   const handleBulkUpload = async () => {
-    if (stagedQuestions.length === 0) return;
+    if (stagedChunks.length === 0) return;
     setIsUploading(true);
     try {
-      let finalQuestions = stagedQuestions;
-      
-      const size = parseInt(chunkSize, 10);
-      if (!isNaN(size) && size > 0) {
-        finalQuestions = stagedQuestions.map((q, i) => {
-          const testNum = Math.floor(i / size) + 1;
-          const formattedTestNum = String(testNum).padStart(2, '0');
-          return {
-            ...q,
-            subcategory: `${q.subcategory} - Test ${formattedTestNum}`
-          };
+      const finalQuestions = [];
+      stagedChunks.forEach(chunk => {
+        chunk.questions.forEach(q => {
+          finalQuestions.push({ ...q, subcategory: chunk.name });
         });
-      }
+      });
       
       const { error } = await supabase
         .from('prepbuddy_questions')
@@ -317,7 +348,7 @@ export default function CreateTestSeries() {
       if (error) throw error;
       
       alert(`🎉 Successfully uploaded ${finalQuestions.length} questions to the database!`);
-      setStagedQuestions([]);
+      setStagedChunks([]);
       setChunkSize("");
       fetchQuestions();
       fetchSidebarGroups();
@@ -328,10 +359,47 @@ export default function CreateTestSeries() {
     }
   };
 
-  const handleRemoveStaged = (index) => {
-    const updated = [...stagedQuestions];
-    updated.splice(index, 1);
-    setStagedQuestions(updated);
+  const handleUploadChunk = async (chunkIndex) => {
+    const chunk = stagedChunks[chunkIndex];
+    if (!chunk || chunk.questions.length === 0) return;
+    
+    setIsUploading(true);
+    try {
+      const finalQuestions = chunk.questions.map(q => ({
+        ...q,
+        subcategory: chunk.name
+      }));
+      
+      const { error } = await supabase
+        .from('prepbuddy_questions')
+        .insert(finalQuestions);
+      if (error) throw error;
+      
+      alert(`🎉 Successfully uploaded ${finalQuestions.length} questions for ${chunk.name}!`);
+      
+      const updatedChunks = [...stagedChunks];
+      updatedChunks.splice(chunkIndex, 1);
+      setStagedChunks(updatedChunks);
+      
+      fetchQuestions();
+      fetchSidebarGroups();
+    } catch (err) {
+      alert('Failed to upload test: ' + err.message);
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleRemoveStaged = (chunkIdx, qIdx) => {
+    const updated = [...stagedChunks];
+    updated[chunkIdx].questions.splice(qIdx, 1);
+    
+    // Remove chunk if empty
+    if (updated[chunkIdx].questions.length === 0) {
+      updated.splice(chunkIdx, 1);
+    }
+    
+    setStagedChunks(updated);
   };
 
   const handleEditQuestion = (q) => {
@@ -633,12 +701,12 @@ export default function CreateTestSeries() {
         </div>
 
         {/* Staging Area for JSON Uploads */}
-        {stagedQuestions.length > 0 && (
+        {stagedChunks.length > 0 && (
           <div className="bg-amber-50 p-5 rounded-2xl border border-amber-200 shadow-sm space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-amber-200/60 pb-4 gap-3">
               <div className="flex flex-wrap items-center gap-4">
                 <h3 className="font-bold text-amber-900 text-base flex items-center gap-2">
-                  Ready to Upload ({stagedQuestions.length})
+                  Ready to Upload ({stagedChunks.reduce((acc, c) => acc + c.questions.length, 0)})
                 </h3>
                 <div className="flex items-center gap-2 bg-white/60 px-3 py-1.5 rounded-lg border border-amber-200/60 shadow-sm">
                   <span className="text-xs font-bold text-gray-600">Split into chunks of:</span>
@@ -647,14 +715,14 @@ export default function CreateTestSeries() {
                     min="1"
                     placeholder="e.g. 50"
                     value={chunkSize}
-                    onChange={(e) => setChunkSize(e.target.value)}
+                    onChange={handleChunkSizeChange}
                     className="w-16 text-sm font-bold text-amber-900 border-b border-amber-300 focus:border-amber-500 focus:outline-none text-center bg-transparent"
                   />
                 </div>
               </div>
               <div className="flex items-center gap-2">
                 <button
-                  onClick={() => setStagedQuestions([])}
+                  onClick={() => setStagedChunks([])}
                   disabled={isUploading}
                   className="px-4 py-2 bg-white text-gray-700 font-bold text-sm rounded-xl border border-gray-300 hover:bg-gray-50 transition-colors disabled:opacity-50"
                 >
@@ -670,61 +738,81 @@ export default function CreateTestSeries() {
               </div>
             </div>
 
-            <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2">
-              {stagedQuestions.map((q, idx) => {
-                const options = Array.isArray(q.options) ? q.options : (typeof q.options === 'string' ? JSON.parse(q.options) : []);
-                const size = parseInt(chunkSize, 10);
-                const isNewChunk = !isNaN(size) && size > 0 && idx % size === 0;
-                const chunkNum = isNewChunk ? Math.floor(idx / size) + 1 : null;
-                
-                return (
-                <div key={idx} className="space-y-4">
-                  {isNewChunk && (
-                    <div className="flex items-center gap-4 pt-4 pb-2">
-                      <div className="flex-1 h-px bg-amber-200"></div>
-                      <span className="text-xs font-bold text-amber-700 uppercase tracking-wider bg-amber-100 px-3 py-1 rounded-full shadow-sm">
-                        Test {String(chunkNum).padStart(2, '0')}
+            <div className="space-y-6 max-h-[500px] overflow-y-auto pr-2">
+              {stagedChunks.map((chunk, chunkIdx) => (
+                <div key={chunkIdx} className="space-y-4">
+                  
+                  {/* Chunk Header */}
+                  <div className="bg-white p-4 rounded-xl border border-amber-200 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3 sticky top-0 z-10">
+                    <div className="flex items-center gap-3 flex-1">
+                      <span className="text-xs font-bold text-amber-700 uppercase tracking-wider bg-amber-100 px-3 py-1 rounded-full whitespace-nowrap">
+                        Chunk {chunkIdx + 1}
                       </span>
-                      <div className="flex-1 h-px bg-amber-200"></div>
+                      <input 
+                        type="text"
+                        value={chunk.name}
+                        onChange={(e) => {
+                          const updated = [...stagedChunks];
+                          updated[chunkIdx].name = e.target.value;
+                          setStagedChunks(updated);
+                        }}
+                        placeholder="Test Name..."
+                        className="flex-1 min-w-0 bg-transparent text-sm font-bold text-gray-900 focus:outline-none border-b border-dashed border-gray-300 focus:border-amber-500 pb-1"
+                      />
                     </div>
-                  )}
-                  <div className="bg-white p-4 rounded-xl border border-amber-100 space-y-3 relative group shadow-sm">
-                    <div className="absolute top-3 right-3 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button onClick={() => handleRemoveStaged(idx)} className="p-1.5 bg-red-50 text-red-600 border border-red-100 rounded-lg shadow-sm hover:bg-red-100 transition-colors">
-                      <Trash2 size={14} />
+                    <button
+                      onClick={() => handleUploadChunk(chunkIdx)}
+                      disabled={isUploading}
+                      className="px-4 py-2 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 font-bold text-xs rounded-lg border border-indigo-200 transition-colors disabled:opacity-50 whitespace-nowrap"
+                    >
+                      Save this Chunk
                     </button>
                   </div>
-                  <p className="font-bold text-gray-900 text-sm pr-10">
-                    Q. {q.question}
-                  </p>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-                    {options.map((opt, oIdx) => {
-                      const optLetter = String.fromCharCode(65 + oIdx);
-                      const safeOpt = opt || "";
-                      const safeAns = q.answer || "";
-                      const isCorrect = safeOpt === safeAns || safeOpt.trim() === String(safeAns).trim() || optLetter === safeAns;
+
+                  {/* Chunk Questions */}
+                  <div className="space-y-3 pl-2 sm:pl-6 border-l-2 border-amber-100">
+                    {chunk.questions.map((q, qIdx) => {
+                      const options = Array.isArray(q.options) ? q.options : (typeof q.options === 'string' ? JSON.parse(q.options) : []);
                       return (
-                      <div 
-                        key={oIdx} 
-                        className={`p-2.5 rounded-lg border ${
-                          isCorrect 
-                            ? 'bg-emerald-50 border-emerald-300 text-emerald-900 font-bold' 
-                            : 'bg-gray-50 border-gray-200 text-gray-700'
-                        }`}
-                      >
-                        <span className="font-bold mr-2">{optLetter}.</span>
-                        {opt}
+                      <div key={qIdx} className="bg-white p-4 rounded-xl border border-gray-200 space-y-3 relative group shadow-sm">
+                        <div className="absolute top-3 right-3 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button onClick={() => handleRemoveStaged(chunkIdx, qIdx)} className="p-1.5 bg-red-50 text-red-600 border border-red-100 rounded-lg shadow-sm hover:bg-red-100 transition-colors">
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
+                        <p className="font-bold text-gray-900 text-sm pr-10">
+                          Q. {q.question}
+                        </p>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                          {options.map((opt, oIdx) => {
+                            const optLetter = String.fromCharCode(65 + oIdx);
+                            const safeOpt = opt || "";
+                            const safeAns = q.answer || "";
+                            const isCorrect = safeOpt === safeAns || safeOpt.trim() === String(safeAns).trim() || optLetter === safeAns;
+                            return (
+                            <div 
+                              key={oIdx} 
+                              className={`p-2.5 rounded-lg border ${
+                                isCorrect 
+                                  ? 'bg-emerald-50 border-emerald-300 text-emerald-900 font-bold' 
+                                  : 'bg-gray-50 border-gray-200 text-gray-700'
+                              }`}
+                            >
+                              <span className="font-bold mr-2">{optLetter}.</span>
+                              {opt}
+                            </div>
+                          )})}
+                        </div>
+                        {q.explanation && (
+                          <p className="text-gray-500 italic pt-2 border-t border-gray-100 text-xs">
+                            <strong>Explanation:</strong> {q.explanation}
+                          </p>
+                        )}
                       </div>
                     )})}
                   </div>
-                  {q.explanation && (
-                    <p className="text-gray-500 italic pt-2 border-t border-gray-100 text-xs">
-                      <strong>Explanation:</strong> {q.explanation}
-                    </p>
-                  )}
-                  </div>
                 </div>
-              )})}
+              ))}
             </div>
           </div>
         )}
