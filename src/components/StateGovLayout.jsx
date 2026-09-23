@@ -8,6 +8,7 @@ import UploadJSONQuestions from './UploadJSONQuestions';
 import CourseDetail from './CourseDetail';
 import TestTaking from './TestTaking';
 import Leaderboard from './Leaderboard';
+import ViewSolution from './ViewSolution';
 import { UserManager } from '../utils/UserManager';
 
 export default function StateGovLayout({ onLogout }) {
@@ -48,6 +49,7 @@ export default function StateGovLayout({ onLogout }) {
           <Route path="/course/:id" element={<CourseDetail />} />
           <Route path="/test/:category/:subcategory" element={<TestTaking />} />
           <Route path="/leaderboard/:category/:subcategory" element={<Leaderboard />} />
+          <Route path="/solution/:category/:subcategory" element={<ViewSolution />} />
         </Routes>
       </main>
 

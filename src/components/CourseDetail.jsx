@@ -13,6 +13,7 @@ export default function CourseDetail() {
   const [isEnrolled, setIsEnrolled] = useState(false);
   const [enrollLoading, setEnrollLoading] = useState(false);
   const [expandedCategories, setExpandedCategories] = useState({});
+  const [attempts, setAttempts] = useState({});
 
   const toggleCategory = (cat) => {
     setExpandedCategories(prev => ({
@@ -33,7 +34,7 @@ export default function CourseDetail() {
         if (error) throw error;
         setCourse(data);
 
-        // Check if enrolled
+        // Check if enrolled and fetch attempts
         if (userId) {
           const { data: enrollmentData } = await supabase
             .from('prepbuddy_enrollments')
@@ -44,6 +45,22 @@ export default function CourseDetail() {
             
           if (enrollmentData) {
             setIsEnrolled(true);
+          }
+
+          const { data: attemptsData } = await supabase
+            .from('prepbuddy_test_attempts')
+            .select('*')
+            .eq('user_id', userId);
+            
+          if (attemptsData) {
+            const attemptsMap = {};
+            attemptsData.forEach(att => {
+              const key = `${att.category}-${att.subcategory}`;
+              if (!attemptsMap[key] || att.score > attemptsMap[key].score) {
+                attemptsMap[key] = att;
+              }
+            });
+            setAttempts(attemptsMap);
           }
         }
 
@@ -184,39 +201,73 @@ export default function CourseDetail() {
                   
                   {expandedCategories[cat] && (
                     <div className="p-3 space-y-2 bg-white">
-                      {tests.map((test, idx) => (
-                        <div 
-                          key={idx} 
-                          onClick={() => {
-                            if (isEnrolled) {
-                              navigate(`/test/${encodeURIComponent(test.category)}/${encodeURIComponent(test.subcategory)}`);
-                            } else {
-                              alert("Please enroll in the course first to take this test!");
-                            }
-                          }}
-                          className={`flex items-start gap-3 p-3 rounded-xl border ${isEnrolled ? 'border-gray-100 hover:border-indigo-200 bg-white shadow-sm cursor-pointer hover:shadow-md' : 'border-gray-50 bg-gray-50/50 opacity-90 cursor-not-allowed'} transition-all group`}
-                        >
-                          <div className={`p-2 rounded-xl transition-colors shrink-0 ${isEnrolled ? 'bg-indigo-50 text-indigo-600 group-hover:bg-indigo-600 group-hover:text-white' : 'bg-gray-200 text-gray-400'}`}>
-                            <FileText size={18} />
-                          </div>
-                          <div className="flex-1 min-w-0 flex flex-col justify-center h-full pt-1">
-                            <h4 className={`font-bold text-sm leading-tight truncate ${isEnrolled ? 'text-gray-900 group-hover:text-indigo-900' : 'text-gray-600'}`}>{test.subcategory}</h4>
-                          </div>
-                          <div className={`flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-md shrink-0 mt-0.5 ${isEnrolled ? 'text-emerald-700 bg-emerald-100/70' : 'text-gray-500 bg-gray-200/60'}`}>
-                            {isEnrolled ? (
-                              <>
-                                <Unlock size={10} strokeWidth={3} />
-                                TAKE TEST
-                              </>
-                            ) : (
-                              <>
-                                <Lock size={10} strokeWidth={3} />
-                                LOCKED
-                              </>
+                      {tests.map((test, idx) => {
+                        const attempt = attempts[`${test.category}-${test.subcategory}`];
+                        
+                        return (
+                          <div 
+                            key={idx} 
+                            onClick={() => {
+                              if (!attempt) {
+                                if (isEnrolled) {
+                                  navigate(`/test/${encodeURIComponent(test.category)}/${encodeURIComponent(test.subcategory)}`);
+                                } else {
+                                  alert("Please enroll in the course first to take this test!");
+                                }
+                              }
+                            }}
+                            className={`flex flex-col gap-3 p-3 rounded-xl border ${isEnrolled ? 'border-gray-100 hover:border-indigo-200 bg-white shadow-sm hover:shadow-md' : 'border-gray-50 bg-gray-50/50 opacity-90 cursor-not-allowed'} transition-all group ${!attempt && isEnrolled ? 'cursor-pointer' : ''}`}
+                          >
+                            <div className="flex items-start gap-3 w-full">
+                              <div className={`p-2 rounded-xl transition-colors shrink-0 ${isEnrolled ? 'bg-indigo-50 text-indigo-600 group-hover:bg-indigo-600 group-hover:text-white' : 'bg-gray-200 text-gray-400'}`}>
+                                <FileText size={18} />
+                              </div>
+                              <div className="flex-1 min-w-0 flex flex-col justify-center h-full pt-1">
+                                <h4 className={`font-bold text-sm leading-tight truncate ${isEnrolled ? 'text-gray-900 group-hover:text-indigo-900' : 'text-gray-600'}`}>{test.subcategory}</h4>
+                              </div>
+                              
+                              {!attempt && (
+                                <div className={`flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-md shrink-0 mt-0.5 ${isEnrolled ? 'text-emerald-700 bg-emerald-100/70' : 'text-gray-500 bg-gray-200/60'}`}>
+                                  {isEnrolled ? (
+                                    <>
+                                      <Unlock size={10} strokeWidth={3} />
+                                      TAKE TEST
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Lock size={10} strokeWidth={3} />
+                                      LOCKED
+                                    </>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+
+                            {attempt && (
+                              <div className="flex flex-col gap-2 mt-1 w-full pt-2 border-t border-gray-50">
+                                <div className="flex items-center justify-between text-xs font-bold text-gray-500 bg-gray-50 px-2 py-1.5 rounded-md">
+                                  <span>Highest Score:</span>
+                                  <span className="text-emerald-600">{attempt.score} / {attempt.total}</span>
+                                </div>
+                                <div className="flex items-center gap-2 mt-1">
+                                  <button 
+                                    onClick={(e) => { e.stopPropagation(); navigate(`/solution/${encodeURIComponent(test.category)}/${encodeURIComponent(test.subcategory)}`); }}
+                                    className="flex-1 py-1.5 text-[10px] font-bold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-md transition-colors text-center"
+                                  >
+                                    VIEW SOLUTION
+                                  </button>
+                                  <button 
+                                    onClick={(e) => { e.stopPropagation(); navigate(`/test/${encodeURIComponent(test.category)}/${encodeURIComponent(test.subcategory)}`); }}
+                                    className="flex-1 py-1.5 text-[10px] font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-md transition-colors text-center"
+                                  >
+                                    ATTEMPT AGAIN
+                                  </button>
+                                </div>
+                              </div>
                             )}
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   )}
                 </div>
