@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../supabase';
-import { ArrowLeft, IndianRupee, Layers, FileText, CheckCircle2, Lock, Unlock } from 'lucide-react';
+import { ArrowLeft, IndianRupee, Layers, FileText, CheckCircle2, Lock, Unlock, ChevronDown, ChevronUp } from 'lucide-react';
 import { UserManager } from '../utils/UserManager';
 
 export default function CourseDetail() {
@@ -12,6 +12,14 @@ export default function CourseDetail() {
   const [loading, setLoading] = useState(true);
   const [isEnrolled, setIsEnrolled] = useState(false);
   const [enrollLoading, setEnrollLoading] = useState(false);
+  const [expandedCategories, setExpandedCategories] = useState({});
+
+  const toggleCategory = (cat) => {
+    setExpandedCategories(prev => ({
+      ...prev,
+      [cat]: !prev[cat]
+    }));
+  };
 
   useEffect(() => {
     const fetchCourseDetails = async () => {
@@ -158,48 +166,59 @@ export default function CourseDetail() {
           ) : (
             <div className="space-y-5">
               {Object.entries(grouped).map(([cat, tests]) => (
-                <div key={cat} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-                  <div className="px-4 py-3 bg-gray-50/80 border-b border-gray-100 flex items-center justify-between">
-                    <h3 className="font-black text-gray-900 text-sm tracking-tight">{cat}</h3>
-                    <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest bg-gray-200/50 px-2.5 py-1 rounded-md">
-                      {tests.length} {tests.length === 1 ? 'Test' : 'Tests'}
-                    </span>
+                <div key={cat} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden transition-all">
+                  <div 
+                    onClick={() => toggleCategory(cat)}
+                    className="px-4 py-3 bg-gray-50/80 border-b border-gray-100 flex items-center justify-between cursor-pointer hover:bg-gray-100/80 transition-colors"
+                  >
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-black text-gray-900 text-sm tracking-tight">{cat}</h3>
+                      <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest bg-gray-200/50 px-2.5 py-1 rounded-md shrink-0">
+                        {tests.length} {tests.length === 1 ? 'Test' : 'Tests'}
+                      </span>
+                    </div>
+                    <div className="text-gray-400">
+                      {expandedCategories[cat] ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                    </div>
                   </div>
-                  <div className="p-3 space-y-2">
-                    {tests.map((test, idx) => (
-                      <div 
-                        key={idx} 
-                        onClick={() => {
-                          if (isEnrolled) {
-                            navigate(`/test/${encodeURIComponent(test.category)}/${encodeURIComponent(test.subcategory)}`);
-                          } else {
-                            alert("Please enroll in the course first to take this test!");
-                          }
-                        }}
-                        className={`flex items-start gap-3 p-3 rounded-xl border ${isEnrolled ? 'border-gray-100 hover:border-indigo-200 bg-white shadow-sm cursor-pointer hover:shadow-md' : 'border-gray-50 bg-gray-50/50 opacity-90 cursor-not-allowed'} transition-all group`}
-                      >
-                        <div className={`p-2 rounded-xl transition-colors shrink-0 ${isEnrolled ? 'bg-indigo-50 text-indigo-600 group-hover:bg-indigo-600 group-hover:text-white' : 'bg-gray-200 text-gray-400'}`}>
-                          <FileText size={18} />
+                  
+                  {expandedCategories[cat] && (
+                    <div className="p-3 space-y-2 bg-white">
+                      {tests.map((test, idx) => (
+                        <div 
+                          key={idx} 
+                          onClick={() => {
+                            if (isEnrolled) {
+                              navigate(`/test/${encodeURIComponent(test.category)}/${encodeURIComponent(test.subcategory)}`);
+                            } else {
+                              alert("Please enroll in the course first to take this test!");
+                            }
+                          }}
+                          className={`flex items-start gap-3 p-3 rounded-xl border ${isEnrolled ? 'border-gray-100 hover:border-indigo-200 bg-white shadow-sm cursor-pointer hover:shadow-md' : 'border-gray-50 bg-gray-50/50 opacity-90 cursor-not-allowed'} transition-all group`}
+                        >
+                          <div className={`p-2 rounded-xl transition-colors shrink-0 ${isEnrolled ? 'bg-indigo-50 text-indigo-600 group-hover:bg-indigo-600 group-hover:text-white' : 'bg-gray-200 text-gray-400'}`}>
+                            <FileText size={18} />
+                          </div>
+                          <div className="flex-1 min-w-0 flex flex-col justify-center h-full pt-1">
+                            <h4 className={`font-bold text-sm leading-tight truncate ${isEnrolled ? 'text-gray-900 group-hover:text-indigo-900' : 'text-gray-600'}`}>{test.subcategory}</h4>
+                          </div>
+                          <div className={`flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-md shrink-0 mt-0.5 ${isEnrolled ? 'text-emerald-700 bg-emerald-100/70' : 'text-gray-500 bg-gray-200/60'}`}>
+                            {isEnrolled ? (
+                              <>
+                                <Unlock size={10} strokeWidth={3} />
+                                TAKE TEST
+                              </>
+                            ) : (
+                              <>
+                                <Lock size={10} strokeWidth={3} />
+                                LOCKED
+                              </>
+                            )}
+                          </div>
                         </div>
-                        <div className="flex-1 min-w-0 flex flex-col justify-center h-full pt-1">
-                          <h4 className={`font-bold text-sm leading-tight truncate ${isEnrolled ? 'text-gray-900 group-hover:text-indigo-900' : 'text-gray-600'}`}>{test.subcategory}</h4>
-                        </div>
-                        <div className={`flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-md shrink-0 mt-0.5 ${isEnrolled ? 'text-emerald-700 bg-emerald-100/70' : 'text-gray-500 bg-gray-200/60'}`}>
-                          {isEnrolled ? (
-                            <>
-                              <Unlock size={10} strokeWidth={3} />
-                              TAKE TEST
-                            </>
-                          ) : (
-                            <>
-                              <Lock size={10} strokeWidth={3} />
-                              LOCKED
-                            </>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
