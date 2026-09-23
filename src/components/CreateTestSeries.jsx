@@ -19,6 +19,7 @@ export default function CreateTestSeries() {
   
   const [questionsList, setQuestionsList] = useState([]);
   const [isUploading, setIsUploading] = useState(false);
+  const [jsonImportText, setJsonImportText] = useState('');
 
   const handleAddQuestion = (e) => {
     e.preventDefault();
@@ -52,6 +53,48 @@ export default function CreateTestSeries() {
     setOptionD('');
     setAnswer('A');
     setExplanation('');
+  };
+
+  const handleImportJson = () => {
+    if (!jsonImportText.trim()) return;
+    try {
+      let data = JSON.parse(jsonImportText);
+      if (Array.isArray(data)) {
+        const formatted = data.map(q => {
+          const opts = Array.isArray(q.options) ? q.options : [q.optionA, q.optionB, q.optionC, q.optionD].filter(Boolean);
+          return {
+            question: q.question || q.q || '',
+            options: opts,
+            answer: q.answer || q.correct_answer || opts[0] || '',
+            explanation: q.explanation || q.desc || '',
+            category: q.category || category,
+            subcategory: q.subcategory || subcategory
+          };
+        });
+        setQuestionsList([...questionsList, ...formatted]);
+        alert(`Successfully added ${formatted.length} questions to the test!`);
+      } else {
+        // Single object
+        setQuestion(data.question || data.q || '');
+        const opts = Array.isArray(data.options) ? data.options : [data.optionA, data.optionB, data.optionC, data.optionD];
+        if (opts[0]) setOptionA(opts[0]);
+        if (opts[1]) setOptionB(opts[1]);
+        if (opts[2]) setOptionC(opts[2]);
+        if (opts[3]) setOptionD(opts[3]);
+        
+        let ans = data.answer || data.correct_answer || opts[0];
+        if (ans === opts[0]) setAnswer('A');
+        else if (ans === opts[1]) setAnswer('B');
+        else if (ans === opts[2]) setAnswer('C');
+        else if (ans === opts[3]) setAnswer('D');
+        
+        setExplanation(data.explanation || data.desc || '');
+        alert('Fields populated from JSON!');
+      }
+      setJsonImportText('');
+    } catch (err) {
+      alert('Invalid JSON format!');
+    }
   };
 
   const handleUpload = async () => {
@@ -111,6 +154,25 @@ export default function CreateTestSeries() {
               className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:bg-white"
             />
           </div>
+        </div>
+
+        {/* JSON Import Feature */}
+        <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm">
+          <h2 className="text-sm font-bold text-gray-900 mb-2">Import from JSON</h2>
+          <textarea
+            value={jsonImportText}
+            onChange={(e) => setJsonImportText(e.target.value)}
+            rows={3}
+            placeholder='Paste a JSON object to fill the form, or a JSON array to add directly to the test.'
+            className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-xs font-mono focus:outline-none focus:ring-2 focus:ring-primary focus:bg-white resize-y"
+          />
+          <button
+            onClick={handleImportJson}
+            disabled={!jsonImportText.trim()}
+            className="w-full mt-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-2 rounded-xl text-xs transition-colors border border-slate-300 disabled:opacity-50"
+          >
+            Read JSON & Populate
+          </button>
         </div>
 
         {/* Add Question Form */}
