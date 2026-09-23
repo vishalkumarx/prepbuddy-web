@@ -156,11 +156,16 @@ export default function CourseDetail() {
               <p className="text-gray-500 font-medium text-sm">No tests have been added to this course yet.</p>
             </div>
           ) : (
-            <div className="space-y-6">
+            <div className="space-y-5">
               {Object.entries(grouped).map(([cat, tests]) => (
-                <div key={cat} className="space-y-3">
-                  <h3 className="font-bold text-gray-800 text-sm border-b border-gray-100 pb-2">{cat}</h3>
-                  <div className="space-y-3">
+                <div key={cat} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+                  <div className="px-4 py-3 bg-gray-50/80 border-b border-gray-100 flex items-center justify-between">
+                    <h3 className="font-black text-gray-900 text-sm tracking-tight">{cat}</h3>
+                    <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest bg-gray-200/50 px-2.5 py-1 rounded-md">
+                      {tests.length} {tests.length === 1 ? 'Test' : 'Tests'}
+                    </span>
+                  </div>
+                  <div className="p-3 space-y-2">
                     {tests.map((test, idx) => (
                       <div 
                         key={idx} 
@@ -171,24 +176,24 @@ export default function CourseDetail() {
                             alert("Please enroll in the course first to take this test!");
                           }
                         }}
-                        className={`flex items-start gap-3 p-4 bg-white rounded-2xl border ${isEnrolled ? 'border-indigo-100 hover:border-indigo-300 shadow-sm cursor-pointer hover:shadow-md' : 'border-gray-100 shadow-sm opacity-80 cursor-not-allowed'} transition-all group`}
+                        className={`flex items-start gap-3 p-3 rounded-xl border ${isEnrolled ? 'border-gray-100 hover:border-indigo-200 bg-white shadow-sm cursor-pointer hover:shadow-md' : 'border-gray-50 bg-gray-50/50 opacity-90 cursor-not-allowed'} transition-all group`}
                       >
-                        <div className={`p-2 rounded-xl mt-0.5 transition-colors ${isEnrolled ? 'bg-indigo-50 text-indigo-600 group-hover:bg-indigo-600 group-hover:text-white' : 'bg-gray-100 text-gray-400'}`}>
-                          <FileText size={20} />
+                        <div className={`p-2 rounded-xl transition-colors shrink-0 ${isEnrolled ? 'bg-indigo-50 text-indigo-600 group-hover:bg-indigo-600 group-hover:text-white' : 'bg-gray-200 text-gray-400'}`}>
+                          <FileText size={18} />
                         </div>
-                        <div className="flex-1">
-                          <h4 className={`font-bold text-sm mb-0.5 ${isEnrolled ? 'text-gray-900 group-hover:text-indigo-900' : 'text-gray-600'}`}>{test.subcategory}</h4>
+                        <div className="flex-1 min-w-0 flex flex-col justify-center h-full pt-1">
+                          <h4 className={`font-bold text-sm leading-tight truncate ${isEnrolled ? 'text-gray-900 group-hover:text-indigo-900' : 'text-gray-600'}`}>{test.subcategory}</h4>
                         </div>
-                        <div className={`flex items-center gap-1 text-xs font-bold px-2 py-1 rounded-lg ${isEnrolled ? 'text-emerald-600 bg-emerald-50' : 'text-gray-500 bg-gray-100'}`}>
+                        <div className={`flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-md shrink-0 mt-0.5 ${isEnrolled ? 'text-emerald-700 bg-emerald-100/70' : 'text-gray-500 bg-gray-200/60'}`}>
                           {isEnrolled ? (
                             <>
-                              <Unlock size={12} />
-                              Take Test
+                              <Unlock size={10} strokeWidth={3} />
+                              TAKE TEST
                             </>
                           ) : (
                             <>
-                              <Lock size={12} />
-                              Locked
+                              <Lock size={10} strokeWidth={3} />
+                              LOCKED
                             </>
                           )}
                         </div>
