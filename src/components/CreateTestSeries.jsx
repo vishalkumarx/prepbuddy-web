@@ -53,14 +53,31 @@ export default function CreateTestSeries() {
 
   const fetchSidebarGroups = async () => {
     try {
-      const { data, error } = await supabase
-        .from('prepbuddy_questions')
-        .select('category, subcategory');
+      let allData = [];
+      let from = 0;
+      let to = 999;
+      let hasMore = true;
       
-      if (error) throw error;
+      while (hasMore) {
+        const { data, error } = await supabase
+          .from('prepbuddy_questions')
+          .select('category, subcategory')
+          .range(from, to);
+          
+        if (error) throw error;
+        
+        if (data && data.length > 0) {
+          allData = [...allData, ...data];
+          from += 1000;
+          to += 1000;
+          if (data.length < 1000) hasMore = false;
+        } else {
+          hasMore = false;
+        }
+      }
       
       const uniqueMap = {};
-      data.forEach(item => {
+      allData.forEach(item => {
         const key = `${item.category}:::${item.subcategory}`;
         if (!uniqueMap[key]) {
           uniqueMap[key] = { category: item.category, subcategory: item.subcategory, count: 0 };
