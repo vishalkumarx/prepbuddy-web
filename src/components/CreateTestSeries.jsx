@@ -980,16 +980,28 @@ export default function CreateTestSeries() {
                 <h3 className="font-bold text-amber-900 text-base flex items-center gap-2">
                   Ready to Upload ({stagedChunks.reduce((acc, c) => acc + c.questions.length, 0)})
                 </h3>
-                <div className="flex flex-col gap-2">
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input 
-                      type="checkbox" 
-                      checked={saveInChunks}
-                      onChange={(e) => {
-                        setSaveInChunks(e.target.checked);
-                        if (!e.target.checked) {
+                <div className="flex flex-col gap-3">
+                  <div className="flex items-center gap-6">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input 
+                        type="radio"
+                        name="saveMode"
+                        checked={!saveInChunks}
+                        onChange={() => {
+                          setSaveInChunks(false);
                           setStagedChunks([{ name: subcategory, questions: stagedChunks.flatMap(c => c.questions) }]);
-                        } else {
+                        }}
+                        className="w-4 h-4 text-amber-600 focus:ring-amber-500"
+                      />
+                      <span className="text-sm font-bold text-amber-900">Save in a single test</span>
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input 
+                        type="radio" 
+                        name="saveMode"
+                        checked={saveInChunks}
+                        onChange={() => {
+                          setSaveInChunks(true);
                           const allQs = stagedChunks.flatMap(c => c.questions);
                           const size = parseInt(chunkSize, 10);
                           if (!isNaN(size) && size > 0) {
@@ -1003,23 +1015,52 @@ export default function CreateTestSeries() {
                             }
                             setStagedChunks(newChunks);
                           }
-                        }
-                      }}
-                      className="w-4 h-4 text-amber-600 rounded border-amber-300 focus:ring-amber-500"
-                    />
-                    <span className="text-sm font-bold text-amber-900">Save in chunks</span>
-                  </label>
-                  {saveInChunks && (
-                    <div className="flex items-center gap-2 bg-white/60 px-3 py-1.5 rounded-lg border border-amber-200/60 shadow-sm">
-                      <span className="text-xs font-bold text-gray-600">Split into chunks of:</span>
-                      <input 
-                        type="number"
-                        min="1"
-                        placeholder="e.g. 50"
-                        value={chunkSize}
-                        onChange={handleChunkSizeChange}
-                        className="w-16 text-sm font-bold text-amber-900 border-b border-amber-300 focus:border-amber-500 focus:outline-none text-center bg-transparent"
+                        }}
+                        className="w-4 h-4 text-amber-600 focus:ring-amber-500"
                       />
+                      <span className="text-sm font-bold text-amber-900">Save in chunks</span>
+                    </label>
+                  </div>
+
+                  {saveInChunks && (
+                    <div className="flex flex-wrap items-center gap-3 bg-white/60 p-3 rounded-lg border border-amber-200/60 shadow-sm">
+                      <div className="flex items-center gap-2 mr-2">
+                        <span className="text-xs font-bold text-gray-600">Chunk size:</span>
+                        <input 
+                          type="number"
+                          min="1"
+                          placeholder="e.g. 50"
+                          value={chunkSize}
+                          onChange={handleChunkSizeChange}
+                          className="w-16 text-sm font-bold text-amber-900 border-b border-amber-300 focus:border-amber-500 focus:outline-none text-center bg-transparent"
+                        />
+                      </div>
+                      <button
+                        onClick={handleBulkUpload}
+                        disabled={isUploading}
+                        className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs rounded-lg transition-colors disabled:opacity-50 shadow-sm"
+                      >
+                        {isUploading ? 'Uploading...' : 'Save all chunks at once'}
+                      </button>
+                      <button
+                        onClick={() => handleUploadChunk(0)}
+                        disabled={isUploading || stagedChunks.length === 0}
+                        className="px-4 py-2 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 font-bold text-xs rounded-lg border border-indigo-200 transition-colors disabled:opacity-50"
+                      >
+                        {isUploading ? 'Uploading...' : 'Save single chunk'}
+                      </button>
+                    </div>
+                  )}
+
+                  {!saveInChunks && (
+                    <div className="flex items-center gap-2 mt-1">
+                      <button
+                        onClick={handleBulkUpload}
+                        disabled={isUploading}
+                        className="px-5 py-2 bg-amber-500 hover:bg-amber-600 text-white font-bold text-sm rounded-xl transition-colors disabled:opacity-50 shadow-sm"
+                      >
+                        {isUploading ? 'Uploading...' : 'Save in a single test'}
+                      </button>
                     </div>
                   )}
                 </div>
@@ -1031,13 +1072,6 @@ export default function CreateTestSeries() {
                   className="px-4 py-2 bg-white text-gray-700 font-bold text-sm rounded-xl border border-gray-300 hover:bg-gray-50 transition-colors disabled:opacity-50"
                 >
                   Clear All
-                </button>
-                <button
-                  onClick={handleBulkUpload}
-                  disabled={isUploading}
-                  className="px-5 py-2 bg-amber-500 hover:bg-amber-600 text-white font-bold text-sm rounded-xl flex items-center gap-2 transition-colors disabled:opacity-50 shadow-sm"
-                >
-                  {isUploading ? 'Uploading...' : 'Save All to Database'}
                 </button>
               </div>
             </div>
