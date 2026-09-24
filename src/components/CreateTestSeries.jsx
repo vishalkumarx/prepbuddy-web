@@ -268,7 +268,7 @@ export default function CreateTestSeries() {
           }
           setStagedChunks(newChunks);
         } else {
-          setStagedChunks([{ name: `${subcategory} - Test 01`, questions: formatted }]);
+          setStagedChunks([{ name: subcategory, questions: formatted }]);
         }
         
         setJsonImportText('');
@@ -356,7 +356,7 @@ export default function CreateTestSeries() {
     const size = parseInt(newSize, 10);
     
     if (isNaN(size) || size <= 0) {
-      setStagedChunks([{ name: `${subcategory} - Test 01`, questions: allQs }]);
+      setStagedChunks([{ name: subcategory, questions: allQs }]);
       return;
     }
     
@@ -378,7 +378,7 @@ export default function CreateTestSeries() {
       const finalQuestions = [];
       stagedChunks.forEach(chunk => {
         chunk.questions.forEach(q => {
-          finalQuestions.push({ ...q, subcategory: chunk.name });
+          finalQuestions.push({ ...q, subcategory: q.subcategory || chunk.name, category: q.category || category });
         });
       });
       
@@ -407,7 +407,8 @@ export default function CreateTestSeries() {
     try {
       const finalQuestions = chunk.questions.map(q => ({
         ...q,
-        subcategory: chunk.name
+        subcategory: q.subcategory || chunk.name,
+        category: q.category || category
       }));
       
       const { error } = await supabase
