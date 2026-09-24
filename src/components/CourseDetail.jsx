@@ -120,8 +120,8 @@ export default function CourseDetail() {
   }, {});
 
   const totalTests = linkedTests.length;
-  const attemptedCount = linkedTests.filter(t => attempts[`${t.category}-${t.subcategory}`]).length;
-  const progressPercent = totalTests > 0 ? Math.round((attemptedCount / totalTests) * 100) : 0;
+  const completedCount = linkedTests.filter(t => attempts[`${t.category}-${t.subcategory}`]).length;
+  const progressPercent = totalTests > 0 ? Math.round((completedCount / totalTests) * 100) : 0;
 
   return (
     <div className="flex flex-col h-[100dvh] bg-app-bg pb-[80px] overflow-y-auto">
@@ -179,7 +179,7 @@ export default function CourseDetail() {
           <div className="mb-6 bg-gray-50 rounded-2xl p-4 border border-gray-100 shadow-[inset_0_2px_4px_rgba(0,0,0,0.02)]">
             <div className="flex items-center justify-between mb-2.5">
               <span className="text-xs font-bold text-gray-500 uppercase tracking-widest">Your Progress</span>
-              <span className="text-sm font-black text-[#0B2457]">{attemptedCount} <span className="text-gray-400 font-bold text-xs">/ {totalTests} Tests</span></span>
+              <span className="text-sm font-black text-[#0B2457]">{completedCount} <span className="text-gray-400 font-bold text-xs">/ {totalTests} Completed</span></span>
             </div>
             <div className="h-2 w-full bg-gray-200 rounded-full overflow-hidden">
               <div 
