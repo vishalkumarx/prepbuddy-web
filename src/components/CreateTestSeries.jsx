@@ -29,6 +29,7 @@ export default function CreateTestSeries() {
   const [sidebarGroups, setSidebarGroups] = useState([]);
   const [stagedChunks, setStagedChunks] = useState([]);
   const [chunkSize, setChunkSize] = useState("");
+  const [saveInChunks, setSaveInChunks] = useState(false);
   const [courses, setCourses] = useState([]);
   const [linkModalGroup, setLinkModalGroup] = useState(null);
 
@@ -274,7 +275,7 @@ export default function CreateTestSeries() {
           };
         });
         const size = parseInt(chunkSize, 10);
-        if (!isNaN(size) && size > 0) {
+        if (saveInChunks && !isNaN(size) && size > 0) {
           const newChunks = [];
           for (let i = 0; i < formatted.length; i += size) {
             const testNum = Math.floor(i / size) + 1;
@@ -961,16 +962,48 @@ export default function CreateTestSeries() {
                 <h3 className="font-bold text-amber-900 text-base flex items-center gap-2">
                   Ready to Upload ({stagedChunks.reduce((acc, c) => acc + c.questions.length, 0)})
                 </h3>
-                <div className="flex items-center gap-2 bg-white/60 px-3 py-1.5 rounded-lg border border-amber-200/60 shadow-sm">
-                  <span className="text-xs font-bold text-gray-600">Split into chunks of:</span>
-                  <input 
-                    type="number"
-                    min="1"
-                    placeholder="e.g. 50"
-                    value={chunkSize}
-                    onChange={handleChunkSizeChange}
-                    className="w-16 text-sm font-bold text-amber-900 border-b border-amber-300 focus:border-amber-500 focus:outline-none text-center bg-transparent"
-                  />
+                <div className="flex flex-col gap-2">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input 
+                      type="checkbox" 
+                      checked={saveInChunks}
+                      onChange={(e) => {
+                        setSaveInChunks(e.target.checked);
+                        if (!e.target.checked) {
+                          setStagedChunks([{ name: subcategory, questions: stagedChunks.flatMap(c => c.questions) }]);
+                        } else {
+                          const allQs = stagedChunks.flatMap(c => c.questions);
+                          const size = parseInt(chunkSize, 10);
+                          if (!isNaN(size) && size > 0) {
+                            const newChunks = [];
+                            for (let i = 0; i < allQs.length; i += size) {
+                              const testNum = Math.floor(i / size) + 1;
+                              newChunks.push({
+                                name: `${subcategory} - Test ${String(testNum).padStart(2, '0')}`,
+                                questions: allQs.slice(i, i + size)
+                              });
+                            }
+                            setStagedChunks(newChunks);
+                          }
+                        }
+                      }}
+                      className="w-4 h-4 text-amber-600 rounded border-amber-300 focus:ring-amber-500"
+                    />
+                    <span className="text-sm font-bold text-amber-900">Save in chunks</span>
+                  </label>
+                  {saveInChunks && (
+                    <div className="flex items-center gap-2 bg-white/60 px-3 py-1.5 rounded-lg border border-amber-200/60 shadow-sm">
+                      <span className="text-xs font-bold text-gray-600">Split into chunks of:</span>
+                      <input 
+                        type="number"
+                        min="1"
+                        placeholder="e.g. 50"
+                        value={chunkSize}
+                        onChange={handleChunkSizeChange}
+                        className="w-16 text-sm font-bold text-amber-900 border-b border-amber-300 focus:border-amber-500 focus:outline-none text-center bg-transparent"
+                      />
+                    </div>
+                  )}
                 </div>
               </div>
               <div className="flex items-center gap-2">
