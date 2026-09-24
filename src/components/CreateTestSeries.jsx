@@ -975,13 +975,13 @@ export default function CreateTestSeries() {
         {/* Staging Area for JSON Uploads */}
         {stagedChunks.length > 0 && (
           <div className="bg-amber-50 p-5 rounded-2xl border border-amber-200 shadow-sm space-y-4">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-amber-200/60 pb-4 gap-3">
-              <div className="flex flex-wrap items-center gap-4">
-                <h3 className="font-bold text-amber-900 text-base flex items-center gap-2">
-                  Ready to Upload ({stagedChunks.reduce((acc, c) => acc + c.questions.length, 0)})
-                </h3>
-                <div className="flex flex-col gap-3">
-                  <div className="flex items-center gap-6">
+            <div className="flex flex-col gap-4 border-b border-amber-200/60 pb-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="flex flex-wrap items-center gap-6">
+                  <h3 className="font-bold text-amber-900 text-base flex items-center gap-2">
+                    Ready to Upload ({stagedChunks.reduce((acc, c) => acc + c.questions.length, 0)})
+                  </h3>
+                  <div className="flex flex-wrap items-center gap-4">
                     <label className="flex items-center gap-2 cursor-pointer">
                       <input 
                         type="radio"
@@ -1021,58 +1021,56 @@ export default function CreateTestSeries() {
                       <span className="text-sm font-bold text-amber-900">Save in chunks</span>
                     </label>
                   </div>
-
-                  {saveInChunks && (
-                    <div className="flex flex-wrap items-center gap-3 bg-white/60 p-3 rounded-lg border border-amber-200/60 shadow-sm">
-                      <div className="flex items-center gap-2 mr-2">
-                        <span className="text-xs font-bold text-gray-600">Chunk size:</span>
-                        <input 
-                          type="number"
-                          min="1"
-                          placeholder="e.g. 50"
-                          value={chunkSize}
-                          onChange={handleChunkSizeChange}
-                          className="w-16 text-sm font-bold text-amber-900 border-b border-amber-300 focus:border-amber-500 focus:outline-none text-center bg-transparent"
-                        />
-                      </div>
-                      <button
-                        onClick={handleBulkUpload}
-                        disabled={isUploading}
-                        className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs rounded-lg transition-colors disabled:opacity-50 shadow-sm"
-                      >
-                        {isUploading ? 'Uploading...' : 'Save all chunks at once'}
-                      </button>
-                      <button
-                        onClick={() => handleUploadChunk(0)}
-                        disabled={isUploading || stagedChunks.length === 0}
-                        className="px-4 py-2 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 font-bold text-xs rounded-lg border border-indigo-200 transition-colors disabled:opacity-50"
-                      >
-                        {isUploading ? 'Uploading...' : 'Save single chunk'}
-                      </button>
-                    </div>
-                  )}
-
-                  {!saveInChunks && (
-                    <div className="flex items-center gap-2 mt-1">
-                      <button
-                        onClick={handleBulkUpload}
-                        disabled={isUploading}
-                        className="px-5 py-2 bg-amber-500 hover:bg-amber-600 text-white font-bold text-sm rounded-xl transition-colors disabled:opacity-50 shadow-sm"
-                      >
-                        {isUploading ? 'Uploading...' : 'Save in a single test'}
-                      </button>
-                    </div>
-                  )}
                 </div>
-              </div>
-              <div className="flex items-center gap-2">
                 <button
                   onClick={() => setStagedChunks([])}
                   disabled={isUploading}
-                  className="px-4 py-2 bg-white text-gray-700 font-bold text-sm rounded-xl border border-gray-300 hover:bg-gray-50 transition-colors disabled:opacity-50"
+                  className="px-4 py-2 bg-white text-gray-700 font-bold text-sm rounded-xl border border-gray-300 hover:bg-gray-50 transition-colors disabled:opacity-50 whitespace-nowrap"
                 >
                   Clear All
                 </button>
+              </div>
+
+              <div>
+                {saveInChunks ? (
+                  <div className="flex flex-wrap items-center gap-3 bg-white/60 p-3 rounded-lg border border-amber-200/60 shadow-sm inline-flex">
+                    <div className="flex items-center gap-2 mr-2">
+                      <span className="text-xs font-bold text-gray-600">Chunk size:</span>
+                      <input 
+                        type="number"
+                        min="1"
+                        placeholder="e.g. 50"
+                        value={chunkSize}
+                        onChange={handleChunkSizeChange}
+                        className="w-16 text-sm font-bold text-amber-900 border-b border-amber-300 focus:border-amber-500 focus:outline-none text-center bg-transparent"
+                      />
+                    </div>
+                    <button
+                      onClick={handleBulkUpload}
+                      disabled={isUploading}
+                      className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs rounded-lg transition-colors disabled:opacity-50 shadow-sm"
+                    >
+                      {isUploading ? 'Uploading...' : 'Save all chunks at once'}
+                    </button>
+                    <button
+                      onClick={() => handleUploadChunk(0)}
+                      disabled={isUploading || stagedChunks.length === 0}
+                      className="px-4 py-2 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 font-bold text-xs rounded-lg border border-indigo-200 transition-colors disabled:opacity-50"
+                    >
+                      {isUploading ? 'Uploading...' : 'Save single chunk'}
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={handleBulkUpload}
+                      disabled={isUploading}
+                      className="px-5 py-2 bg-amber-500 hover:bg-amber-600 text-white font-bold text-sm rounded-xl transition-colors disabled:opacity-50 shadow-sm"
+                    >
+                      {isUploading ? 'Uploading...' : 'Save in a single test'}
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
 
