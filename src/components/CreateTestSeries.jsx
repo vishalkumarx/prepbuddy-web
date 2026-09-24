@@ -1081,31 +1081,33 @@ export default function CreateTestSeries() {
                 <div key={chunkIdx} className="space-y-4">
                   
                   {/* Chunk Header */}
-                  <div className="bg-white p-4 rounded-xl border border-amber-200 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3 sticky top-0 z-10">
-                    <div className="flex items-center gap-3 flex-1">
-                      <span className="text-xs font-bold text-amber-700 uppercase tracking-wider bg-amber-100 px-3 py-1 rounded-full whitespace-nowrap">
-                        Chunk {chunkIdx + 1}
-                      </span>
-                      <input 
-                        type="text"
-                        value={chunk.name}
-                        onChange={(e) => {
-                          const updated = [...stagedChunks];
-                          updated[chunkIdx].name = e.target.value;
-                          setStagedChunks(updated);
-                        }}
-                        placeholder="Test Name..."
-                        className="flex-1 min-w-0 bg-transparent text-sm font-bold text-gray-900 focus:outline-none border-b border-dashed border-gray-300 focus:border-amber-500 pb-1"
-                      />
+                  {saveInChunks && (
+                    <div className="bg-white p-4 rounded-xl border border-amber-200 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3 sticky top-0 z-10">
+                      <div className="flex items-center gap-3 flex-1">
+                        <span className="text-xs font-bold text-amber-700 uppercase tracking-wider bg-amber-100 px-3 py-1 rounded-full whitespace-nowrap">
+                          Chunk {chunkIdx + 1}
+                        </span>
+                        <input 
+                          type="text"
+                          value={chunk.name}
+                          onChange={(e) => {
+                            const updated = [...stagedChunks];
+                            updated[chunkIdx].name = e.target.value;
+                            setStagedChunks(updated);
+                          }}
+                          placeholder="Test Name..."
+                          className="flex-1 min-w-0 bg-transparent text-sm font-bold text-gray-900 focus:outline-none border-b border-dashed border-gray-300 focus:border-amber-500 pb-1"
+                        />
+                      </div>
+                      <button
+                        onClick={() => handleUploadChunk(chunkIdx)}
+                        disabled={isUploading}
+                        className="px-4 py-2 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 font-bold text-xs rounded-lg border border-indigo-200 transition-colors disabled:opacity-50 whitespace-nowrap"
+                      >
+                        Save this Chunk
+                      </button>
                     </div>
-                    <button
-                      onClick={() => handleUploadChunk(chunkIdx)}
-                      disabled={isUploading}
-                      className="px-4 py-2 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 font-bold text-xs rounded-lg border border-indigo-200 transition-colors disabled:opacity-50 whitespace-nowrap"
-                    >
-                      Save this Chunk
-                    </button>
-                  </div>
+                  )}
 
                   {/* Chunk Questions */}
                   <div className="space-y-3 pl-2 sm:pl-6 border-l-2 border-amber-100">
