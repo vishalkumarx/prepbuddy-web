@@ -472,27 +472,6 @@ export default function CreateTestSeries() {
     }
   };
 
-  const handleDeleteCategory = async (e, groupCategory) => {
-    e.stopPropagation();
-    if (!window.confirm(`WARNING: Are you sure you want to delete ALL test series inside the category "${groupCategory}"? This will permanently delete EVERY question in this category!`)) return;
-    
-    try {
-      const { error } = await supabase
-        .from('prepbuddy_questions')
-        .delete()
-        .eq('category', groupCategory);
-        
-      if (error) throw error;
-      
-      if (category === groupCategory) {
-        setQuestionsList([]);
-      }
-      
-      fetchSidebarGroups();
-    } catch (err) {
-      alert('Failed to delete category: ' + err.message);
-    }
-  };
 
   const handleRenameCategory = async (e, groupCategory, groupSubcategory) => {
     e.stopPropagation();
@@ -712,13 +691,6 @@ export default function CreateTestSeries() {
                           title="Rename Category"
                         >
                           <Edit2 size={12} />
-                        </button>
-                        <button 
-                          onClick={(e) => handleDeleteCategory(e, group.category)}
-                          className="p-1 text-gray-400 hover:text-red-600 transition-colors flex-shrink-0 opacity-0 group-hover/sidebar:opacity-100"
-                          title="Delete ALL Tests in this Category"
-                        >
-                          <Trash2 size={12} />
                         </button>
                       </div>
                       <div className="opacity-0 group-hover/sidebar:opacity-100 flex items-center gap-1 z-10 transition-opacity">
