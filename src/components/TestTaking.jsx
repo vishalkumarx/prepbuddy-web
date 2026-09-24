@@ -221,7 +221,7 @@ export default function TestTaking() {
       {/* Main Content */}
       <div ref={scrollContainerRef} className="flex-1 overflow-y-auto p-5 relative">
         <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
-          <h2 className="text-lg font-bold text-gray-900 leading-snug mb-6">
+          <h2 className="text-lg font-bold text-gray-900 leading-snug mb-6 whitespace-pre-wrap">
             <span className="text-indigo-600 mr-2">Q{currentIdx + 1}.</span>
             {currentQ.question}
           </h2>
@@ -246,7 +246,7 @@ export default function TestTaking() {
                   }`}>
                     {optLetter}
                   </div>
-                  <span className={`text-sm ${isSelected ? 'font-bold text-indigo-900' : 'font-medium text-gray-700'}`}>
+                  <span className={`text-sm whitespace-pre-wrap ${isSelected ? 'font-bold text-indigo-900' : 'font-medium text-gray-700'}`}>
                     {opt}
                   </span>
                 </div>

@@ -86,7 +86,7 @@ export default function ViewSolution() {
               <div className="absolute -top-3 -left-2 bg-indigo-600 text-white font-black text-xs px-2.5 py-1 rounded-lg shadow-sm">
                 Q{idx + 1}
               </div>
-              <h2 className="text-base font-bold text-gray-900 leading-snug mb-4 mt-2">
+              <h2 className="text-base font-bold text-gray-900 leading-snug mb-4 mt-2 whitespace-pre-wrap">
                 {q.question}
               </h2>
 
@@ -109,7 +109,7 @@ export default function ViewSolution() {
                       }`}>
                         {optLetter}
                       </div>
-                      <span className={`text-sm ${isCorrect ? 'font-bold text-emerald-900' : 'font-medium text-gray-500'}`}>
+                      <span className={`text-sm whitespace-pre-wrap ${isCorrect ? 'font-bold text-emerald-900' : 'font-medium text-gray-500'}`}>
                         {opt}
                       </span>
                       {isCorrect && (

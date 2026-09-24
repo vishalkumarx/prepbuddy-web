@@ -1032,7 +1032,7 @@ export default function CreateTestSeries() {
                             <Trash2 size={14} />
                           </button>
                         </div>
-                        <p className="font-bold text-gray-900 text-sm pr-10">
+                        <p className="font-bold text-gray-900 text-sm pr-10 whitespace-pre-wrap">
                           Q. {q.question}
                         </p>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
