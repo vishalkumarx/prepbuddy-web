@@ -6,8 +6,8 @@ import { ArrowLeft, Plus, Edit2, Trash2, ListPlus, Sparkles, X, RefreshCw, Link2
 export default function CreateTestSeries() {
   const navigate = useNavigate();
   
-  const [category, setCategory] = useState('Senior Assistant');
-  const [subcategory, setSubcategory] = useState('General Knowledge');
+  const [category, setCategory] = useState('');
+  const [subcategory, setSubcategory] = useState('');
   
   const [question, setQuestion] = useState('');
   const [optionA, setOptionA] = useState('');
@@ -114,6 +114,10 @@ export default function CreateTestSeries() {
 
   const handleAddQuestion = async (e) => {
     e.preventDefault();
+    if (!category.trim() || !subcategory.trim()) {
+      alert('Please fill out the Category and Subcategory fields.');
+      return;
+    }
     if (!question || !optionA || !optionB || !optionC || !optionD) {
       alert('Please fill out the question and all 4 options.');
       return;
@@ -258,6 +262,10 @@ export default function CreateTestSeries() {
   };
 
   const handleImportJson = async (overrideText = null) => {
+    if (!category.trim() || !subcategory.trim()) {
+      alert('Please fill out the Category and Subcategory fields before importing JSON.');
+      return;
+    }
     const textToParse = typeof overrideText === 'string' ? overrideText : jsonImportText;
     if (!textToParse.trim()) return;
     try {
@@ -391,6 +399,10 @@ export default function CreateTestSeries() {
 
   const handleBulkUpload = async () => {
     if (stagedChunks.length === 0) return;
+    if (!category.trim() || !subcategory.trim()) {
+      alert('Please fill out the Category and Subcategory fields before saving.');
+      return;
+    }
     setIsUploading(true);
     try {
       const finalQuestions = [];
@@ -420,6 +432,10 @@ export default function CreateTestSeries() {
   const handleUploadChunk = async (chunkIndex) => {
     const chunk = stagedChunks[chunkIndex];
     if (!chunk || chunk.questions.length === 0) return;
+    if (!category.trim() || !subcategory.trim()) {
+      alert('Please fill out the Category and Subcategory fields before saving.');
+      return;
+    }
     
     setIsUploading(true);
     try {
@@ -772,9 +788,10 @@ export default function CreateTestSeries() {
         {/* Category & Subcategory */}
         <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">Category / Exam</label>
+            <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">Category / Exam <span className="text-red-500">*</span></label>
             <input 
               type="text"
+              required
               value={category}
               onChange={(e) => setCategory(e.target.value)}
               placeholder="e.g. UPSC, SSC"
@@ -782,9 +799,10 @@ export default function CreateTestSeries() {
             />
           </div>
           <div>
-            <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">Subcategory / Subject</label>
+            <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">Subcategory / Subject <span className="text-red-500">*</span></label>
             <input 
               type="text"
+              required
               value={subcategory}
               onChange={(e) => setSubcategory(e.target.value)}
               placeholder="e.g. History, Polity"
