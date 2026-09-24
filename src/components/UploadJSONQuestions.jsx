@@ -49,15 +49,27 @@ export default function UploadJSONQuestions() {
         }
       }
 
-      const formatted = data.map((q, idx) => ({
-        id: idx + 1,
-        question: q.question || q.q || q.title || '',
-        options: Array.isArray(q.options) ? q.options : [q.optionA, q.optionB, q.optionC, q.optionD].filter(Boolean),
-        answer: q.answer || q.correct_answer || q.correctAnswer || q.optionA || '',
-        explanation: q.explanation || q.desc || q.solution || '',
-        category: q.category || category,
-        subcategory: q.subcategory || subcategory
-      }));
+      const formatted = data.map((q, idx) => {
+        let answerVal = q.answer || q.correct_answer || q.correctAnswer || q.optionA || '';
+        if (typeof answerVal === 'string') {
+          const lowerAns = answerVal.trim().toLowerCase();
+          const optsArray = Array.isArray(q.options) ? q.options : [];
+          if (lowerAns === 'optiona' || lowerAns === 'a') answerVal = q.optionA || optsArray[0] || answerVal;
+          else if (lowerAns === 'optionb' || lowerAns === 'b') answerVal = q.optionB || optsArray[1] || answerVal;
+          else if (lowerAns === 'optionc' || lowerAns === 'c') answerVal = q.optionC || optsArray[2] || answerVal;
+          else if (lowerAns === 'optiond' || lowerAns === 'd') answerVal = q.optionD || optsArray[3] || answerVal;
+        }
+
+        return {
+          id: idx + 1,
+          question: q.question || q.q || q.title || '',
+          options: Array.isArray(q.options) ? q.options : [q.optionA, q.optionB, q.optionC, q.optionD].filter(Boolean),
+          answer: answerVal,
+          explanation: q.explanation || q.desc || q.solution || '',
+          category: q.category || category,
+          subcategory: q.subcategory || subcategory
+        };
+      });
 
       setParsedQuestions(formatted);
       setMessage({ type: 'success', text: `Successfully parsed ${formatted.length} question(s)!` });
