@@ -25,6 +25,7 @@ export default function CreateTestSeries() {
   const [geminiModel, setGeminiModel] = useState('gemini-3.5-flash-lite');
   const [isFormatting, setIsFormatting] = useState(false);
   const [editingId, setEditingId] = useState(null);
+  const [editingStagedId, setEditingStagedId] = useState(null);
   const [isLoadingQuestions, setIsLoadingQuestions] = useState(false);
   const [sidebarGroups, setSidebarGroups] = useState([]);
   const [stagedChunks, setStagedChunks] = useState([]);
@@ -137,6 +138,23 @@ export default function CreateTestSeries() {
       category,
       subcategory
     };
+
+    if (editingStagedId) {
+      const updatedChunks = [...stagedChunks];
+      const { cIdx, qIdx } = editingStagedId;
+      updatedChunks[cIdx].questions[qIdx] = questionData;
+      setStagedChunks(updatedChunks);
+      setEditingStagedId(null);
+      
+      setQuestion('');
+      setOptionA('');
+      setOptionB('');
+      setOptionC('');
+      setOptionD('');
+      setAnswer('A');
+      setExplanation('');
+      return;
+    }
 
     setIsUploading(true);
     try {
@@ -427,6 +445,28 @@ export default function CreateTestSeries() {
     } finally {
       setIsUploading(false);
     }
+  };
+
+  const handleEditStaged = (cIdx, qIdx) => {
+    const q = stagedChunks[cIdx].questions[qIdx];
+    setQuestion(q.question || '');
+    const opts = Array.isArray(q.options) ? q.options : (typeof q.options === 'string' ? JSON.parse(q.options) : []);
+    setOptionA(opts[0] || '');
+    setOptionB(opts[1] || '');
+    setOptionC(opts[2] || '');
+    setOptionD(opts[3] || '');
+    
+    let ansLetter = 'A';
+    if (opts[1] && q.answer === opts[1]) ansLetter = 'B';
+    if (opts[2] && q.answer === opts[2]) ansLetter = 'C';
+    if (opts[3] && q.answer === opts[3]) ansLetter = 'D';
+    setAnswer(ansLetter);
+    setExplanation(q.explanation || '');
+    
+    setEditingStagedId({ cIdx, qIdx });
+    setEditingId(null);
+    
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleUploadChunk = async (chunkIndex) => {
@@ -946,14 +986,15 @@ export default function CreateTestSeries() {
                 disabled={isUploading}
                 className="flex-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold py-3.5 rounded-xl text-sm flex items-center justify-center gap-2 transition-colors border border-indigo-200 disabled:opacity-50"
               >
-                {editingId ? <Edit2 size={18} /> : <Plus size={18} />}
-                {editingId ? (isUploading ? 'Saving...' : 'Save Changes') : (isUploading ? 'Adding...' : 'Add Question')}
+                {(editingId || editingStagedId) ? <Edit2 size={18} /> : <Plus size={18} />}
+                {(editingId || editingStagedId) ? (isUploading ? 'Saving...' : 'Save Changes') : (isUploading ? 'Adding...' : 'Add Question')}
               </button>
-              {editingId && (
+              {(editingId || editingStagedId) && (
                 <button
                   type="button"
                   onClick={() => {
                     setEditingId(null);
+                    setEditingStagedId(null);
                     setQuestion('');
                     setOptionA('');
                     setOptionB('');
@@ -1114,6 +1155,9 @@ export default function CreateTestSeries() {
                       return (
                       <div key={qIdx} className="bg-white p-4 rounded-xl border border-gray-200 space-y-3 relative group shadow-sm">
                         <div className="absolute top-3 right-3 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button onClick={() => handleEditStaged(chunkIdx, qIdx)} className="p-1.5 bg-blue-50 text-blue-600 border border-blue-100 rounded-lg shadow-sm hover:bg-blue-100 transition-colors">
+                            <Edit2 size={14} />
+                          </button>
                           <button onClick={() => handleRemoveStaged(chunkIdx, qIdx)} className="p-1.5 bg-red-50 text-red-600 border border-red-100 rounded-lg shadow-sm hover:bg-red-100 transition-colors">
                             <Trash2 size={14} />
                           </button>
