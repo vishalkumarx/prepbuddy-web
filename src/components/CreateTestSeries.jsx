@@ -269,8 +269,8 @@ export default function CreateTestSeries() {
             options: opts,
             answer: q.answer || q.correct_answer || opts[0] || '',
             explanation: q.explanation || q.desc || '',
-            category: q.category || category,
-            subcategory: q.subcategory || subcategory
+            category: category,
+            subcategory: subcategory
           };
         });
         const size = parseInt(chunkSize, 10);
@@ -395,7 +395,7 @@ export default function CreateTestSeries() {
       const finalQuestions = [];
       stagedChunks.forEach(chunk => {
         chunk.questions.forEach(q => {
-          finalQuestions.push({ ...q, subcategory: q.subcategory || chunk.name, category: q.category || category });
+          finalQuestions.push({ ...q, subcategory: chunk.name, category: category });
         });
       });
       
@@ -424,8 +424,8 @@ export default function CreateTestSeries() {
     try {
       const finalQuestions = chunk.questions.map(q => ({
         ...q,
-        subcategory: q.subcategory || chunk.name,
-        category: q.category || category
+        subcategory: chunk.name,
+        category: category
       }));
       
       const { error } = await supabase
