@@ -48,9 +48,9 @@ export default function StateGovLayout({ onLogout }) {
           <Route path="/profile" element={<Profile onLogout={onLogout} />} />
           <Route path="/admin/upload-json" element={<UploadJSONQuestions />} />
           <Route path="/course/:id" element={<CourseDetail />} />
-          <Route path="/test/:category/:subcategory" element={<TestTaking />} />
-          <Route path="/leaderboard/:category/:subcategory" element={<Leaderboard />} />
-          <Route path="/solution/:category/:subcategory" element={<ViewSolution />} />
+          <Route path="/test/:courseId/:category/:subcategory" element={<TestTaking />} />
+          <Route path="/leaderboard/:courseId/:category/:subcategory" element={<Leaderboard />} />
+          <Route path="/solution/:courseId/:category/:subcategory" element={<ViewSolution />} />
         </Routes>
       </main>
 

@@ -5,7 +5,7 @@ import { ArrowLeft, Trophy, Medal, User as UserIcon, Calendar } from 'lucide-rea
 import { UserManager } from '../utils/UserManager';
 
 export default function Leaderboard() {
-  const { category, subcategory } = useParams();
+  const { courseId, category, subcategory } = useParams();
   const navigate = useNavigate();
   const [attempts, setAttempts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -19,6 +19,7 @@ export default function Leaderboard() {
           .select('*')
           .eq('category', decodeURIComponent(category))
           .eq('subcategory', decodeURIComponent(subcategory))
+          .eq('course_id', courseId)
           .order('score', { ascending: false })
           .order('created_at', { ascending: true }); // Tie-breaker: earlier attempt wins
 
@@ -42,7 +43,7 @@ export default function Leaderboard() {
     <div className="flex flex-col h-[100dvh] bg-app-bg pb-6">
       {/* Header Banner */}
       <div className="bg-[#0B2457] pt-8 pb-16 px-5 relative shrink-0">
-        <button onClick={() => navigate(-1)} className="absolute top-4 left-4 p-2 bg-white/10 hover:bg-white/20 rounded-full text-white transition-colors">
+        <button onClick={() => navigate(`/course/${courseId}`)} className="absolute top-4 left-4 p-2 bg-white/10 hover:bg-white/20 rounded-full text-white transition-colors">
           <ArrowLeft size={20} />
         </button>
         <div className="flex flex-col items-center justify-center text-center mt-2">

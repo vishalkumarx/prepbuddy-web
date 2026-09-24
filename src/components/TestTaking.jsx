@@ -5,7 +5,7 @@ import { ArrowLeft, CheckCircle2, ChevronRight, ChevronLeft } from 'lucide-react
 import { UserManager } from '../utils/UserManager';
 
 export default function TestTaking() {
-  const { category, subcategory } = useParams();
+  const { courseId, category, subcategory } = useParams();
   const navigate = useNavigate();
   const [questions, setQuestions] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -20,7 +20,7 @@ export default function TestTaking() {
   const attemptedCount = Object.keys(answers).length;
   const skippedCount = questions.length - attemptedCount;
 
-  const progressKey = `test_progress_${UserManager.getUserId()}_${category}_${subcategory}`;
+  const progressKey = `test_progress_${UserManager.getUserId()}_${courseId}_${category}_${subcategory}`;
 
   // Scroll to top when question changes
   useEffect(() => {
@@ -155,6 +155,7 @@ export default function TestTaking() {
         .insert([{
           user_id: userId,
           username: username,
+          course_id: courseId,
           category: decodeURIComponent(category),
           subcategory: decodeURIComponent(subcategory),
           score: score,
@@ -171,7 +172,7 @@ export default function TestTaking() {
       
       // Navigate to leaderboard
       setTimeout(() => {
-        navigate(`/leaderboard/${encodeURIComponent(category)}/${encodeURIComponent(subcategory)}`, { replace: true });
+        navigate(`/leaderboard/${courseId}/${encodeURIComponent(category)}/${encodeURIComponent(subcategory)}`, { replace: true });
       }, 10);
     } catch (err) {
       alert("Error submitting test: " + err.message);

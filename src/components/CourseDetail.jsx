@@ -50,7 +50,8 @@ export default function CourseDetail() {
           const { data: attemptsData } = await supabase
             .from('prepbuddy_test_attempts')
             .select('*')
-            .eq('user_id', userId);
+            .eq('user_id', userId)
+            .eq('course_id', id);
             
           if (attemptsData) {
             const attemptsMap = {};
@@ -233,7 +234,7 @@ export default function CourseDetail() {
                     <div className="p-3 space-y-2 bg-white">
                       {tests.map((test, idx) => {
                         const attempt = attempts[`${test.category}-${test.subcategory}`];
-                        const progressKey = `test_progress_${UserManager.getUserId()}_${test.category}_${test.subcategory}`;
+                        const progressKey = `test_progress_${UserManager.getUserId()}_${course.id}_${test.category}_${test.subcategory}`;
                         const isPaused = !!localStorage.getItem(progressKey);
                         
                         return (
@@ -242,7 +243,7 @@ export default function CourseDetail() {
                             onClick={() => {
                               if (!attempt || isPaused) {
                                 if (isEnrolled) {
-                                  navigate(`/test/${encodeURIComponent(test.category)}/${encodeURIComponent(test.subcategory)}`);
+                                  navigate(`/test/${course.id}/${encodeURIComponent(test.category)}/${encodeURIComponent(test.subcategory)}`);
                                 } else {
                                   alert("Please enroll in the course first to take this test!");
                                 }
@@ -303,13 +304,13 @@ export default function CourseDetail() {
                                 </div>
                                 <div className="flex items-center gap-2 mt-1">
                                   <button 
-                                    onClick={(e) => { e.stopPropagation(); navigate(`/solution/${encodeURIComponent(test.category)}/${encodeURIComponent(test.subcategory)}`); }}
+                                    onClick={(e) => { e.stopPropagation(); navigate(`/solution/${course.id}/${encodeURIComponent(test.category)}/${encodeURIComponent(test.subcategory)}`); }}
                                     className="flex-1 py-1.5 text-[10px] font-bold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-md transition-colors text-center"
                                   >
                                     VIEW SOLUTIONS
                                   </button>
                                   <button 
-                                    onClick={(e) => { e.stopPropagation(); navigate(`/test/${encodeURIComponent(test.category)}/${encodeURIComponent(test.subcategory)}`); }}
+                                    onClick={(e) => { e.stopPropagation(); navigate(`/test/${course.id}/${encodeURIComponent(test.category)}/${encodeURIComponent(test.subcategory)}`); }}
                                     className={`flex-1 py-1.5 text-[10px] font-bold text-white rounded-md transition-colors text-center ${isPaused ? 'bg-orange-500 hover:bg-orange-600' : 'bg-indigo-600 hover:bg-indigo-700'}`}
                                   >
                                     {isPaused ? 'RESUME TEST' : 'ATTEMPT AGAIN'}

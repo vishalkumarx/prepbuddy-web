@@ -4,7 +4,7 @@ import { supabase } from '../supabase';
 import { ArrowLeft, CheckCircle2 } from 'lucide-react';
 
 export default function ViewSolution() {
-  const { category, subcategory } = useParams();
+  const { courseId, category, subcategory } = useParams();
   const navigate = useNavigate();
   const [questions, setQuestions] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -58,7 +58,7 @@ export default function ViewSolution() {
     <div className="flex flex-col h-[100dvh] bg-app-bg">
       {/* Header */}
       <header className="bg-primary flex items-center p-4 shadow-md z-10 sticky top-0 min-h-[58px]">
-        <button onClick={() => navigate(-1)} className="text-white hover:bg-white/10 p-1.5 rounded-full mr-3">
+        <button onClick={() => navigate(`/course/${courseId}`)} className="text-white hover:bg-white/10 p-1.5 rounded-full mr-3">
           <ArrowLeft size={22} />
         </button>
         <div className="flex-1 overflow-hidden">
