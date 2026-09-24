@@ -1033,7 +1033,7 @@ export default function CreateTestSeries() {
                           </button>
                         </div>
                         <p className="font-bold text-gray-900 text-sm pr-10 whitespace-pre-wrap">
-                          Q. {q.question}
+                          Q. {q.question?.replace(/\\n/g, '\n')}
                         </p>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
                           {options.map((opt, oIdx) => {
@@ -1055,13 +1055,13 @@ export default function CreateTestSeries() {
                               }`}
                             >
                               <span className="font-bold mr-2">{optLetter}.</span>
-                              {opt}
+                              <span className="whitespace-pre-wrap">{opt?.replace(/\\n/g, '\n')}</span>
                             </div>
                           )})}
                         </div>
                         {q.explanation && (
-                          <p className="text-gray-500 italic pt-2 border-t border-gray-100 text-xs">
-                            <strong>Explanation:</strong> {q.explanation}
+                          <p className="text-gray-500 italic pt-2 border-t border-gray-100 text-xs whitespace-pre-wrap">
+                            <strong>Explanation:</strong> {q.explanation?.replace(/\\n/g, '\n')}
                           </p>
                         )}
                       </div>

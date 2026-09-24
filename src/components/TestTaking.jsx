@@ -223,7 +223,7 @@ export default function TestTaking() {
         <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
           <h2 className="text-lg font-bold text-gray-900 leading-snug mb-6 whitespace-pre-wrap">
             <span className="text-indigo-600 mr-2">Q{currentIdx + 1}.</span>
-            {currentQ.question}
+            {currentQ.question?.replace(/\\n/g, '\n')}
           </h2>
 
           <div className="space-y-3">
@@ -247,7 +247,7 @@ export default function TestTaking() {
                     {optLetter}
                   </div>
                   <span className={`text-sm whitespace-pre-wrap ${isSelected ? 'font-bold text-indigo-900' : 'font-medium text-gray-700'}`}>
-                    {opt}
+                    {opt?.replace(/\\n/g, '\n')}
                   </span>
                 </div>
               );

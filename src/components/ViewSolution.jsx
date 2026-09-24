@@ -87,7 +87,7 @@ export default function ViewSolution() {
                 Q{idx + 1}
               </div>
               <h2 className="text-base font-bold text-gray-900 leading-snug mb-4 mt-2 whitespace-pre-wrap">
-                {q.question}
+                {q.question?.replace(/\\n/g, '\n')}
               </h2>
 
               <div className="space-y-2">
@@ -110,7 +110,7 @@ export default function ViewSolution() {
                         {optLetter}
                       </div>
                       <span className={`text-sm whitespace-pre-wrap ${isCorrect ? 'font-bold text-emerald-900' : 'font-medium text-gray-500'}`}>
-                        {opt}
+                        {opt?.replace(/\\n/g, '\n')}
                       </span>
                       {isCorrect && (
                         <div className="ml-auto mt-0.5 text-emerald-500">
@@ -125,7 +125,7 @@ export default function ViewSolution() {
               {q.explanation && (
                 <div className="mt-4 p-3 bg-blue-50/50 border border-blue-100 rounded-xl">
                   <h4 className="text-xs font-bold text-blue-800 mb-1">Explanation:</h4>
-                  <p className="text-xs text-blue-900/80 leading-relaxed whitespace-pre-wrap">{q.explanation}</p>
+                  <p className="text-xs text-blue-900/80 leading-relaxed whitespace-pre-wrap">{q.explanation?.replace(/\\n/g, '\n')}</p>
                 </div>
               )}
             </div>
