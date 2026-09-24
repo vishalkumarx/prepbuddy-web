@@ -233,12 +233,14 @@ export default function CourseDetail() {
                     <div className="p-3 space-y-2 bg-white">
                       {tests.map((test, idx) => {
                         const attempt = attempts[`${test.category}-${test.subcategory}`];
+                        const progressKey = `test_progress_${UserManager.getUserId()}_${test.category}_${test.subcategory}`;
+                        const isPaused = !!localStorage.getItem(progressKey);
                         
                         return (
                           <div 
                             key={idx} 
                             onClick={() => {
-                              if (!attempt) {
+                              if (!attempt || isPaused) {
                                 if (isEnrolled) {
                                   navigate(`/test/${encodeURIComponent(test.category)}/${encodeURIComponent(test.subcategory)}`);
                                 } else {
@@ -255,13 +257,31 @@ export default function CourseDetail() {
                               <div className="flex-1 min-w-0 flex flex-col pt-0.5">
                                 <h4 className={`font-bold text-sm leading-tight ${isEnrolled ? 'text-gray-900 group-hover:text-indigo-900' : 'text-gray-600'}`}>{test.subcategory}</h4>
                                 
-                                {!attempt && (
+                                {!attempt && !isPaused && (
                                   <div className="mt-2 flex items-center">
                                     <div className={`flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-md shrink-0 ${isEnrolled ? 'text-emerald-700 bg-emerald-100/70' : 'text-gray-500 bg-gray-200/60'}`}>
                                       {isEnrolled ? (
                                         <>
                                           <Unlock size={10} strokeWidth={3} />
                                           TAKE TEST
+                                        </>
+                                      ) : (
+                                        <>
+                                          <Lock size={10} strokeWidth={3} />
+                                          LOCKED
+                                        </>
+                                      )}
+                                    </div>
+                                  </div>
+                                )}
+                                
+                                {isPaused && (
+                                  <div className="mt-2 flex items-center">
+                                    <div className={`flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-md shrink-0 ${isEnrolled ? 'text-orange-700 bg-orange-100/70' : 'text-gray-500 bg-gray-200/60'}`}>
+                                      {isEnrolled ? (
+                                        <>
+                                          <Unlock size={10} strokeWidth={3} />
+                                          RESUME TEST
                                         </>
                                       ) : (
                                         <>
@@ -290,9 +310,9 @@ export default function CourseDetail() {
                                   </button>
                                   <button 
                                     onClick={(e) => { e.stopPropagation(); navigate(`/test/${encodeURIComponent(test.category)}/${encodeURIComponent(test.subcategory)}`); }}
-                                    className="flex-1 py-1.5 text-[10px] font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-md transition-colors text-center"
+                                    className={`flex-1 py-1.5 text-[10px] font-bold text-white rounded-md transition-colors text-center ${isPaused ? 'bg-orange-500 hover:bg-orange-600' : 'bg-indigo-600 hover:bg-indigo-700'}`}
                                   >
-                                    ATTEMPT AGAIN
+                                    {isPaused ? 'RESUME TEST' : 'ATTEMPT AGAIN'}
                                   </button>
                                 </div>
                               </div>
