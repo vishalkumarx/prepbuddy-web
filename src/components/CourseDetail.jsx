@@ -448,7 +448,7 @@ export default function CourseDetail() {
 
       {/* Sticky Buy/Start Button */}
       {!isEnrolled && (
-        <div className="fixed bottom-0 w-full max-w-md bg-white border-t border-gray-100 p-4 shadow-[0_-10px_20px_-10px_rgba(0,0,0,0.05)] z-40">
+        <div className="sticky bottom-0 w-full bg-white border-t border-gray-100 p-4 shadow-[0_-10px_20px_-10px_rgba(0,0,0,0.05)] z-40">
           <button 
             onClick={handleBuyClick}
             disabled={enrollLoading}
