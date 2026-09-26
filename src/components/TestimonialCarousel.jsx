@@ -1,22 +1,34 @@
 import React, { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
-const testimonials = [
-  {
-    id: 1,
-    image: '/testimonials/testimonial1.jpg',
-    alt: 'Sanjeev Banotra - GoalPrep Testimonial'
-  },
-  {
-    id: 2,
-    image: '/testimonials/testimonial2.jpg',
-    alt: 'Vikas Banotra - GoalPrep Testimonial'
-  }
+const mobileTestimonials = [
+  { id: 1, image: '/testimonials/testimonial1.jpg', alt: 'Sanjeev Banotra - GoalPrep Testimonial' },
+  { id: 2, image: '/testimonials/testimonial2.jpg', alt: 'Vikas Banotra - GoalPrep Testimonial' },
+];
+
+const wideTestimonials = [
+  { id: 1, image: '/testimonials/wide/banner1.jpg', alt: 'GoalPrep Banner 1' },
+  { id: 2, image: '/testimonials/wide/banner2.jpg', alt: 'GoalPrep Banner 2' },
 ];
 
 export default function TestimonialCarousel() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
+  const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 768);
+
+  useEffect(() => {
+    const handleResize = () => {
+      const desktop = window.innerWidth >= 768;
+      if (desktop !== isDesktop) {
+        setIsDesktop(desktop);
+        setCurrentIndex(0);
+      }
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [isDesktop]);
+
+  const testimonials = isDesktop ? wideTestimonials : mobileTestimonials;
 
   useEffect(() => {
     if (isPaused) return;
