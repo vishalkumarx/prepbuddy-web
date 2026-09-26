@@ -36,7 +36,7 @@ export default function TestimonialCarousel() {
 
   return (
     <div 
-      className="relative w-full rounded-2xl overflow-hidden shadow-md bg-gray-900 aspect-square md:aspect-[16/5] border border-gray-100 mb-4 group"
+      className="relative w-full rounded-2xl overflow-hidden shadow-md bg-gray-900 aspect-square md:aspect-video border border-gray-100 mb-4 group"
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
       onTouchStart={() => setIsPaused(true)}
