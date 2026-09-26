@@ -113,7 +113,7 @@ export default function CouponManager({ resourceId }) {
       <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 bg-gray-50">
         <div className="flex items-center gap-2">
           <Tag size={16} className="text-primary" />
-          <h3 className="text-sm font-bold text-gray-800">Manage Coupons</h3>
+          <h3 className="text-sm font-bold text-gray-800">Manage Promo Codes</h3>
           {coupons.length > 0 && (
             <span className="bg-primary text-white text-[10px] font-bold px-2 py-0.5 rounded-full">{coupons.length}</span>
           )}
@@ -132,7 +132,7 @@ export default function CouponManager({ resourceId }) {
         <form onSubmit={handleCreate} className="p-4 border-b border-gray-100 bg-indigo-50/40 space-y-3">
           {/* Code */}
           <div>
-            <label className="text-xs font-bold text-gray-600 mb-1 block">Coupon Code</label>
+            <label className="text-xs font-bold text-gray-600 mb-1 block">Promo Code</label>
             <div className="flex gap-2">
               <input
                 type="text"
@@ -262,12 +262,12 @@ export default function CouponManager({ resourceId }) {
             disabled={saving}
             className="w-full bg-primary text-white font-bold py-2.5 rounded-xl text-sm active:scale-[0.98] transition-transform disabled:opacity-60"
           >
-            {saving ? 'Creating...' : 'Create Coupon'}
+            {saving ? 'Creating...' : 'Create Promo Code'}
           </button>
         </form>
       )}
 
-      {/* Coupon List */}
+      {/* Promo Code List */}
       <div className="divide-y divide-gray-50">
         {loading ? (
           <div className="flex justify-center py-6">

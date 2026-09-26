@@ -276,7 +276,7 @@ export default function CourseControlPanel() {
                     <Layers size={16} className="inline mr-1" /> Contents
                   </button>
                   <button onClick={() => setActiveTab('coupons')} className={`pb-2 px-1 text-sm font-bold border-b-2 transition-colors whitespace-nowrap ${activeTab === 'coupons' ? 'border-primary text-primary' : 'border-transparent text-gray-500 hover:text-gray-700'}`}>
-                    <Tag size={16} className="inline mr-1" /> Coupons
+                    <Tag size={16} className="inline mr-1" /> Promo Codes
                   </button>
                   <button onClick={() => setActiveTab('settings')} className={`pb-2 px-1 text-sm font-bold border-b-2 transition-colors whitespace-nowrap ${activeTab === 'settings' ? 'border-primary text-primary' : 'border-transparent text-gray-500 hover:text-gray-700'}`}>
                     <Settings size={16} className="inline mr-1" /> Settings
@@ -508,7 +508,7 @@ export default function CourseControlPanel() {
                   );
                 })()}
 
-                {/* COUPONS TAB */}
+                {/* PROMO CODES TAB */}
                 {activeTab === 'coupons' && (
                   <div className="p-4">
                     <CouponManager resourceId={selectedCourse.id} />
