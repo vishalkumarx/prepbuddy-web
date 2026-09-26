@@ -99,9 +99,9 @@ export default function StateHomeFeed() {
             >
               <div className="relative">
                 {ts.banner_url ? (
-                  <img src={ts.banner_url} alt={ts.title} className="w-full h-48 object-cover bg-gray-100" />
+                  <img src={ts.banner_url} alt={ts.title} className="w-full h-40 md:h-32 object-cover bg-gray-100" />
                 ) : (
-                  <div className="w-full h-48 bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center border-b border-gray-100">
+                  <div className="w-full h-40 md:h-32 bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center border-b border-gray-100">
                     <span className="text-primary/40 font-bold text-lg">{ts.title}</span>
                   </div>
                 )}
