@@ -7,8 +7,8 @@ const mobileTestimonials = [
 ];
 
 const wideTestimonials = [
-  { id: 1, image: '/testimonials/wide/banner1.jpg', alt: 'GoalPrep Banner 1' },
-  { id: 2, image: '/testimonials/wide/banner2.jpg', alt: 'GoalPrep Banner 2' },
+  { id: 1, image: '/testimonials/wide/banner1.png', alt: 'GoalPrep Banner 1' },
+  { id: 2, image: '/testimonials/wide/banner2.png', alt: 'GoalPrep Banner 2' },
 ];
 
 export default function TestimonialCarousel() {
