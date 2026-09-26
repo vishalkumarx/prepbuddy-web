@@ -25,7 +25,6 @@ export default function StateGovLayout({ onLogout }) {
   ];
 
   return (
-  return (
     <div className="flex flex-col md:flex-row h-[100dvh] w-full bg-gray-50 overflow-hidden relative">
       
       {/* Desktop Sidebar (Left) */}
