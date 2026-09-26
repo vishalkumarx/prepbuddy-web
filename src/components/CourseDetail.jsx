@@ -238,7 +238,7 @@ export default function CourseDetail() {
         
         {/* Title & Price */}
         <div className="flex items-start justify-between gap-4 mb-4">
-          <h1 className="text-xl font-black text-[#0B2457] leading-tight flex-1">
+          <h1 className="text-lg font-black text-[#0B2457] leading-tight flex-1">
             {course.title}
           </h1>
           {!isEnrolled && (
@@ -275,7 +275,7 @@ export default function CourseDetail() {
 
         {/* Description */}
         {!isEnrolled && course.description && (
-          <p className="text-gray-600 text-sm leading-relaxed mb-6 whitespace-pre-wrap">
+          <p className="text-gray-600 text-xs leading-relaxed mb-6 whitespace-pre-wrap">
             {course.description}
           </p>
         )}
@@ -291,7 +291,7 @@ export default function CourseDetail() {
         <div className="mt-8 space-y-4">
           <div className="flex items-center gap-2 mb-4">
             <Layers size={20} className="text-primary" />
-            <h2 className="text-lg font-bold text-gray-900 tracking-tight">Test Series Contents</h2>
+            <h2 className="text-base font-bold text-gray-900 tracking-tight">Test Series Contents</h2>
           </div>
 
           {/* Highlights Grid */}

@@ -309,26 +309,31 @@ export default function StateHomeFeed() {
                   )}
                   <div className={`flex gap-2 ${enrolledIds.has(ts.id) ? 'w-full' : ''}`}>
                     {enrolledIds.has(ts.id) ? (
-                      <div className="flex items-center gap-3">
-                        <div className="relative flex-shrink-0 w-12 h-12">
-                          <svg viewBox="0 0 36 36" className="w-12 h-12 -rotate-90">
-                            <circle cx="18" cy="18" r="15.9" fill="none" stroke="#e5e7eb" strokeWidth="3" />
-                            <circle
-                              cx="18" cy="18" r="15.9" fill="none"
-                              stroke="#10b981" strokeWidth="3"
-                              strokeDasharray={`${progressPercent} ${100 - progressPercent}`}
-                              strokeLinecap="round"
-                              style={{ transition: 'stroke-dasharray 0.5s ease' }}
-                            />
-                          </svg>
-                          <span className="absolute inset-0 flex items-center justify-center text-[10px] font-black text-emerald-600">
-                            {progressPercent}%
-                          </span>
+                      <div className="flex items-center justify-between w-full gap-2">
+                        <div className="flex items-center gap-2">
+                          <div className="relative flex-shrink-0 w-10 h-10">
+                            <svg viewBox="0 0 36 36" className="w-10 h-10 -rotate-90">
+                              <circle cx="18" cy="18" r="15.9" fill="none" stroke="#e5e7eb" strokeWidth="3" />
+                              <circle
+                                cx="18" cy="18" r="15.9" fill="none"
+                                stroke="#10b981" strokeWidth="3"
+                                strokeDasharray={`${progressPercent} ${100 - progressPercent}`}
+                                strokeLinecap="round"
+                                style={{ transition: 'stroke-dasharray 0.5s ease' }}
+                              />
+                            </svg>
+                            <span className="absolute inset-0 flex items-center justify-center text-[9px] font-black text-emerald-600">
+                              {progressPercent}%
+                            </span>
+                          </div>
+                          <div>
+                            <p className="text-[10px] font-bold text-gray-800">Progress</p>
+                            <p className="text-[9px] text-gray-400">{progressPercent === 100 ? 'Completed! 🎉' : 'Keep going!'}</p>
+                          </div>
                         </div>
-                        <div>
-                          <p className="text-xs font-bold text-gray-800">Your Progress</p>
-                          <p className="text-[10px] text-gray-400">{progressPercent === 100 ? 'Completed! 🎉' : 'Keep going!'}</p>
-                        </div>
+                        <button className="bg-[#0B2457] text-white font-bold py-2 px-4 rounded-xl text-xs active:scale-95 transition-transform">
+                          View Details
+                        </button>
                       </div>
                     ) : (
                       <>
