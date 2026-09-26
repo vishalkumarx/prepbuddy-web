@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabase';
 import { UserManager } from '../utils/UserManager';
-import { Shield, Search, UserPlus, Trash2, ArrowLeft, RefreshCw, Layers, Tag, Settings, FileText, Languages, Award, Newspaper, Plus, Clock, X, Edit2 } from 'lucide-react';
+import { Shield, Search, UserPlus, Trash2, ArrowLeft, RefreshCw, Layers, Tag, Settings, FileText, Languages, Award, Newspaper, Plus, Clock, X, Edit2, Star } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import CouponManager from './CouponManager';
 
@@ -555,6 +555,75 @@ export default function CourseControlPanel() {
                   <div className="p-6">
                     <h3 className="font-bold text-gray-900 mb-6 text-lg">Course Settings</h3>
                     
+                    <CourseDetailsEditor 
+                      course={selectedCourse} 
+                      onUpdate={(updated) => {
+                        setSelectedCourse({...selectedCourse, ...updated});
+                        setCourses(courses.map(c => c.id === selectedCourse.id ? {...c, ...updated} : c));
+                      }} 
+                    />
+
+                    <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm max-w-xl mb-6">
+                      <h4 className="font-bold text-gray-900 mb-2 flex items-center gap-2">
+                        <Clock size={18} className="text-amber-500" /> Course Status
+                      </h4>
+                      <p className="text-xs text-gray-500 mb-5 leading-relaxed">
+                        Tagging a course as "Coming Soon" will show an animated banner on the course tile.
+                      </p>
+                      <label className="flex items-center gap-3 cursor-pointer">
+                        <input 
+                          type="checkbox" 
+                          checked={selectedCourse.is_coming_soon || false}
+                          onChange={async (e) => {
+                            const val = e.target.checked;
+                            try {
+                               const { error } = await supabase.from('prepbuddy_test_series').update({ is_coming_soon: val }).eq('id', selectedCourse.id);
+                               if(error) {
+                                  if(error.message.includes('column "is_coming_soon" of relation "prepbuddy_test_series" does not exist')) {
+                                      alert("Please run this SQL in Supabase: alter table public.prepbuddy_test_series add column is_coming_soon boolean default false;");
+                                  } else {
+                                      throw error;
+                                  }
+                               } else {
+                                  setSelectedCourse({...selectedCourse, is_coming_soon: val});
+                                  setCourses(courses.map(c => c.id === selectedCourse.id ? {...c, is_coming_soon: val} : c));
+                               }
+                            } catch(err) {
+                               alert(err.message);
+                            }
+                          }}
+                          className="w-5 h-5 rounded text-indigo-600 focus:ring-indigo-500 bg-gray-100 border-gray-300"
+                        />
+                        <span className="font-bold text-sm text-gray-800">Mark as "Coming Soon"</span>
+                      </label>
+                      <label className="flex items-center gap-3 cursor-pointer mt-4">
+                        <input 
+                          type="checkbox" 
+                          checked={selectedCourse.is_popular || false}
+                          onChange={async (e) => {
+                            const val = e.target.checked;
+                            try {
+                               const { error } = await supabase.from('prepbuddy_test_series').update({ is_popular: val }).eq('id', selectedCourse.id);
+                               if(error) {
+                                  if(error.message.includes('column "is_popular" of relation "prepbuddy_test_series" does not exist')) {
+                                      alert("Please run this SQL in Supabase: alter table public.prepbuddy_test_series add column is_popular boolean default false;");
+                                  } else {
+                                      throw error;
+                                  }
+                               } else {
+                                  setSelectedCourse({...selectedCourse, is_popular: val});
+                                  setCourses(courses.map(c => c.id === selectedCourse.id ? {...c, is_popular: val} : c));
+                               }
+                            } catch(err) {
+                               alert(err.message);
+                            }
+                          }}
+                          className="w-5 h-5 rounded text-indigo-600 focus:ring-indigo-500 bg-gray-100 border-gray-300"
+                        />
+                        <span className="font-bold text-sm text-gray-800">Mark as "Popular Course"</span>
+                      </label>
+                    </div>
+
                     <div className="bg-white p-5 rounded-2xl border border-red-100 shadow-sm max-w-xl">
                       <h4 className="font-bold text-red-600 mb-2 flex items-center gap-2">
                         <Trash2 size={18} /> Danger Zone
@@ -586,6 +655,86 @@ export default function CourseControlPanel() {
             </>
           )}
         </div>
+      </div>
+    </div>
+  );
+}
+
+function CourseDetailsEditor({ course, onUpdate }) {
+  const [title, setTitle] = React.useState(course.title || '');
+  const [description, setDescription] = React.useState(course.description || '');
+  const [price, setPrice] = React.useState(course.price ?? 0);
+  const [saving, setSaving] = React.useState(false);
+
+  React.useEffect(() => {
+    setTitle(course.title || '');
+    setDescription(course.description || '');
+    setPrice(course.price ?? 0);
+  }, [course.id]);
+
+  const handleSave = async () => {
+    if (!title.trim()) return;
+    setSaving(true);
+    try {
+      const { data, error } = await supabase
+        .from('prepbuddy_test_series')
+        .update({ title: title.trim(), description: description.trim(), price: Number(price) })
+        .eq('id', course.id)
+        .select()
+        .single();
+      if (error) throw error;
+      onUpdate(data);
+      alert('Course details updated!');
+    } catch (err) {
+      alert('Error: ' + err.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm max-w-xl mb-6">
+      <h4 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
+        <Edit2 size={18} className="text-indigo-500" /> Basic Details
+      </h4>
+      <div className="space-y-4">
+        <div>
+          <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">Course Title</label>
+          <input
+            type="text"
+            value={title}
+            onChange={e => setTitle(e.target.value)}
+            placeholder="Course title..."
+            className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 focus:outline-none"
+          />
+        </div>
+        <div>
+          <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">Description</label>
+          <textarea
+            value={description}
+            onChange={e => setDescription(e.target.value)}
+            rows={3}
+            placeholder="Short description..."
+            className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 focus:outline-none resize-none"
+          />
+        </div>
+        <div>
+          <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">Price (₹) — set 0 for Free</label>
+          <input
+            type="number"
+            min="0"
+            value={price}
+            onChange={e => setPrice(e.target.value)}
+            className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 focus:outline-none"
+          />
+        </div>
+        <button
+          onClick={handleSave}
+          disabled={saving}
+          className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-5 py-2.5 rounded-xl text-sm transition-colors disabled:opacity-50"
+        >
+          {saving ? 'Saving...' : 'Save Changes'}
+        </button>
       </div>
     </div>
   );

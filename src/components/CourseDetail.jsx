@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../supabase';
-import { ArrowLeft, IndianRupee, Layers, FileText, CheckCircle2, Lock, Unlock, ChevronDown, ChevronUp, Tag, CheckCircle, XCircle, Languages, Newspaper, Award } from 'lucide-react';
+import { ArrowLeft, IndianRupee, Layers, FileText, CheckCircle2, Lock, Unlock, ChevronDown, ChevronUp, Tag, CheckCircle, XCircle, Languages, Newspaper, Award, Clock, Star } from 'lucide-react';
 import { UserManager } from '../utils/UserManager';
 import CouponManager from './CouponManager';
 
@@ -228,13 +228,23 @@ export default function CourseDetail() {
           <img src={course.banner_url} alt={course.title} className="w-full h-full object-cover" />
         ) : (
           <div className="w-full h-full bg-gradient-to-br from-blue-900 to-indigo-900 flex items-center justify-center">
-            <span className="text-white/20 font-bold text-4xl uppercase px-4 text-center">{course.title}</span>
+            <span className="text-white/20 font-bold text-3xl uppercase px-4 text-center">{course.title}</span>
           </div>
         )}
 
         {isEnrolled && (
           <div className="absolute top-4 right-4 bg-emerald-500/90 backdrop-blur-md text-white font-bold text-xs px-3 py-1.5 rounded-full shadow-lg z-10 flex items-center gap-1.5 border border-emerald-400/50">
             <CheckCircle2 size={14} /> ENROLLED
+          </div>
+        )}
+        {!isEnrolled && course.is_popular && (
+          <div className="absolute top-4 right-4 bg-gradient-to-r from-pink-500 to-rose-500 text-white font-black text-xs px-3 py-1.5 rounded-full shadow-lg z-10 flex items-center gap-1 border border-pink-400">
+            <Star size={14} fill="currentColor" /> POPULAR
+          </div>
+        )}
+        {course.is_coming_soon && (
+          <div className="absolute top-4 left-4 bg-gradient-to-r from-amber-500 to-orange-500 text-white font-black text-xs px-3 py-1.5 rounded-full shadow-lg z-10 flex items-center gap-1 border border-amber-400 animate-bounce">
+            <Clock size={14} /> COMING SOON
           </div>
         )}
       </div>
@@ -244,7 +254,7 @@ export default function CourseDetail() {
         
         {/* Title & Price */}
         <div className="flex items-start justify-between gap-4 mb-4">
-          <h1 className="text-2xl font-black text-[#0B2457] leading-tight flex-1">
+          <h1 className="text-xl font-black text-[#0B2457] leading-tight flex-1">
             {course.title}
           </h1>
           {!isEnrolled && (
@@ -423,16 +433,16 @@ export default function CourseDetail() {
                                   <span>Highest Score:</span>
                                   <span className="text-emerald-600">{attempt.score} / {attempt.total}</span>
                                 </div>
-                                <div className="flex items-center gap-2 mt-1">
+                                <div className="flex items-center justify-center gap-2 mt-1">
                                   <button 
                                     onClick={(e) => { e.stopPropagation(); navigate(`/solution/${course.id}/${encodeURIComponent(test.category)}/${encodeURIComponent(test.subcategory)}`); }}
-                                    className="flex-1 py-1.5 text-[10px] font-bold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-md transition-colors text-center"
+                                    className="px-4 py-1.5 text-[10px] font-bold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-md transition-colors text-center"
                                   >
                                     VIEW SOLUTIONS
                                   </button>
                                   <button 
                                     onClick={(e) => { e.stopPropagation(); navigate(`/test/${course.id}/${encodeURIComponent(test.category)}/${encodeURIComponent(test.subcategory)}`); }}
-                                    className={`flex-1 py-1.5 text-[10px] font-bold text-white rounded-md transition-colors text-center ${isPaused ? 'bg-orange-500 hover:bg-orange-600' : 'bg-indigo-600 hover:bg-indigo-700'}`}
+                                    className={`px-4 py-1.5 text-[10px] font-bold text-white rounded-md transition-colors text-center ${isPaused ? 'bg-orange-500 hover:bg-orange-600' : 'bg-indigo-600 hover:bg-indigo-700'}`}
                                   >
                                     {isPaused ? 'RESUME TEST' : 'ATTEMPT AGAIN'}
                                   </button>
