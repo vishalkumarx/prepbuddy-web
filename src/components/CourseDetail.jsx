@@ -372,7 +372,12 @@ export default function CourseDetail() {
                                 <FileText size={18} />
                               </div>
                               <div className="flex-1 min-w-0 flex flex-col pt-0.5">
-                                <h4 className={`font-bold text-sm leading-tight ${isEnrolled ? 'text-gray-900 group-hover:text-indigo-900' : 'text-gray-600'}`}>{test.subcategory}</h4>
+                                <div className="flex items-center gap-2">
+                                  <h4 className={`font-bold text-sm leading-tight ${isEnrolled ? 'text-gray-900 group-hover:text-indigo-900' : 'text-gray-600'}`}>{test.subcategory}</h4>
+                                  {test.coming_soon && (
+                                    <span className="text-[9px] font-bold bg-amber-50 text-amber-500 border border-amber-200 px-1.5 py-0.5 rounded-full uppercase tracking-wide flex-shrink-0">Coming Soon</span>
+                                  )}
+                                </div>
                                 
                                 {!attempt && !isPaused && (
                                   <div className="mt-2 flex items-center">
