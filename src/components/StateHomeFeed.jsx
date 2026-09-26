@@ -160,9 +160,14 @@ export default function StateHomeFeed() {
                       'Free'
                     )}
                   </span>
-                  <button className="bg-primary text-white font-bold py-2 px-4 rounded-xl text-sm active:scale-95 transition-transform shadow-md">
-                    View Details
-                  </button>
+                  <div className="flex gap-2">
+                    <button className="bg-gray-100 text-gray-700 font-bold py-2 px-3 rounded-xl text-xs active:scale-95 transition-transform">
+                      View Details
+                    </button>
+                    <button className="bg-[#0B2457] text-white font-bold py-2 px-4 rounded-xl text-xs active:scale-95 transition-transform shadow-md">
+                      {ts.price > 0 ? 'Buy Now' : 'Enroll Now'}
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
