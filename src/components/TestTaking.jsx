@@ -257,11 +257,11 @@ export default function TestTaking() {
       </div>
 
       {/* Footer Navigation */}
-      <div className="fixed bottom-0 w-full max-w-md bg-white border-t border-gray-100 p-4 shadow-[0_-10px_20px_-10px_rgba(0,0,0,0.05)] z-50 flex items-center justify-between gap-4">
+      <div className="fixed bottom-0 w-full max-w-md bg-white border-t border-gray-100 p-4 shadow-[0_-10px_20px_-10px_rgba(0,0,0,0.05)] z-50 flex items-center justify-between">
         <button 
           onClick={handlePrev}
           disabled={currentIdx === 0}
-          className="flex-1 py-3.5 rounded-xl font-bold flex items-center justify-center gap-1 bg-gray-100 text-gray-700 hover:bg-gray-200 disabled:opacity-50 transition-colors"
+          className={`px-6 py-3.5 rounded-xl font-bold flex items-center justify-center gap-1 transition-colors ${currentIdx === 0 ? 'opacity-0 pointer-events-none' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
         >
           <ChevronLeft size={18} /> Prev
         </button>
@@ -270,7 +270,7 @@ export default function TestTaking() {
           <button 
             onClick={() => setShowSubmitPrompt(true)}
             disabled={isSubmitting}
-            className="flex-1 py-3.5 rounded-xl font-bold flex items-center justify-center gap-1.5 bg-emerald-600 text-white hover:bg-emerald-700 shadow-md transition-all active:scale-95"
+            className="px-8 py-3.5 rounded-xl font-bold flex items-center justify-center gap-1.5 bg-emerald-600 text-white hover:bg-emerald-700 shadow-md transition-all active:scale-95"
           >
             <>
               <CheckCircle2 size={18} /> Submit
@@ -279,7 +279,7 @@ export default function TestTaking() {
         ) : (
           <button 
             onClick={handleNext}
-            className="flex-1 py-3.5 rounded-xl font-bold flex items-center justify-center gap-1 bg-[#0B2457] text-white hover:bg-blue-900 shadow-md transition-all active:scale-95"
+            className="px-8 py-3.5 rounded-xl font-bold flex items-center justify-center gap-1 bg-[#0B2457] text-white hover:bg-blue-900 shadow-md transition-all active:scale-95"
           >
             Next <ChevronRight size={18} />
           </button>
