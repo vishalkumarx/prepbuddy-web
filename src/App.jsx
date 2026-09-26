@@ -122,7 +122,7 @@ function Layout({ children }) {
                 <Search size={18} className="text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
                 <input
                   type="text"
-                  placeholder="Search posts, courses, and resources..."
+                  placeholder="Search posts, test series, and resources..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-full bg-gray-100 border-none outline-none text-gray-900 px-10 py-2.5 rounded-full placeholder-gray-500 text-sm focus:ring-2 focus:ring-primary/20 transition-all"

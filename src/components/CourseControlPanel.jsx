@@ -247,14 +247,14 @@ export default function CourseControlPanel() {
           <ArrowLeft size={24} />
         </button>
         <Shield className="ml-2 text-primary mr-2" size={20} />
-        <h1 className="text-xl font-bold text-[#0B2457] flex-1">Course Control Panel</h1>
+        <h1 className="text-xl font-bold text-[#0B2457] flex-1">Test Series Control Panel</h1>
       </header>
 
       <div className="flex-1 overflow-hidden flex flex-col md:flex-row">
         {/* Left sidebar: Course List */}
         <div className="w-full md:w-1/3 bg-white border-r border-gray-200 flex flex-col h-1/3 md:h-full">
           <div className="p-4 border-b border-gray-100 bg-gray-50/50">
-            <h2 className="font-bold text-gray-700 text-sm uppercase tracking-wider">Select a Course</h2>
+            <h2 className="font-bold text-gray-700 text-sm uppercase tracking-wider">Select a Test Series</h2>
           </div>
           <div className="flex-1 overflow-y-auto">
             {courses.map(c => (
@@ -275,7 +275,7 @@ export default function CourseControlPanel() {
           {!selectedCourse ? (
             <div className="flex-1 flex flex-col items-center justify-center text-gray-400 p-6 text-center">
               <Shield size={48} className="mb-4 opacity-20" />
-              <p>Select a course from the list to manage its enrollments.</p>
+              <p>Select a test series from the list to manage its enrollments.</p>
             </div>
           ) : (
             <>
@@ -345,7 +345,7 @@ export default function CourseControlPanel() {
                         </div>
                       ) : enrollments.length === 0 ? (
                         <div className="text-center py-10 bg-white rounded-2xl border border-gray-100 border-dashed">
-                          <p className="text-gray-500 font-medium text-sm">No users are enrolled in this course.</p>
+                          <p className="text-gray-500 font-medium text-sm">No users are enrolled in this test series.</p>
                         </div>
                       ) : (
                         <div className="space-y-3">
@@ -553,7 +553,7 @@ export default function CourseControlPanel() {
                 {/* SETTINGS TAB */}
                 {activeTab === 'settings' && (
                   <div className="p-6">
-                    <h3 className="font-bold text-gray-900 mb-6 text-lg">Course Settings</h3>
+                    <h3 className="font-bold text-gray-900 mb-6 text-lg">Test Series Settings</h3>
                     
                     <CourseDetailsEditor 
                       course={selectedCourse} 
@@ -620,7 +620,7 @@ export default function CourseControlPanel() {
                           }}
                           className="w-5 h-5 rounded text-indigo-600 focus:ring-indigo-500 bg-gray-100 border-gray-300"
                         />
-                        <span className="font-bold text-sm text-gray-800">Mark as "Popular Course"</span>
+                        <span className="font-bold text-sm text-gray-800">Mark as "Popular Test Series"</span>
                       </label>
                     </div>
 
@@ -701,7 +701,7 @@ function CourseDetailsEditor({ course, onUpdate }) {
       </h4>
       <div className="space-y-4">
         <div>
-          <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">Course Title</label>
+          <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">Test Series Title</label>
           <input
             type="text"
             value={title}

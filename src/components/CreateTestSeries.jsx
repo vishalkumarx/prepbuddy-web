@@ -1272,7 +1272,7 @@ export default function CreateTestSeries() {
           <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setLinkModalGroup(null)}></div>
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md relative z-10 max-h-[80vh] flex flex-col">
             <div className="flex items-center justify-between p-4 border-b border-gray-100">
-              <h2 className="font-bold text-gray-900 text-lg">Link to Course</h2>
+              <h2 className="font-bold text-gray-900 text-lg">Link to Test Series</h2>
               <button onClick={() => setLinkModalGroup(null)} className="p-2 bg-gray-100 text-gray-500 hover:bg-gray-200 rounded-full transition-colors">
                 <X size={16} />
               </button>
@@ -1283,7 +1283,7 @@ export default function CreateTestSeries() {
             </div>
             <div className="flex-1 overflow-y-auto p-4 space-y-3">
               {courses.length === 0 ? (
-                <p className="text-center text-sm text-gray-500 py-8 italic">No courses found. Create one in the app first.</p>
+                <p className="text-center text-sm text-gray-500 py-8 italic">No test series found. Create one in the app first.</p>
               ) : (
                 courses.map(course => {
                   const isLinked = (course.linked_tests || []).some(l => l.category === linkModalGroup.category && l.subcategory === linkModalGroup.subcategory);
