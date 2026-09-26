@@ -263,36 +263,25 @@ export default function StateHomeFeed() {
                   <p className="text-sm text-gray-600 line-clamp-2">{ts.description}</p>
                 )}
 
-                {/* Key Features List */}
-                {ts.linked_tests && ts.linked_tests.length > 0 && (
-                  <div className="my-2 pt-3 border-t border-gray-100 flex flex-col gap-2">
-                    {Object.entries(
-                      ts.linked_tests.reduce((acc, test) => {
-                        if (!acc[test.category]) acc[test.category] = [];
-                        acc[test.category].push(test);
-                        return acc;
-                      }, {})
-                    ).map(([category, tests], idx) => {
-                      const colors = [
-                        { bg: 'bg-blue-50/70', border: 'border-blue-100/70', iconBg: 'bg-[#0B2457]', icon: Layers },
-                        { bg: 'bg-amber-50/70', border: 'border-amber-100/70', iconBg: 'bg-amber-500', icon: Languages },
-                        { bg: 'bg-purple-50/70', border: 'border-purple-100/70', iconBg: 'bg-purple-600', icon: Newspaper },
-                        { bg: 'bg-emerald-50/70', border: 'border-emerald-100/70', iconBg: 'bg-emerald-600', icon: Award },
-                      ];
-                      const color = colors[idx % colors.length];
-                      const Icon = color.icon;
-                      
-                      return (
-                        <div key={category} className={`flex items-center gap-2.5 text-xs font-semibold text-gray-800 ${color.bg} border ${color.border} px-3 py-2 rounded-xl`}>
-                          <div className={`p-1 rounded-lg ${color.iconBg} text-white flex-shrink-0`}>
-                            <Icon size={14} />
-                          </div>
-                          <span>{tests.length} {category} {tests.length === 1 ? 'Test' : 'Tests'}</span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
+                {/* Compact test count summary */}
+                {ts.linked_tests && ts.linked_tests.length > 0 && (() => {
+                  const grouped = ts.linked_tests.reduce((acc, test) => {
+                    if (!acc[test.category]) acc[test.category] = 0;
+                    acc[test.category]++;
+                    return acc;
+                  }, {});
+                  return (
+                    <div className="flex items-center gap-1.5 flex-wrap pt-2 border-t border-gray-100">
+                      <Layers size={12} className="text-gray-400 flex-shrink-0" />
+                      {Object.entries(grouped).map(([cat, count], idx) => (
+                        <span key={cat} className="text-[11px] text-gray-500 font-medium">
+                          {count} {cat}{idx < Object.keys(grouped).length - 1 ? <span className="text-gray-300 ml-1.5">·</span> : ''}
+                        </span>
+                      ))}
+                      <span className="text-[11px] text-gray-400 ml-auto">{ts.linked_tests.length} tests total</span>
+                    </div>
+                  );
+                })()}
                 
                 <div className="mt-2 flex items-center justify-between">
                   {!enrolledIds.has(ts.id) && (
