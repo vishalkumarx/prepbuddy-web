@@ -118,35 +118,33 @@ export default function StateHomeFeed() {
                 )}
 
                 {/* Key Features List */}
-                {showFeatures && (
+                {ts.linked_tests && ts.linked_tests.length > 0 && (
                   <div className="my-2 pt-3 border-t border-gray-100 flex flex-col gap-2">
-                    <div className="flex items-center gap-2.5 text-xs font-semibold text-gray-800 bg-blue-50/70 border border-blue-100/70 px-3 py-2 rounded-xl">
-                      <div className="p-1 rounded-lg bg-[#0B2457] text-white flex-shrink-0">
-                        <Layers size={14} />
-                      </div>
-                      <span>25 Sectional Tests</span>
-                    </div>
-
-                    <div className="flex items-center gap-2.5 text-xs font-semibold text-gray-800 bg-amber-50/70 border border-amber-100/70 px-3 py-2 rounded-xl">
-                      <div className="p-1 rounded-lg bg-amber-500 text-white flex-shrink-0">
-                        <Languages size={14} />
-                      </div>
-                      <span>5 Punjabi Qualifying Language Tests</span>
-                    </div>
-
-                    <div className="flex items-center gap-2.5 text-xs font-semibold text-gray-800 bg-purple-50/70 border border-purple-100/70 px-3 py-2 rounded-xl">
-                      <div className="p-1 rounded-lg bg-purple-600 text-white flex-shrink-0">
-                        <Newspaper size={14} />
-                      </div>
-                      <span>10 Current Affairs Tests</span>
-                    </div>
-
-                    <div className="flex items-center gap-2.5 text-xs font-semibold text-gray-800 bg-emerald-50/70 border border-emerald-100/70 px-3 py-2 rounded-xl">
-                      <div className="p-1 rounded-lg bg-emerald-600 text-white flex-shrink-0">
-                        <Award size={14} />
-                      </div>
-                      <span>10 Full Length Tests</span>
-                    </div>
+                    {Object.entries(
+                      ts.linked_tests.reduce((acc, test) => {
+                        if (!acc[test.category]) acc[test.category] = [];
+                        acc[test.category].push(test);
+                        return acc;
+                      }, {})
+                    ).map(([category, tests], idx) => {
+                      const colors = [
+                        { bg: 'bg-blue-50/70', border: 'border-blue-100/70', iconBg: 'bg-[#0B2457]', icon: Layers },
+                        { bg: 'bg-amber-50/70', border: 'border-amber-100/70', iconBg: 'bg-amber-500', icon: Languages },
+                        { bg: 'bg-purple-50/70', border: 'border-purple-100/70', iconBg: 'bg-purple-600', icon: Newspaper },
+                        { bg: 'bg-emerald-50/70', border: 'border-emerald-100/70', iconBg: 'bg-emerald-600', icon: Award },
+                      ];
+                      const color = colors[idx % colors.length];
+                      const Icon = color.icon;
+                      
+                      return (
+                        <div key={category} className={`flex items-center gap-2.5 text-xs font-semibold text-gray-800 ${color.bg} border ${color.border} px-3 py-2 rounded-xl`}>
+                          <div className={`p-1 rounded-lg ${color.iconBg} text-white flex-shrink-0`}>
+                            <Icon size={14} />
+                          </div>
+                          <span>{tests.length} {category} {tests.length === 1 ? 'Test' : 'Tests'}</span>
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
                 

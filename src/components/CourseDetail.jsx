@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../supabase';
-import { ArrowLeft, IndianRupee, Layers, FileText, CheckCircle2, Lock, Unlock, ChevronDown, ChevronUp } from 'lucide-react';
+import { ArrowLeft, IndianRupee, Layers, FileText, CheckCircle2, Lock, Unlock, ChevronDown, ChevronUp, Tag, CheckCircle, XCircle, Languages, Newspaper, Award } from 'lucide-react';
 import { UserManager } from '../utils/UserManager';
+import CouponManager from './CouponManager';
 
 export default function CourseDetail() {
   const { id } = useParams();
@@ -14,6 +15,12 @@ export default function CourseDetail() {
   const [enrollLoading, setEnrollLoading] = useState(false);
   const [expandedCategories, setExpandedCategories] = useState({});
   const [attempts, setAttempts] = useState({});
+
+  // Coupon state
+  const [couponCode, setCouponCode] = useState('');
+  const [couponStatus, setCouponStatus] = useState(null); // null | 'valid' | 'invalid' | 'checking'
+  const [couponData, setCouponData] = useState(null);
+  const [discountedPrice, setDiscountedPrice] = useState(null);
 
   const toggleCategory = (cat) => {
     setExpandedCategories(prev => ({
@@ -74,6 +81,67 @@ export default function CourseDetail() {
 
     fetchCourseDetails();
   }, [id, userId]);
+
+  const applyCoupon = async () => {
+    if (!couponCode.trim()) return;
+    setCouponStatus('checking');
+    setCouponData(null);
+    setDiscountedPrice(null);
+
+    try {
+      const { data, error } = await supabase
+        .from('prepbuddy_coupons')
+        .select('*')
+        .eq('resource_id', id)
+        .eq('code', couponCode.trim().toUpperCase())
+        .eq('is_active', true)
+        .single();
+
+      if (error || !data) {
+        setCouponStatus('invalid');
+        return;
+      }
+
+      if (data.scope === 'single_user') {
+        const userEmail = UserManager.getEmail();
+        if (!userEmail || userEmail.toLowerCase() !== data.user_email.toLowerCase()) {
+          setCouponStatus('invalid');
+          return;
+        }
+      }
+
+      if (data.max_uses !== null && (data.uses_count || 0) >= data.max_uses) {
+        setCouponStatus('invalid');
+        return;
+      }
+
+      let finalPrice = course.price;
+      if (data.discount_type === 'percentage') {
+        finalPrice = course.price - (course.price * data.discount_value / 100);
+      } else {
+        finalPrice = Math.max(0, course.price - data.discount_value);
+      }
+
+      await supabase
+        .from('prepbuddy_coupons')
+        .update({ uses_count: (data.uses_count || 0) + 1 })
+        .eq('id', data.id);
+
+      setCouponData(data);
+      setDiscountedPrice(Math.round(finalPrice));
+      setCouponStatus('valid');
+    } catch (err) {
+      console.error('Coupon error:', err);
+      setCouponStatus('invalid');
+    }
+  };
+
+  const removeCoupon = () => {
+    setCouponCode('');
+    setCouponStatus(null);
+    setCouponData(null);
+    setDiscountedPrice(null);
+  };
 
   const handleEnroll = async () => {
     if (isEnrolled) return;
@@ -200,12 +268,97 @@ export default function CourseDetail() {
           </p>
         )}
 
+        {/* Coupon Section */}
+        {!isEnrolled && course.price > 0 && (
+          <div className="mb-6 bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+            <h3 className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-3 flex items-center gap-1.5">
+              <Tag size={12} /> Have a Coupon?
+            </h3>
+            {couponStatus === 'valid' && couponData ? (
+              <div className="flex items-center gap-3 bg-green-50 border border-green-200 rounded-xl p-3">
+                <CheckCircle size={18} className="text-green-500 flex-shrink-0" />
+                <div className="flex-1">
+                  <p className="text-sm font-bold text-green-800">{couponData.code} applied!</p>
+                  <p className="text-xs text-green-600">
+                    {couponData.discount_type === 'percentage'
+                      ? `${couponData.discount_value}% off`
+                      : `₹${couponData.discount_value} off`}
+                    {' — '}You pay <span className="font-black">₹{discountedPrice}</span>
+                  </p>
+                </div>
+                <button onClick={removeCoupon} className="text-gray-400 hover:text-red-500 transition-colors">
+                  <XCircle size={18} />
+                </button>
+              </div>
+            ) : (
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={couponCode}
+                  onChange={(e) => { setCouponCode(e.target.value.toUpperCase()); setCouponStatus(null); }}
+                  placeholder="Enter coupon code"
+                  className={`flex-1 bg-gray-50 border rounded-xl px-3 py-2.5 text-sm font-bold tracking-widest uppercase focus:outline-none focus:ring-2 focus:ring-primary transition-colors ${
+                    couponStatus === 'invalid' ? 'border-red-300 bg-red-50' : 'border-gray-200'
+                  }`}
+                />
+                <button
+                  onClick={applyCoupon}
+                  disabled={couponStatus === 'checking' || !couponCode.trim()}
+                  className="bg-primary text-white font-bold px-4 py-2.5 rounded-xl text-sm active:scale-95 transition-transform disabled:opacity-50"
+                >
+                  {couponStatus === 'checking' ? '...' : 'Apply'}
+                </button>
+              </div>
+            )}
+            {couponStatus === 'invalid' && (
+              <p className="text-xs text-red-500 mt-2 flex items-center gap-1">
+                <XCircle size={12} /> Invalid or expired coupon code.
+              </p>
+            )}
+          </div>
+        )}
+
+        {/* Admin — Coupon Manager */}
+        {UserManager.isAdmin() && (
+          <div className="mb-6">
+            <CouponManager resourceId={id} />
+          </div>
+        )}
+
         {/* Included Tests Section */}
         <div className="mt-8 space-y-4">
           <div className="flex items-center gap-2 mb-4">
             <Layers size={20} className="text-primary" />
             <h2 className="text-lg font-bold text-gray-900 tracking-tight">Included Mock Tests</h2>
           </div>
+
+          {/* Highlights Grid */}
+          {linkedTests.length > 0 && (
+            <div className="mb-6 grid grid-cols-3 gap-3">
+              {Object.entries(grouped).map(([category, tests], idx) => {
+                const colors = [
+                  { bg: 'bg-blue-50/70', border: 'border-blue-100/70', iconBg: 'bg-[#0B2457]', icon: Layers },
+                  { bg: 'bg-amber-50/70', border: 'border-amber-100/70', iconBg: 'bg-amber-500', icon: Languages },
+                  { bg: 'bg-purple-50/70', border: 'border-purple-100/70', iconBg: 'bg-purple-600', icon: Newspaper },
+                  { bg: 'bg-emerald-50/70', border: 'border-emerald-100/70', iconBg: 'bg-emerald-600', icon: Award },
+                ];
+                const color = colors[idx % colors.length];
+                const Icon = color.icon;
+                
+                return (
+                  <div key={category} className={`flex flex-col items-center justify-center gap-2 text-center ${color.bg} border ${color.border} p-3 rounded-2xl`}>
+                    <div className={`p-2 rounded-xl ${color.iconBg} text-white shadow-sm`}>
+                      <Icon size={18} />
+                    </div>
+                    <div>
+                      <div className="font-black text-xl text-gray-900 leading-none">{tests.length}</div>
+                      <div className="text-[10px] font-bold text-gray-600 uppercase tracking-wider mt-1.5 leading-tight line-clamp-2">{category}</div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
 
           {linkedTests.length === 0 ? (
             <div className="p-6 text-center border-2 border-dashed border-gray-200 rounded-2xl bg-gray-50">
@@ -338,7 +491,7 @@ export default function CourseDetail() {
             disabled={enrollLoading}
             className="w-full font-bold py-4 rounded-xl text-base shadow-lg transition-all flex items-center justify-center gap-2 bg-[#0B2457] text-white hover:bg-blue-900 active:scale-[0.98]"
           >
-            {enrollLoading ? 'Processing...' : (course.price > 0 ? 'Buy Now' : 'Enroll Now for Free')}
+            {enrollLoading ? 'Processing...' : ((discountedPrice !== null ? discountedPrice : course.price) === 0 ? 'Enroll Now for Free' : `Buy Now — ₹${discountedPrice !== null ? discountedPrice : course.price}`)}
           </button>
         </div>
       )}
