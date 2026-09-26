@@ -285,74 +285,69 @@ export default function StateHomeFeed() {
                   );
                 })()}
                 
-                <div className="mt-2 flex items-center justify-between">
-                  {!enrolledIds.has(ts.id) && (
-                    <div className="flex items-center gap-2 flex-wrap">
-                      {ts.price > 0 ? (
-                        <>
-                          <span className="font-black text-lg text-[#0B2457] flex items-center">
-                            <IndianRupee size={15} className="mr-0.5" />{ts.price}
-                          </span>
-                          {ts.mrp && ts.mrp > ts.price && (
-                            <>
-                              <span className="text-sm text-gray-400 line-through flex items-center">
-                                <IndianRupee size={12} className="mr-0.5" />{ts.mrp}
-                              </span>
-                              <span className="bg-green-100 text-green-700 font-black text-[10px] px-2 py-0.5 rounded-full">
-                                {Math.round((ts.mrp - ts.price) / ts.mrp * 100)}% OFF
-                              </span>
-                            </>
-                          )}
-                        </>
-                      ) : (
-                        <span className="font-black text-lg text-emerald-600">FREE</span>
-                      )}
-                    </div>
-                  )}
-                  <div className={`flex gap-2 ${enrolledIds.has(ts.id) ? 'w-full' : ''}`}>
-                    {enrolledIds.has(ts.id) ? (
-                      <div className="flex items-center justify-between w-full gap-2">
-                        <div className="flex items-center gap-2">
-                          <div className="relative flex-shrink-0 w-10 h-10">
-                            <svg viewBox="0 0 36 36" className="w-10 h-10 -rotate-90">
-                              <circle cx="18" cy="18" r="15.9" fill="none" stroke="#e5e7eb" strokeWidth="3" />
-                              <circle
-                                cx="18" cy="18" r="15.9" fill="none"
-                                stroke="#10b981" strokeWidth="3"
-                                strokeDasharray={`${progressPercent} ${100 - progressPercent}`}
-                                strokeLinecap="round"
-                                style={{ transition: 'stroke-dasharray 0.5s ease' }}
-                              />
-                            </svg>
-                            <span className="absolute inset-0 flex items-center justify-center text-[9px] font-black text-emerald-600">
-                              {progressPercent}%
-                            </span>
-                          </div>
-                          <div>
-                            <p className="text-[10px] font-bold text-gray-800">Progress</p>
-                            <p className="text-[9px] text-gray-400">{progressPercent === 100 ? 'Completed! 🎉' : 'Keep going!'}</p>
-                          </div>
-                        </div>
-                        <button className="bg-[#0B2457] text-white font-bold py-2 px-4 rounded-xl text-xs active:scale-95 transition-transform">
-                          View Details
-                        </button>
-                      </div>
-                    ) : (
+                {/* Price row */}
+                {!enrolledIds.has(ts.id) && (
+                  <div className="mt-2 flex items-center gap-2 flex-wrap">
+                    {ts.price > 0 ? (
                       <>
-                        <button className="bg-gray-100 text-gray-700 font-bold py-2 px-3 rounded-xl text-xs active:scale-95 transition-transform">
-                          View Details
-                        </button>
-                        <button 
-                          onClick={(e) => handleBuyClick(e, ts)}
-                          className="bg-[#0B2457] text-white font-bold py-2 px-4 rounded-xl text-xs active:scale-95 transition-all shadow-md animate-pulse"
-                        >
-                          {ts.price > 0 ? 'Buy Now' : 'Enroll Now'}
-                        </button>
+                        <span className="font-black text-lg text-[#0B2457] flex items-center">
+                          <IndianRupee size={15} className="mr-0.5" />{ts.price}
+                        </span>
+                        {ts.mrp && ts.mrp > ts.price && (
+                          <>
+                            <span className="text-sm text-gray-400 line-through flex items-center">
+                              <IndianRupee size={12} className="mr-0.5" />{ts.mrp}
+                            </span>
+                            <span className="bg-green-100 text-green-700 font-black text-[10px] px-2 py-0.5 rounded-full">
+                              {Math.round((ts.mrp - ts.price) / ts.mrp * 100)}% OFF
+                            </span>
+                          </>
+                        )}
                       </>
+                    ) : (
+                      <span className="font-black text-lg text-emerald-600">FREE</span>
                     )}
                   </div>
-                </div>
+                )}
+
+                {/* Enrolled: progress + View Details */}
+                {enrolledIds.has(ts.id) && (
+                  <div className="mt-3 flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <div className="relative flex-shrink-0 w-10 h-10">
+                        <svg viewBox="0 0 36 36" className="w-10 h-10 -rotate-90">
+                          <circle cx="18" cy="18" r="15.9" fill="none" stroke="#e5e7eb" strokeWidth="3" />
+                          <circle cx="18" cy="18" r="15.9" fill="none" stroke="#10b981" strokeWidth="3"
+                            strokeDasharray={`${progressPercent} ${100 - progressPercent}`}
+                            strokeLinecap="round"
+                            style={{ transition: 'stroke-dasharray 0.5s ease' }}
+                          />
+                        </svg>
+                        <span className="absolute inset-0 flex items-center justify-center text-[9px] font-black text-emerald-600">
+                          {progressPercent}%
+                        </span>
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-bold text-gray-800">Progress</p>
+                        <p className="text-[9px] text-gray-400">{progressPercent === 100 ? 'Completed! 🎉' : 'Keep going!'}</p>
+                      </div>
+                    </div>
+                    <button className="bg-[#0B2457] text-white font-bold py-2 px-4 rounded-xl text-xs active:scale-95 transition-transform">
+                      View Details
+                    </button>
+                  </div>
+                )}
               </div>
+
+              {/* Full-width Buy Now button at bottom — non-enrolled only */}
+              {!enrolledIds.has(ts.id) && (
+                <button
+                  onClick={(e) => handleBuyClick(e, ts)}
+                  className="w-full bg-[#0B2457] text-white font-bold py-3 text-sm active:scale-[0.98] transition-all shadow-sm animate-pulse"
+                >
+                  {ts.price > 0 ? 'Buy Now' : 'Enroll Now'}
+                </button>
+              )}
             </div>
           );
           })}
