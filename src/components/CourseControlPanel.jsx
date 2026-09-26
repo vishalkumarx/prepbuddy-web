@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabase';
 import { UserManager } from '../utils/UserManager';
-import { Shield, Search, UserMinus, UserPlus, Trash2, ArrowLeft, RefreshCw, Layers, Tag, Settings } from 'lucide-react';
+import { Shield, Search, UserMinus, UserPlus, Trash2, ArrowLeft, RefreshCw, Layers, Tag, Settings, FileText, Languages, Award, Newspaper } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import CouponManager from './CouponManager';
 
@@ -14,6 +14,9 @@ export default function CourseControlPanel() {
   const [actionLoading, setActionLoading] = useState(false);
   const [newUser, setNewUser] = useState('');
   const [activeTab, setActiveTab] = useState('enrollments');
+  const [expandedCategories, setExpandedCategories] = useState({});
+
+  const toggleCategory = (cat) => setExpandedCategories(prev => ({ [cat]: !prev[cat] }));
   
   // All known users (from sessions or enrollments) to help autocomplete
   const [knownUsers, setKnownUsers] = useState([]);
@@ -303,33 +306,81 @@ export default function CourseControlPanel() {
                 )}
 
                 {/* CONTENTS TAB */}
-                {activeTab === 'contents' && (
-                  <div className="p-4">
-                    <div className="flex justify-between items-center mb-4">
-                      <h3 className="font-bold text-gray-800">Tests Included</h3>
-                      <button onClick={() => navigate('/admin/create-test')} className="text-xs bg-indigo-50 text-indigo-700 px-3 py-1.5 rounded-lg font-bold">
-                        Manage / Create Tests
-                      </button>
-                    </div>
-                    {(!selectedCourse.linked_tests || selectedCourse.linked_tests.length === 0) ? (
-                      <p className="text-sm text-gray-500 text-center py-8 bg-white rounded-xl border border-dashed border-gray-200">No tests in this course.</p>
-                    ) : (
-                      <div className="space-y-2">
-                        {selectedCourse.linked_tests.map((t, idx) => (
-                          <div key={idx} className="bg-white p-3 rounded-xl border border-gray-100 flex justify-between items-center shadow-sm">
-                            <div>
-                              <p className="font-bold text-sm text-gray-800">{t.subcategory}</p>
-                              <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mt-0.5">{t.category}</p>
-                            </div>
-                            <div className="text-right text-xs text-gray-400 font-bold">
-                              {t.totalQuestions} Qs • {t.duration} min
-                            </div>
+                {activeTab === 'contents' && (() => {
+                  const linkedTests = selectedCourse.linked_tests || [];
+                  const grouped = linkedTests.reduce((acc, t) => {
+                    if (!acc[t.category]) acc[t.category] = [];
+                    acc[t.category].push(t);
+                    return acc;
+                  }, {});
+                  const colors = [
+                    { bg: 'bg-blue-50/70', border: 'border-blue-100/70', iconBg: 'bg-[#0B2457]', icon: Layers },
+                    { bg: 'bg-amber-50/70', border: 'border-amber-100/70', iconBg: 'bg-amber-500', icon: Languages },
+                    { bg: 'bg-purple-50/70', border: 'border-purple-100/70', iconBg: 'bg-purple-600', icon: Newspaper },
+                    { bg: 'bg-emerald-50/70', border: 'border-emerald-100/70', iconBg: 'bg-emerald-600', icon: Award },
+                  ];
+                  return (
+                    <div className="p-4">
+                      {linkedTests.length === 0 ? (
+                        <p className="text-sm text-gray-500 text-center py-8 bg-white rounded-xl border border-dashed border-gray-200">No tests in this course.</p>
+                      ) : (
+                        <>
+                          {/* Category Tiles */}
+                          <div className="grid grid-cols-3 gap-3 mb-6">
+                            {Object.entries(grouped).map(([category, tests], idx) => {
+                              const color = colors[idx % colors.length];
+                              const Icon = color.icon;
+                              const isExpanded = expandedCategories[category];
+                              return (
+                                <div
+                                  key={category}
+                                  onClick={() => toggleCategory(category)}
+                                  className={`flex flex-col items-center justify-center gap-2 text-center border p-3 rounded-2xl cursor-pointer hover:scale-[1.02] active:scale-[0.98] transition-all ${
+                                    isExpanded
+                                      ? `${color.bg} ${color.border} shadow-sm ring-1 ring-black/5`
+                                      : 'bg-white border-gray-200 hover:bg-gray-50'
+                                  }`}
+                                >
+                                  <div className={`p-2 rounded-xl ${isExpanded ? color.iconBg : 'bg-gray-200'} ${isExpanded ? 'text-white' : 'text-gray-400'} shadow-sm transition-colors`}>
+                                    <Icon size={18} />
+                                  </div>
+                                  <div>
+                                    <div className={`font-black text-xl leading-none ${isExpanded ? 'text-gray-900' : 'text-gray-400'}`}>{tests.length}</div>
+                                    <div className={`text-[10px] font-bold uppercase tracking-wider mt-1.5 leading-tight line-clamp-2 ${isExpanded ? 'text-gray-700' : 'text-gray-400'}`}>{category}</div>
+                                  </div>
+                                </div>
+                              );
+                            })}
                           </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                )}
+
+                          {/* Expanded Test List */}
+                          <div className="space-y-6">
+                            {Object.entries(grouped).map(([cat, tests]) =>
+                              expandedCategories[cat] && (
+                                <div key={cat} className="space-y-3">
+                                  <h3 className="font-bold text-gray-900 pl-1">{cat} Tests</h3>
+                                  <div className="space-y-2">
+                                    {tests.map((t, idx) => (
+                                      <div key={idx} className="bg-white p-3 rounded-xl border border-gray-100 shadow-sm flex items-center gap-3">
+                                        <div className="p-2 rounded-xl bg-indigo-50 text-indigo-600 flex-shrink-0">
+                                          <FileText size={16} />
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                          <p className="font-bold text-sm text-gray-900 truncate">{t.subcategory}</p>
+                                          <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mt-0.5">{t.totalQuestions} Qs • {t.duration} min</p>
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              )
+                            )}
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  );
+                })()}
 
                 {/* COUPONS TAB */}
                 {activeTab === 'coupons' && (
