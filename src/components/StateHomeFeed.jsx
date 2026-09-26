@@ -255,17 +255,6 @@ export default function StateHomeFeed() {
                     <span className="text-primary/40 font-bold text-base">{ts.title}</span>
                   </div>
                 )}
-                {enrolledIds.has(ts.id) && (
-                  <div className="absolute top-3 left-3 bg-emerald-500/90 backdrop-blur-md text-white font-bold text-xs px-3 py-1.5 rounded-full shadow-lg z-10 flex items-center gap-1.5 border border-emerald-400/50">
-                    <CheckCircle2 size={14} /> ENROLLED
-                  </div>
-                )}
-
-                {ts.is_coming_soon && (
-                  <div className="absolute top-3 right-3 bg-gradient-to-r from-amber-500 to-orange-500 text-white font-black text-xs px-3 py-1.5 rounded-full shadow-lg z-10 flex items-center gap-1 border border-amber-400 animate-bounce">
-                    <Clock size={14} /> COMING SOON
-                  </div>
-                )}
               </div>
               
               <div className="p-4 flex flex-col gap-2">

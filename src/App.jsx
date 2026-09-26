@@ -184,11 +184,10 @@ function MainAppRoutes({ isAuth, setIsAuth, preparationMode, setPreparationMode,
   }
 
   if (!preparationMode) {
-    return (
-      <div className="h-[100dvh] w-full bg-white relative overflow-hidden">
-        <PreparationSelector onSelect={setPreparationMode} />
-      </div>
-    );
+    // Auto-select state_gov, skip the selector screen
+    setPreparationMode('state_gov');
+    UserManager.setPreparation('state_gov');
+    return null;
   }
 
   if (preparationMode === 'state_gov') {
