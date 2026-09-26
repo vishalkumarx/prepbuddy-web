@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { UserManager } from '../utils/UserManager';
-import { LogOut, User, Mail, Award, CheckCircle, Users, Settings, FileCode, Shield } from 'lucide-react';
+import { LogOut, User, Mail, Award, CheckCircle, Users, Settings, FileCode, Shield, Image } from 'lucide-react';
 
 export default function Profile({ onLogout }) {
   const username = UserManager.getUsername() || 'Anonymous';
@@ -83,6 +83,13 @@ export default function Profile({ onLogout }) {
               >
                 <Shield size={18} />
                 Course Control Panel
+              </Link>
+              <Link 
+                to="/admin/banners"
+                className="w-full py-3.5 mb-3 bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold rounded-xl flex items-center justify-center gap-2 transition-colors border border-blue-100 shadow-sm"
+              >
+                <Image size={18} />
+                Banner Control Panel
               </Link>
             </>
           )}

@@ -9,6 +9,7 @@ import CourseDetail from './CourseDetail';
 import TestTaking from './TestTaking';
 import Leaderboard from './Leaderboard';
 import ViewSolution from './ViewSolution';
+import BannerManager from './BannerManager';
 import { UserManager } from '../utils/UserManager';
 
 export default function StateGovLayout({ onLogout }) {
@@ -78,6 +79,7 @@ export default function StateGovLayout({ onLogout }) {
               <Route path="/test/:courseId/:category/:subcategory" element={<TestTaking />} />
               <Route path="/leaderboard/:courseId/:category/:subcategory" element={<Leaderboard />} />
               <Route path="/solution/:courseId/:category/:subcategory" element={<ViewSolution />} />
+              <Route path="/admin/banners" element={<BannerManager />} />
             </Routes>
           </div>
         </main>
