@@ -231,18 +231,6 @@ export default function CourseDetail() {
             <span className="text-white/20 font-bold text-3xl uppercase px-4 text-center">{course.title}</span>
           </div>
         )}
-
-        {isEnrolled && (
-          <div className="absolute top-4 right-4 bg-emerald-500/90 backdrop-blur-md text-white font-bold text-xs px-3 py-1.5 rounded-full shadow-lg z-10 flex items-center gap-1.5 border border-emerald-400/50">
-            <CheckCircle2 size={14} /> ENROLLED
-          </div>
-        )}
-
-        {course.is_coming_soon && (
-          <div className="absolute top-4 left-4 bg-gradient-to-r from-amber-500 to-orange-500 text-white font-black text-xs px-3 py-1.5 rounded-full shadow-lg z-10 flex items-center gap-1 border border-amber-400 animate-bounce">
-            <Clock size={14} /> COMING SOON
-          </div>
-        )}
       </div>
 
       {/* Main Content */}
