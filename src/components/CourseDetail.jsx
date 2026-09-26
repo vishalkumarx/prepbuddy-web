@@ -21,13 +21,17 @@ export default function CourseDetail() {
   const [couponStatus, setCouponStatus] = useState(null); // null | 'valid' | 'invalid' | 'checking'
   const [couponData, setCouponData] = useState(null);
   const [discountedPrice, setDiscountedPrice] = useState(null);
+  const [showPromoDialog, setShowPromoDialog] = useState(false);
 
   const toggleCategory = (cat) => {
-    setExpandedCategories(prev => ({
-      ...prev,
-      [cat]: !prev[cat]
-    }));
+    setExpandedCategories({ [cat]: true });
   };
+
+  useEffect(() => {
+    if (course && course.linked_tests && course.linked_tests.length > 0 && Object.keys(expandedCategories).length === 0) {
+      setExpandedCategories({ [course.linked_tests[0].category]: true });
+    }
+  }, [course, expandedCategories]);
 
   useEffect(() => {
     const fetchCourseDetails = async () => {
@@ -143,8 +147,23 @@ export default function CourseDetail() {
     setDiscountedPrice(null);
   };
 
-  const handleEnroll = async () => {
+  const handleBuyClick = () => {
     if (isEnrolled) return;
+    if (course.price > 0 && couponStatus !== 'valid') {
+      setShowPromoDialog(true);
+    } else {
+      proceedToEnrollmentOrPayment();
+    }
+  };
+
+  const proceedToEnrollmentOrPayment = async () => {
+    const finalPrice = discountedPrice !== null ? discountedPrice : course.price;
+    
+    if (finalPrice > 0) {
+      navigate(`/payment/course/${id}?price=${finalPrice}`);
+      return;
+    }
+
     setEnrollLoading(true);
     try {
       const { error } = await supabase
@@ -157,6 +176,7 @@ export default function CourseDetail() {
       alert('Error enrolling: ' + err.message);
     } finally {
       setEnrollLoading(false);
+      setShowPromoDialog(false);
     }
   };
 
@@ -194,6 +214,14 @@ export default function CourseDetail() {
 
   return (
     <div className="flex flex-col h-[100dvh] bg-app-bg pb-[80px] overflow-y-auto">
+      {/* Header */}
+      <header className="bg-white px-4 py-4 flex items-center sticky top-0 z-50 shadow-sm border-b border-gray-100 flex-shrink-0">
+        <button onClick={() => navigate(-1)} className="p-2 -ml-2 text-gray-500 hover:text-gray-900 rounded-full hover:bg-gray-100 transition-colors">
+          <ArrowLeft size={24} />
+        </button>
+        <h1 className="text-xl font-bold ml-2 text-[#0B2457] line-clamp-1 flex-1">Course Details</h1>
+      </header>
+
       {/* Top Banner & Nav */}
       <div className="relative w-full h-64 bg-gray-100 flex-shrink-0">
         {course.banner_url ? (
@@ -203,16 +231,6 @@ export default function CourseDetail() {
             <span className="text-white/20 font-bold text-4xl uppercase px-4 text-center">{course.title}</span>
           </div>
         )}
-        
-        {/* Back Button Gradient Overlay */}
-        <div className="absolute top-0 left-0 right-0 h-24 bg-gradient-to-b from-black/50 to-transparent pointer-events-none" />
-        
-        <button 
-          onClick={() => navigate(-1)}
-          className="absolute top-4 left-4 p-2.5 bg-black/30 backdrop-blur-md rounded-full text-white hover:bg-black/50 transition-colors pointer-events-auto"
-        >
-          <ArrowLeft size={20} />
-        </button>
 
         {isEnrolled && (
           <div className="absolute top-4 right-4 bg-emerald-500/90 backdrop-blur-md text-white font-bold text-xs px-3 py-1.5 rounded-full shadow-lg z-10 flex items-center gap-1.5 border border-emerald-400/50">
@@ -268,56 +286,6 @@ export default function CourseDetail() {
           </p>
         )}
 
-        {/* Coupon Section */}
-        {!isEnrolled && course.price > 0 && (
-          <div className="mb-6 bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
-            <h3 className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-3 flex items-center gap-1.5">
-              <Tag size={12} /> Have a Coupon?
-            </h3>
-            {couponStatus === 'valid' && couponData ? (
-              <div className="flex items-center gap-3 bg-green-50 border border-green-200 rounded-xl p-3">
-                <CheckCircle size={18} className="text-green-500 flex-shrink-0" />
-                <div className="flex-1">
-                  <p className="text-sm font-bold text-green-800">{couponData.code} applied!</p>
-                  <p className="text-xs text-green-600">
-                    {couponData.discount_type === 'percentage'
-                      ? `${couponData.discount_value}% off`
-                      : `₹${couponData.discount_value} off`}
-                    {' — '}You pay <span className="font-black">₹{discountedPrice}</span>
-                  </p>
-                </div>
-                <button onClick={removeCoupon} className="text-gray-400 hover:text-red-500 transition-colors">
-                  <XCircle size={18} />
-                </button>
-              </div>
-            ) : (
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={couponCode}
-                  onChange={(e) => { setCouponCode(e.target.value.toUpperCase()); setCouponStatus(null); }}
-                  placeholder="Enter coupon code"
-                  className={`flex-1 bg-gray-50 border rounded-xl px-3 py-2.5 text-sm font-bold tracking-widest uppercase focus:outline-none focus:ring-2 focus:ring-primary transition-colors ${
-                    couponStatus === 'invalid' ? 'border-red-300 bg-red-50' : 'border-gray-200'
-                  }`}
-                />
-                <button
-                  onClick={applyCoupon}
-                  disabled={couponStatus === 'checking' || !couponCode.trim()}
-                  className="bg-primary text-white font-bold px-4 py-2.5 rounded-xl text-sm active:scale-95 transition-transform disabled:opacity-50"
-                >
-                  {couponStatus === 'checking' ? '...' : 'Apply'}
-                </button>
-              </div>
-            )}
-            {couponStatus === 'invalid' && (
-              <p className="text-xs text-red-500 mt-2 flex items-center gap-1">
-                <XCircle size={12} /> Invalid or expired coupon code.
-              </p>
-            )}
-          </div>
-        )}
-
         {/* Admin — Coupon Manager */}
         {UserManager.isAdmin() && (
           <div className="mb-6">
@@ -329,7 +297,7 @@ export default function CourseDetail() {
         <div className="mt-8 space-y-4">
           <div className="flex items-center gap-2 mb-4">
             <Layers size={20} className="text-primary" />
-            <h2 className="text-lg font-bold text-gray-900 tracking-tight">Included Mock Tests</h2>
+            <h2 className="text-lg font-bold text-gray-900 tracking-tight">Course Contents</h2>
           </div>
 
           {/* Highlights Grid */}
@@ -344,15 +312,24 @@ export default function CourseDetail() {
                 ];
                 const color = colors[idx % colors.length];
                 const Icon = color.icon;
+                const isExpanded = expandedCategories[category];
                 
                 return (
-                  <div key={category} className={`flex flex-col items-center justify-center gap-2 text-center ${color.bg} border ${color.border} p-3 rounded-2xl`}>
-                    <div className={`p-2 rounded-xl ${color.iconBg} text-white shadow-sm`}>
+                  <div 
+                    key={category} 
+                    onClick={() => toggleCategory(category)}
+                    className={`flex flex-col items-center justify-center gap-2 text-center border p-3 rounded-2xl cursor-pointer hover:scale-[1.02] active:scale-[0.98] transition-all ${
+                      isExpanded 
+                        ? `${color.bg} ${color.border} shadow-sm ring-1 ring-black/5` 
+                        : 'bg-white border-gray-200 hover:bg-gray-50'
+                    }`}
+                  >
+                    <div className={`p-2 rounded-xl ${isExpanded ? color.iconBg : 'bg-gray-200 text-gray-400'} ${isExpanded ? 'text-white' : ''} shadow-sm transition-colors`}>
                       <Icon size={18} />
                     </div>
                     <div>
-                      <div className="font-black text-xl text-gray-900 leading-none">{tests.length}</div>
-                      <div className="text-[10px] font-bold text-gray-600 uppercase tracking-wider mt-1.5 leading-tight line-clamp-2">{category}</div>
+                      <div className={`font-black text-xl leading-none ${isExpanded ? 'text-gray-900' : 'text-gray-400'}`}>{tests.length}</div>
+                      <div className={`text-[10px] font-bold uppercase tracking-wider mt-1.5 leading-tight line-clamp-2 ${isExpanded ? 'text-gray-700' : 'text-gray-400'}`}>{category}</div>
                     </div>
                   </div>
                 );
@@ -365,26 +342,12 @@ export default function CourseDetail() {
               <p className="text-gray-500 font-medium text-sm">No tests have been added to this course yet.</p>
             </div>
           ) : (
-            <div className="space-y-5">
+            <div className="space-y-6">
               {Object.entries(grouped).map(([cat, tests]) => (
-                <div key={cat} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden transition-all">
-                  <div 
-                    onClick={() => toggleCategory(cat)}
-                    className="px-4 py-3 bg-gray-50/80 border-b border-gray-100 flex items-center justify-between cursor-pointer hover:bg-gray-100/80 transition-colors"
-                  >
-                    <div className="flex items-center gap-2">
-                      <h3 className="font-black text-gray-900 text-sm tracking-tight">{cat}</h3>
-                      <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest bg-gray-200/50 px-2.5 py-1 rounded-md shrink-0">
-                        {tests.length} {tests.length === 1 ? 'Test' : 'Tests'}
-                      </span>
-                    </div>
-                    <div className="text-gray-400">
-                      {expandedCategories[cat] ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-                    </div>
-                  </div>
-                  
-                  {expandedCategories[cat] && (
-                    <div className="p-3 space-y-2 bg-white">
+                expandedCategories[cat] && (
+                  <div key={cat} className="space-y-3 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                    <h3 className="font-bold text-gray-900 pl-1">{cat} Tests</h3>
+                    <div className="space-y-3">
                       {tests.map((test, idx) => {
                         const attempt = attempts[`${test.category}-${test.subcategory}`];
                         const progressKey = `test_progress_${UserManager.getUserId()}_${course.id}_${test.category}_${test.subcategory}`;
@@ -475,8 +438,8 @@ export default function CourseDetail() {
                         );
                       })}
                     </div>
-                  )}
-                </div>
+                  </div>
+                )
               ))}
             </div>
           )}
@@ -485,14 +448,90 @@ export default function CourseDetail() {
 
       {/* Sticky Buy/Start Button */}
       {!isEnrolled && (
-        <div className="fixed bottom-0 w-full max-w-md bg-white border-t border-gray-100 p-4 shadow-[0_-10px_20px_-10px_rgba(0,0,0,0.05)] z-50">
+        <div className="fixed bottom-0 w-full max-w-md bg-white border-t border-gray-100 p-4 shadow-[0_-10px_20px_-10px_rgba(0,0,0,0.05)] z-40">
           <button 
-            onClick={handleEnroll}
+            onClick={handleBuyClick}
             disabled={enrollLoading}
             className="w-full font-bold py-4 rounded-xl text-base shadow-lg transition-all flex items-center justify-center gap-2 bg-[#0B2457] text-white hover:bg-blue-900 active:scale-[0.98]"
           >
             {enrollLoading ? 'Processing...' : ((discountedPrice !== null ? discountedPrice : course.price) === 0 ? 'Enroll Now for Free' : `Buy Now — ₹${discountedPrice !== null ? discountedPrice : course.price}`)}
           </button>
+        </div>
+      )}
+
+      {/* Promo Code Dialog */}
+      {showPromoDialog && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-end sm:items-center justify-center p-4">
+          <div className="bg-white rounded-3xl w-full max-w-sm p-6 shadow-2xl animate-in slide-in-from-bottom-4 relative">
+            <button onClick={() => setShowPromoDialog(false)} className="absolute top-4 right-4 text-gray-400 hover:text-gray-900">
+              <XCircle size={24} />
+            </button>
+            <div className="mb-2">
+              <div className="w-12 h-12 bg-indigo-50 rounded-2xl flex items-center justify-center mb-4">
+                <Tag size={24} className="text-primary" />
+              </div>
+              <h3 className="text-xl font-black text-gray-900 leading-tight">Have a promo code?</h3>
+              <p className="text-sm text-gray-500 mt-1">Enter it below to get a discount on this course.</p>
+            </div>
+
+            <div className="my-5">
+              {couponStatus === 'valid' && couponData ? (
+                <div className="flex items-center gap-3 bg-green-50 border border-green-200 rounded-xl p-3">
+                  <CheckCircle size={20} className="text-green-500 flex-shrink-0" />
+                  <div className="flex-1">
+                    <p className="text-sm font-bold text-green-800">{couponData.code} applied!</p>
+                    <p className="text-xs text-green-600">
+                      {couponData.discount_type === 'percentage'
+                        ? `${couponData.discount_value}% off`
+                        : `₹${couponData.discount_value} off`}
+                      {' — '}New Price: <span className="font-black">₹{discountedPrice}</span>
+                    </p>
+                  </div>
+                  <button onClick={removeCoupon} className="text-gray-400 hover:text-red-500 transition-colors">
+                    <XCircle size={18} />
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={couponCode}
+                      onChange={(e) => { setCouponCode(e.target.value.toUpperCase()); setCouponStatus(null); }}
+                      placeholder="Enter code"
+                      className={`flex-1 bg-gray-50 border rounded-xl px-4 py-3 text-sm font-bold tracking-widest uppercase focus:outline-none focus:ring-2 focus:ring-primary transition-colors ${
+                        couponStatus === 'invalid' ? 'border-red-300 bg-red-50' : 'border-gray-200'
+                      }`}
+                    />
+                    <button
+                      onClick={applyCoupon}
+                      disabled={couponStatus === 'checking' || !couponCode.trim()}
+                      className="bg-gray-900 text-white font-bold px-5 py-3 rounded-xl text-sm active:scale-95 transition-transform disabled:opacity-50"
+                    >
+                      {couponStatus === 'checking' ? '...' : 'Apply'}
+                    </button>
+                  </div>
+                  {couponStatus === 'invalid' && (
+                    <p className="text-xs text-red-500 mt-2 flex items-center gap-1 font-medium">
+                      <XCircle size={12} /> Invalid or expired coupon code.
+                    </p>
+                  )}
+                </>
+              )}
+            </div>
+
+            <div className="flex gap-3">
+              <button onClick={() => proceedToEnrollmentOrPayment()} className="flex-1 py-3.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-xl transition-colors active:scale-95">
+                Skip
+              </button>
+              <button 
+                onClick={() => proceedToEnrollmentOrPayment()} 
+                className="flex-[2] py-3.5 bg-primary text-white font-bold rounded-xl shadow-lg shadow-primary/20 transition-transform active:scale-95"
+              >
+                {discountedPrice !== null ? `Pay ₹${discountedPrice}` : `Pay ₹${course.price}`}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

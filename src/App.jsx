@@ -12,6 +12,8 @@ import Profile from './components/Profile';
 import AdminSessions from './components/AdminSessions';
 import UploadJSONQuestions from './components/UploadJSONQuestions';
 import CreateTestSeries from './components/CreateTestSeries';
+import DummyPaymentGateway from './components/DummyPaymentGateway';
+import CourseControlPanel from './components/CourseControlPanel';
 import PreparationSelector from './components/PreparationSelector';
 import StateGovLayout from './components/StateGovLayout';
 import { Home, User, BookOpen, Search, Plus, X, ShoppingBag } from 'lucide-react';
@@ -236,6 +238,8 @@ function App() {
         <Route path="/admin/upload-json" element={<UploadJSONQuestions />} />
         <Route path="/upload-json" element={<UploadJSONQuestions />} />
         <Route path="/admin/create-test" element={<CreateTestSeries />} />
+        <Route path="/admin/courses" element={<CourseControlPanel />} />
+        <Route path="/payment/:type/:id" element={<DummyPaymentGateway />} />
 
         {/* Main Application Routes */}
         <Route 

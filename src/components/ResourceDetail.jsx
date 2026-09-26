@@ -26,6 +26,7 @@ export default function ResourceDetail() {
   const [couponStatus, setCouponStatus] = useState(null); // null | 'valid' | 'invalid' | 'checking'
   const [couponData, setCouponData] = useState(null);
   const [discountedPrice, setDiscountedPrice] = useState(null);
+  const [showPromoDialog, setShowPromoDialog] = useState(false);
 
   const generateSamples = async (fileUrl) => {
     setLoadingSamples(true);
@@ -93,12 +94,22 @@ export default function ResourceDetail() {
     fetchResource();
   }, [id]);
 
-  const handleAction = () => {
+  const handleBuyClick = () => {
+    if (resource.price > 0 && couponStatus !== 'valid') {
+      setShowPromoDialog(true);
+    } else {
+      proceedToEnrollmentOrPayment();
+    }
+  };
+
+  const proceedToEnrollmentOrPayment = () => {
     const finalPrice = discountedPrice !== null ? discountedPrice : resource.price;
+    setShowPromoDialog(false);
+    
     if (finalPrice === 0) {
       window.open(resource.file_url, '_blank');
     } else {
-      alert(`Payment gateway coming soon! Price: ₹${finalPrice}`);
+      navigate(`/payment/resource/${id}?price=${finalPrice}`);
     }
   };
 
@@ -247,60 +258,10 @@ export default function ResourceDetail() {
           )}
         </div>
 
-        {/* Coupon Section (only for paid resources) */}
-        {resource.price > 0 && (
-          <div className="mb-4 bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
-            <h3 className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-3 flex items-center gap-1.5">
-              <Tag size={12} /> Have a Coupon?
-            </h3>
-            {couponStatus === 'valid' && couponData ? (
-              <div className="flex items-center gap-3 bg-green-50 border border-green-200 rounded-xl p-3">
-                <CheckCircle size={18} className="text-green-500 flex-shrink-0" />
-                <div className="flex-1">
-                  <p className="text-sm font-bold text-green-800">{couponData.code} applied!</p>
-                  <p className="text-xs text-green-600">
-                    {couponData.discount_type === 'percentage'
-                      ? `${couponData.discount_value}% off`
-                      : `₹${couponData.discount_value} off`}
-                    {' — '}You pay <span className="font-black">₹{discountedPrice}</span>
-                  </p>
-                </div>
-                <button onClick={removeCoupon} className="text-gray-400 hover:text-red-500 transition-colors">
-                  <XCircle size={18} />
-                </button>
-              </div>
-            ) : (
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={couponCode}
-                  onChange={(e) => { setCouponCode(e.target.value.toUpperCase()); setCouponStatus(null); }}
-                  placeholder="Enter coupon code"
-                  className={`flex-1 bg-gray-50 border rounded-xl px-3 py-2.5 text-sm font-bold tracking-widest uppercase focus:outline-none focus:ring-2 focus:ring-primary transition-colors ${
-                    couponStatus === 'invalid' ? 'border-red-300 bg-red-50' : 'border-gray-200'
-                  }`}
-                />
-                <button
-                  onClick={applyCoupon}
-                  disabled={couponStatus === 'checking' || !couponCode.trim()}
-                  className="bg-primary text-white font-bold px-4 py-2.5 rounded-xl text-sm active:scale-95 transition-transform disabled:opacity-50"
-                >
-                  {couponStatus === 'checking' ? '...' : 'Apply'}
-                </button>
-              </div>
-            )}
-            {couponStatus === 'invalid' && (
-              <p className="text-xs text-red-500 mt-2 flex items-center gap-1">
-                <XCircle size={12} /> Invalid or expired coupon code.
-              </p>
-            )}
-          </div>
-        )}
-
         {/* Action Button */}
         <div className="mb-6">
           <button
-            onClick={handleAction}
+            onClick={handleBuyClick}
             className={`w-full flex items-center justify-center gap-2 py-4 rounded-xl font-bold text-lg transition-colors shadow-md active:scale-[0.98] ${
               (discountedPrice !== null ? discountedPrice : resource.price) === 0
                 ? 'bg-green-600 text-white hover:bg-green-700 shadow-green-600/20'
@@ -358,6 +319,82 @@ export default function ResourceDetail() {
            )}
         </div>
       </div>
+
+      {/* Promo Code Dialog */}
+      {showPromoDialog && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-end sm:items-center justify-center p-4">
+          <div className="bg-white rounded-3xl w-full max-w-sm p-6 shadow-2xl animate-in slide-in-from-bottom-4 relative">
+            <button onClick={() => setShowPromoDialog(false)} className="absolute top-4 right-4 text-gray-400 hover:text-gray-900">
+              <XCircle size={24} />
+            </button>
+            <div className="mb-2">
+              <div className="w-12 h-12 bg-indigo-50 rounded-2xl flex items-center justify-center mb-4">
+                <Tag size={24} className="text-primary" />
+              </div>
+              <h3 className="text-xl font-black text-gray-900 leading-tight">Have a promo code?</h3>
+              <p className="text-sm text-gray-500 mt-1">Enter it below to get a discount on this resource.</p>
+            </div>
+
+            <div className="my-5">
+              {couponStatus === 'valid' && couponData ? (
+                <div className="flex items-center gap-3 bg-green-50 border border-green-200 rounded-xl p-3">
+                  <CheckCircle size={20} className="text-green-500 flex-shrink-0" />
+                  <div className="flex-1">
+                    <p className="text-sm font-bold text-green-800">{couponData.code} applied!</p>
+                    <p className="text-xs text-green-600">
+                      {couponData.discount_type === 'percentage'
+                        ? `${couponData.discount_value}% off`
+                        : `₹${couponData.discount_value} off`}
+                      {' — '}New Price: <span className="font-black">₹{discountedPrice}</span>
+                    </p>
+                  </div>
+                  <button onClick={removeCoupon} className="text-gray-400 hover:text-red-500 transition-colors">
+                    <XCircle size={18} />
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={couponCode}
+                      onChange={(e) => { setCouponCode(e.target.value.toUpperCase()); setCouponStatus(null); }}
+                      placeholder="Enter code"
+                      className={`flex-1 bg-gray-50 border rounded-xl px-4 py-3 text-sm font-bold tracking-widest uppercase focus:outline-none focus:ring-2 focus:ring-primary transition-colors ${
+                        couponStatus === 'invalid' ? 'border-red-300 bg-red-50' : 'border-gray-200'
+                      }`}
+                    />
+                    <button
+                      onClick={applyCoupon}
+                      disabled={couponStatus === 'checking' || !couponCode.trim()}
+                      className="bg-gray-900 text-white font-bold px-5 py-3 rounded-xl text-sm active:scale-95 transition-transform disabled:opacity-50"
+                    >
+                      {couponStatus === 'checking' ? '...' : 'Apply'}
+                    </button>
+                  </div>
+                  {couponStatus === 'invalid' && (
+                    <p className="text-xs text-red-500 mt-2 flex items-center gap-1 font-medium">
+                      <XCircle size={12} /> Invalid or expired coupon code.
+                    </p>
+                  )}
+                </>
+              )}
+            </div>
+
+            <div className="flex gap-3">
+              <button onClick={() => proceedToEnrollmentOrPayment()} className="flex-1 py-3.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-xl transition-colors active:scale-95">
+                Skip
+              </button>
+              <button 
+                onClick={() => proceedToEnrollmentOrPayment()} 
+                className="flex-[2] py-3.5 bg-primary text-white font-bold rounded-xl shadow-lg shadow-primary/20 transition-transform active:scale-95"
+              >
+                {discountedPrice !== null ? `Pay ₹${discountedPrice}` : `Pay ₹${resource.price}`}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

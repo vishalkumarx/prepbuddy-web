@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { UserManager } from '../utils/UserManager';
-import { LogOut, User, Mail, Award, CheckCircle, Users, Settings, FileCode } from 'lucide-react';
+import { LogOut, User, Mail, Award, CheckCircle, Users, Settings, FileCode, Shield } from 'lucide-react';
 
 export default function Profile({ onLogout }) {
   const username = UserManager.getUsername() || 'Anonymous';
@@ -76,6 +76,13 @@ export default function Profile({ onLogout }) {
               >
                 <FileCode size={18} />
                 Create Test Series
+              </Link>
+              <Link 
+                to="/admin/courses"
+                className="w-full py-3.5 mb-3 bg-purple-50 hover:bg-purple-100 text-purple-700 font-bold rounded-xl flex items-center justify-center gap-2 transition-colors border border-purple-100 shadow-sm"
+              >
+                <Shield size={18} />
+                Course Control Panel
               </Link>
             </>
           )}
