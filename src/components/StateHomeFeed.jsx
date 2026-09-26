@@ -87,7 +87,8 @@ export default function StateHomeFeed() {
           <p>No test series available yet.</p>
         </div>
       ) : (
-        testSeries.map((ts) => {
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {testSeries.map((ts) => {
           const showFeatures = ts.title?.toLowerCase().includes('senior') || ts.title?.toLowerCase().includes('assistant') || ts.title?.toLowerCase().includes('asi') || true;
 
           return (
@@ -166,7 +167,8 @@ export default function StateHomeFeed() {
               </div>
             </div>
           );
-        })
+          })}
+        </div>
       )}
     </div>
   );
