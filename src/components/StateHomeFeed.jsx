@@ -291,12 +291,12 @@ export default function StateHomeFeed() {
                     {ts.price > 0 ? (
                       <>
                         <span className="font-black text-lg text-[#0B2457] flex items-center">
-                          <IndianRupee size={15} className="mr-0.5" />{ts.price}
+                          <IndianRupee size={15} className="mr-0" />{ts.price}
                         </span>
                         {ts.mrp && ts.mrp > ts.price && (
                           <>
                             <span className="text-sm text-gray-400 line-through flex items-center">
-                              <IndianRupee size={12} className="mr-0.5" />{ts.mrp}
+                              <IndianRupee size={12} className="mr-0" />{ts.mrp}
                             </span>
                             <span className="bg-green-100 text-green-700 font-black text-[10px] px-2 py-0.5 rounded-full">
                               {Math.round((ts.mrp - ts.price) / ts.mrp * 100)}% OFF
