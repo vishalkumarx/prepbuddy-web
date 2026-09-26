@@ -34,13 +34,13 @@ export default function CourseControlPanel() {
         
       setCourses(coursesData || []);
       
-      // Try to fetch known users from existing enrollments
-      const { data: allEnrollments } = await supabase
-        .from('prepbuddy_enrollments')
-        .select('user_id');
-      if (allEnrollments) {
-        const uniqueUsers = [...new Set(allEnrollments.map(e => e.user_id))];
-        setKnownUsers(uniqueUsers);
+      // Fetch known users from sessions for autocomplete
+      const { data: allUsers } = await supabase
+        .from('prepbuddy_user_sessions')
+        .select('email');
+      if (allUsers) {
+        const uniqueEmails = [...new Set(allUsers.map(e => e.email))].filter(Boolean);
+        setKnownUsers(uniqueEmails);
       }
       
     } catch (err) {
@@ -58,7 +58,28 @@ export default function CourseControlPanel() {
         .select('*')
         .eq('course_id', courseId)
         .order('created_at', { ascending: false });
-      setEnrollments(data || []);
+        
+      if (data && data.length > 0) {
+        const userIds = data.map(e => e.user_id);
+        const { data: sessionsData } = await supabase
+          .from('prepbuddy_user_sessions')
+          .select('user_id, email, name')
+          .in('user_id', userIds);
+          
+        const sessionMap = {};
+        if (sessionsData) {
+          sessionsData.forEach(s => sessionMap[s.user_id] = s);
+        }
+        
+        const enriched = data.map(e => ({
+          ...e,
+          email: sessionMap[e.user_id]?.email || e.user_id,
+          name: sessionMap[e.user_id]?.name || 'Unknown'
+        }));
+        setEnrollments(enriched);
+      } else {
+        setEnrollments([]);
+      }
     } catch (err) {
       console.error(err);
     } finally {
@@ -88,23 +109,46 @@ export default function CourseControlPanel() {
     e.preventDefault();
     if (!newUser.trim() || !selectedCourse) return;
     
-    // Check if already enrolled
-    if (enrollments.some(en => en.user_id === newUser.trim())) {
-      alert("User is already enrolled in this course.");
-      return;
-    }
-
     setActionLoading(true);
+    
+    const targetEmail = newUser.trim().toLowerCase();
+    
     try {
+      // Find user_id by email
+      const { data: sessionData, error: sessionError } = await supabase
+        .from('prepbuddy_user_sessions')
+        .select('user_id, email, name')
+        .eq('email', targetEmail)
+        .maybeSingle();
+        
+      if (sessionError || !sessionData) {
+         alert("User email not found. The user must log into the app at least once before they can be enrolled.");
+         setActionLoading(false);
+         return;
+      }
+      
+      const targetUserId = sessionData.user_id;
+
+      // Check if already enrolled
+      if (enrollments.some(en => en.user_id === targetUserId)) {
+        alert("User is already enrolled in this course.");
+        setActionLoading(false);
+        return;
+      }
+
       const { data, error } = await supabase
         .from('prepbuddy_enrollments')
-        .insert([{ user_id: newUser.trim(), course_id: selectedCourse.id }])
+        .insert([{ user_id: targetUserId, course_id: selectedCourse.id }])
         .select();
         
       if (error) throw error;
       
       if (data && data.length > 0) {
-        setEnrollments([data[0], ...enrollments]);
+        setEnrollments([{
+          ...data[0],
+          email: sessionData.email,
+          name: sessionData.name
+        }, ...enrollments]);
       }
       setNewUser('');
     } catch (err) {
@@ -173,7 +217,7 @@ export default function CourseControlPanel() {
                       type="text" 
                       value={newUser}
                       onChange={(e) => setNewUser(e.target.value)}
-                      placeholder="Enter user_id to re-enroll..."
+                      placeholder="Enter user's gmail id to enroll..."
                       className="w-full bg-gray-50 border border-gray-200 rounded-xl pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
                       list="known-users"
                     />
@@ -207,12 +251,13 @@ export default function CourseControlPanel() {
                     {enrollments.map(en => (
                       <div key={en.id} className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm flex items-center justify-between">
                         <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-full bg-indigo-50 flex items-center justify-center text-primary font-bold text-xs border border-indigo-100">
-                            {en.user_id.substring(0, 2).toUpperCase()}
+                          <div className="w-10 h-10 rounded-full bg-indigo-50 flex items-center justify-center text-primary font-bold text-xs border border-indigo-100 uppercase">
+                            {en.email ? en.email.substring(0, 2) : en.user_id.substring(0, 2)}
                           </div>
                           <div>
-                            <p className="font-bold text-gray-900 text-sm font-mono">{en.user_id}</p>
-                            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mt-0.5">
+                            <p className="font-bold text-gray-900 text-sm">{en.name}</p>
+                            <p className="text-xs text-gray-500 font-mono">{en.email}</p>
+                            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mt-1">
                               Enrolled: {new Date(en.created_at).toLocaleDateString()}
                             </p>
                           </div>
