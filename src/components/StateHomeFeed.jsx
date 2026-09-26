@@ -271,14 +271,16 @@ export default function StateHomeFeed() {
                     return acc;
                   }, {});
                   return (
-                    <div className="flex items-center gap-1.5 flex-wrap pt-2 border-t border-gray-100">
-                      <Layers size={12} className="text-gray-400 flex-shrink-0" />
-                      {Object.entries(grouped).map(([cat, count], idx) => (
-                        <span key={cat} className="text-[11px] text-gray-500 font-medium">
-                          {count} {cat}{idx < Object.keys(grouped).length - 1 ? <span className="text-gray-300 ml-1.5">·</span> : ''}
-                        </span>
+                    <div className="pt-2 border-t border-gray-100 flex flex-col gap-1">
+                      {Object.entries(grouped).map(([cat, count]) => (
+                        <div key={cat} className="flex items-center justify-between">
+                          <span className="text-xs text-gray-600 font-medium flex items-center gap-1.5">
+                            <Layers size={11} className="text-gray-400" />
+                            {cat}
+                          </span>
+                          <span className="text-xs font-bold text-[#0B2457] bg-indigo-50 px-2 py-0.5 rounded-full">{count} {count === 1 ? 'Test' : 'Tests'}</span>
+                        </div>
                       ))}
-                      <span className="text-[11px] text-gray-400 ml-auto">{ts.linked_tests.length} tests total</span>
                     </div>
                   );
                 })()}
