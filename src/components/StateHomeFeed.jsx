@@ -324,13 +324,25 @@ export default function StateHomeFeed() {
                   )}
                   <div className={`flex gap-2 ${enrolledIds.has(ts.id) ? 'w-full' : ''}`}>
                     {enrolledIds.has(ts.id) ? (
-                      <div className="w-full mt-1">
-                        <div className="flex items-center justify-between text-[10px] font-bold text-gray-500 mb-1">
-                          <span>Your Progress</span>
-                          <span className="text-emerald-600">{progressPercent}%</span>
+                      <div className="flex items-center gap-3">
+                        <div className="relative flex-shrink-0 w-12 h-12">
+                          <svg viewBox="0 0 36 36" className="w-12 h-12 -rotate-90">
+                            <circle cx="18" cy="18" r="15.9" fill="none" stroke="#e5e7eb" strokeWidth="3" />
+                            <circle
+                              cx="18" cy="18" r="15.9" fill="none"
+                              stroke="#10b981" strokeWidth="3"
+                              strokeDasharray={`${progressPercent} ${100 - progressPercent}`}
+                              strokeLinecap="round"
+                              style={{ transition: 'stroke-dasharray 0.5s ease' }}
+                            />
+                          </svg>
+                          <span className="absolute inset-0 flex items-center justify-center text-[10px] font-black text-emerald-600">
+                            {progressPercent}%
+                          </span>
                         </div>
-                        <div className="w-full bg-gray-100 rounded-full h-2">
-                          <div className="bg-emerald-500 h-2 rounded-full transition-all duration-500" style={{ width: `${progressPercent}%` }}></div>
+                        <div>
+                          <p className="text-xs font-bold text-gray-800">Your Progress</p>
+                          <p className="text-[10px] text-gray-400">{progressPercent === 100 ? 'Completed! 🎉' : 'Keep going!'}</p>
                         </div>
                       </div>
                     ) : (
