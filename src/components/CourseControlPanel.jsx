@@ -664,12 +664,14 @@ function CourseDetailsEditor({ course, onUpdate }) {
   const [title, setTitle] = React.useState(course.title || '');
   const [description, setDescription] = React.useState(course.description || '');
   const [price, setPrice] = React.useState(course.price ?? 0);
+  const [mrp, setMrp] = React.useState(course.mrp ?? '');
   const [saving, setSaving] = React.useState(false);
 
   React.useEffect(() => {
     setTitle(course.title || '');
     setDescription(course.description || '');
     setPrice(course.price ?? 0);
+    setMrp(course.mrp ?? '');
   }, [course.id]);
 
   const handleSave = async () => {
@@ -678,7 +680,7 @@ function CourseDetailsEditor({ course, onUpdate }) {
     try {
       const { data, error } = await supabase
         .from('prepbuddy_test_series')
-        .update({ title: title.trim(), description: description.trim(), price: Number(price) })
+        .update({ title: title.trim(), description: description.trim(), price: Number(price), mrp: mrp !== '' ? Number(mrp) : null })
         .eq('id', course.id)
         .select()
         .single();
@@ -718,15 +720,29 @@ function CourseDetailsEditor({ course, onUpdate }) {
             className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 focus:outline-none resize-none"
           />
         </div>
-        <div>
-          <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">Price (₹) — set 0 for Free</label>
-          <input
-            type="number"
-            min="0"
-            value={price}
-            onChange={e => setPrice(e.target.value)}
-            className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 focus:outline-none"
-          />
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">Selling Price (₹)</label>
+            <input
+              type="number"
+              min="0"
+              value={price}
+              onChange={e => setPrice(e.target.value)}
+              className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 focus:outline-none"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">MRP / Original Price (₹)</label>
+            <input
+              type="number"
+              min="0"
+              value={mrp}
+              onChange={e => setMrp(e.target.value)}
+              placeholder="Leave blank if no discount"
+              className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 focus:outline-none"
+            />
+          </div>
         </div>
         <button
           onClick={handleSave}

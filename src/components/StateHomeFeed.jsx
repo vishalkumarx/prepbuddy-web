@@ -311,16 +311,27 @@ export default function StateHomeFeed() {
                 
                 <div className="mt-2 flex items-center justify-between">
                   {!enrolledIds.has(ts.id) && (
-                    <span className="font-bold text-lg text-primary flex items-center">
+                    <div className="flex items-center gap-2 flex-wrap">
                       {ts.price > 0 ? (
                         <>
-                          <IndianRupee size={16} className="mr-0.5" />
-                          {ts.price}
+                          <span className="font-black text-lg text-[#0B2457] flex items-center">
+                            <IndianRupee size={15} className="mr-0.5" />{ts.price}
+                          </span>
+                          {ts.mrp && ts.mrp > ts.price && (
+                            <>
+                              <span className="text-sm text-gray-400 line-through flex items-center">
+                                <IndianRupee size={12} className="mr-0.5" />{ts.mrp}
+                              </span>
+                              <span className="bg-green-100 text-green-700 font-black text-[10px] px-2 py-0.5 rounded-full">
+                                {Math.round((ts.mrp - ts.price) / ts.mrp * 100)}% OFF
+                              </span>
+                            </>
+                          )}
                         </>
                       ) : (
-                        'Free'
+                        <span className="font-black text-lg text-emerald-600">FREE</span>
                       )}
-                    </span>
+                    </div>
                   )}
                   <div className={`flex gap-2 ${enrolledIds.has(ts.id) ? 'w-full' : ''}`}>
                     {enrolledIds.has(ts.id) ? (
