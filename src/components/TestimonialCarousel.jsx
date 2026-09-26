@@ -127,7 +127,7 @@ export default function TestimonialCarousel() {
 
       {/* Carousel Indicators (Dots) */}
       <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-2 z-10 bg-black/30 backdrop-blur-sm px-3 py-1.5 rounded-full border border-white/10">
-        {testimonials.map((_, idx) => (
+        {activeTestimonials.map((_, idx) => (
           <button
             key={idx}
             onClick={() => setCurrentIndex(idx)}
