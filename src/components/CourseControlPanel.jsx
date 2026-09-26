@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabase';
 import { UserManager } from '../utils/UserManager';
-import { Shield, Search, UserPlus, Trash2, ArrowLeft, RefreshCw, Layers, Tag, Settings, FileText, Languages, Award, Newspaper, Plus, Clock, X } from 'lucide-react';
+import { Shield, Search, UserPlus, Trash2, ArrowLeft, RefreshCw, Layers, Tag, Settings, FileText, Languages, Award, Newspaper, Plus, Clock, X, Edit2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import CouponManager from './CouponManager';
 
@@ -16,6 +16,7 @@ export default function CourseControlPanel() {
   const [activeTab, setActiveTab] = useState('enrollments');
   const [expandedCategories, setExpandedCategories] = useState({});
   const [showAddTile, setShowAddTile] = useState(false);
+  const [editTileIdx, setEditTileIdx] = useState(null);
   const [newTile, setNewTile] = useState({ category: '', subcategory: '', totalQuestions: '', duration: '', coming_soon: false });
 
   const toggleCategory = (cat) => setExpandedCategories(prev => ({ [cat]: !prev[cat] }));
@@ -25,13 +26,21 @@ export default function CourseControlPanel() {
     setActionLoading(true);
     try {
       const existing = selectedCourse.linked_tests || [];
-      const updated = [...existing, {
+      const updatedTile = {
         category: newTile.category.trim(),
         subcategory: newTile.subcategory.trim(),
         totalQuestions: parseInt(newTile.totalQuestions) || 0,
         duration: parseInt(newTile.duration) || 0,
         coming_soon: newTile.coming_soon
-      }];
+      };
+      
+      let updated;
+      if (editTileIdx !== null) {
+        updated = [...existing];
+        updated[editTileIdx] = updatedTile;
+      } else {
+        updated = [...existing, updatedTile];
+      }
       const { data, error } = await supabase
         .from('prepbuddy_test_series')
         .update({ linked_tests: updated })
@@ -42,12 +51,25 @@ export default function CourseControlPanel() {
       setSelectedCourse(data);
       setCourses(prev => prev.map(c => c.id === data.id ? data : c));
       setNewTile({ category: '', subcategory: '', totalQuestions: '', duration: '', coming_soon: false });
+      setEditTileIdx(null);
       setShowAddTile(false);
     } catch (err) {
       alert('Error adding tile: ' + err.message);
     } finally {
       setActionLoading(false);
     }
+  };
+
+  const handleEditTileStart = (t, idx) => {
+    setNewTile({
+      category: t.category,
+      subcategory: t.subcategory,
+      totalQuestions: t.totalQuestions,
+      duration: t.duration,
+      coming_soon: t.coming_soon || false
+    });
+    setEditTileIdx(idx);
+    setShowAddTile(true);
   };
 
   const handleDeleteTile = async (tileIdx) => {
@@ -378,7 +400,11 @@ export default function CourseControlPanel() {
                       <div className="flex justify-between items-center mb-4">
                         <h3 className="font-bold text-gray-800">Test Tiles</h3>
                         <button
-                          onClick={() => setShowAddTile(v => !v)}
+                          onClick={() => {
+                            setEditTileIdx(null);
+                            setNewTile({ category: '', subcategory: '', totalQuestions: '', duration: '', coming_soon: false });
+                            setShowAddTile(v => !v);
+                          }}
                           className="flex items-center gap-1.5 text-xs bg-primary text-white px-3 py-1.5 rounded-lg font-bold hover:bg-blue-900 transition-colors"
                         >
                           <Plus size={14} /> Add Tile
@@ -388,7 +414,7 @@ export default function CourseControlPanel() {
                       {/* Add Tile Form */}
                       {showAddTile && (
                         <div className="mb-5 bg-white border border-indigo-100 rounded-2xl p-4 shadow-sm space-y-3">
-                          <p className="font-bold text-sm text-gray-700">New Test Tile</p>
+                          <p className="font-bold text-sm text-gray-700">{editTileIdx !== null ? 'Edit Test Tile' : 'New Test Tile'}</p>
                           <div className="grid grid-cols-2 gap-2">
                             <input
                               value={newTile.category}
@@ -427,9 +453,9 @@ export default function CourseControlPanel() {
                             Mark as "Coming Soon"
                           </label>
                           <div className="flex gap-2 pt-1">
-                            <button onClick={() => setShowAddTile(false)} className="flex-1 py-2 bg-gray-100 text-gray-600 rounded-xl text-sm font-bold">Cancel</button>
+                            <button onClick={() => { setShowAddTile(false); setEditTileIdx(null); }} className="flex-1 py-2 bg-gray-100 text-gray-600 rounded-xl text-sm font-bold">Cancel</button>
                             <button onClick={handleAddTile} disabled={actionLoading || !newTile.category.trim() || !newTile.subcategory.trim()} className="flex-[2] py-2 bg-primary text-white rounded-xl text-sm font-bold disabled:opacity-50">
-                              {actionLoading ? 'Saving...' : 'Save Tile'}
+                              {actionLoading ? 'Saving...' : (editTileIdx !== null ? 'Update Tile' : 'Save Tile')}
                             </button>
                           </div>
                         </div>
@@ -488,13 +514,22 @@ export default function CourseControlPanel() {
                                           </div>
                                           <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mt-0.5">{t.totalQuestions} Qs • {t.duration} min</p>
                                         </div>
-                                        <button
-                                          onClick={() => handleDeleteTile(t._idx)}
-                                          disabled={actionLoading}
-                                          className="p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                                        >
-                                          <X size={14} />
-                                        </button>
+                                        <div className="flex items-center gap-1">
+                                          <button
+                                            onClick={() => handleEditTileStart(t, t._idx)}
+                                            disabled={actionLoading}
+                                            className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                          >
+                                            <Edit2 size={14} />
+                                          </button>
+                                          <button
+                                            onClick={() => handleDeleteTile(t._idx)}
+                                            disabled={actionLoading}
+                                            className="p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                          >
+                                            <X size={14} />
+                                          </button>
+                                        </div>
                                       </div>
                                     ))}
                                   </div>
