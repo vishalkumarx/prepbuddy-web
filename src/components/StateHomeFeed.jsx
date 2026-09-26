@@ -260,11 +260,7 @@ export default function StateHomeFeed() {
                     <CheckCircle2 size={14} /> ENROLLED
                   </div>
                 )}
-                {!enrolledIds.has(ts.id) && ts.is_popular && (
-                  <div className="absolute top-3 left-3 bg-gradient-to-r from-pink-500 to-rose-500 text-white font-black text-xs px-3 py-1.5 rounded-full shadow-lg z-10 flex items-center gap-1 border border-pink-400">
-                    <Star size={14} fill="currentColor" /> POPULAR
-                  </div>
-                )}
+
                 {ts.is_coming_soon && (
                   <div className="absolute top-3 right-3 bg-gradient-to-r from-amber-500 to-orange-500 text-white font-black text-xs px-3 py-1.5 rounded-full shadow-lg z-10 flex items-center gap-1 border border-amber-400 animate-bounce">
                     <Clock size={14} /> COMING SOON

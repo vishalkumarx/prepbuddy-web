@@ -237,11 +237,7 @@ export default function CourseDetail() {
             <CheckCircle2 size={14} /> ENROLLED
           </div>
         )}
-        {!isEnrolled && course.is_popular && (
-          <div className="absolute top-4 right-4 bg-gradient-to-r from-pink-500 to-rose-500 text-white font-black text-xs px-3 py-1.5 rounded-full shadow-lg z-10 flex items-center gap-1 border border-pink-400">
-            <Star size={14} fill="currentColor" /> POPULAR
-          </div>
-        )}
+
         {course.is_coming_soon && (
           <div className="absolute top-4 left-4 bg-gradient-to-r from-amber-500 to-orange-500 text-white font-black text-xs px-3 py-1.5 rounded-full shadow-lg z-10 flex items-center gap-1 border border-amber-400 animate-bounce">
             <Clock size={14} /> COMING SOON
