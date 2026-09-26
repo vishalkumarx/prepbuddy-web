@@ -29,18 +29,13 @@ export default function StateGovLayout({ onLogout }) {
       
       {/* Desktop Sidebar (Left) */}
       <nav className="hidden md:flex flex-col w-64 bg-white border-r border-gray-200 h-full py-6 flex-shrink-0 z-20">
-        <div className="px-6 mb-8 flex flex-col items-start gap-1">
-          <div className="flex items-center gap-2">
-            <img src="/logo.png" alt="GoalPrep" className="h-8 w-auto object-contain" />
-            {isAdmin && (
-              <span className="bg-secondary/20 text-secondary text-[10px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wide border border-secondary/30">
-                Admin
-              </span>
-            )}
-          </div>
-          <span className="text-gray-500 text-[10px] font-bold tracking-widest uppercase ml-1">
-            State Government
-          </span>
+        <div className="px-6 mb-8">
+          <img src="/goalprep-logo.png" alt="GoalPrep" className="h-12 w-auto object-contain" />
+          {isAdmin && (
+            <span className="mt-1.5 inline-block bg-secondary/20 text-secondary text-[10px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wide border border-secondary/30">
+              Admin
+            </span>
+          )}
         </div>
         <div className="flex-1 px-3 space-y-1">
           {navItems.map((item) => {
