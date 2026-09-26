@@ -79,7 +79,7 @@ export default function StateHomeFeed() {
 
       {/* Section Title */}
       <div className="pt-2 pb-1">
-        <h2 className="text-xl font-bold text-gray-900 tracking-tight">Upcoming exams</h2>
+        <h2 className="text-xl font-bold text-gray-900 tracking-tight">Popular Courses</h2>
       </div>
 
       {testSeries.length === 0 ? (
