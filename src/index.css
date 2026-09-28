@@ -31,7 +31,18 @@
   .html-content img {
     width: 100% !important;
     height: auto !important;
-    margin: 0.5rem 0;
+    margin: 0.5rem 0 !important;
+    display: block !important;
+  }
+  
+  /* If the image is inside a restricting span or div with inline styles, force the parent to expand too */
+  .html-content span:has(img),
+  .html-content p:has(img),
+  .html-content div:has(img),
+  .html-content a:has(img) {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
   }
 }
 
