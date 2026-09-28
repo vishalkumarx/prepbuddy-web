@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../supabase';
 import { ArrowLeft, Plus, Edit2, Trash2, ListPlus, Sparkles, X, RefreshCw, Link2 } from 'lucide-react';
+import { processHtml } from '../utils/htmlUtils';
 
 // Reusable sidebar test item to avoid repetition
 function SidebarTestItem({ group, isActive, linkedCoursesCount, selectedSidebarItems, toggleSidebarItemSelection, handleRenameCategory, setLinkModalGroup, handleRenameTestSeries, handleDeleteTestSeries, setCategory, setSubcategory, showToast, shouldScrollToPreviewRef }) {
