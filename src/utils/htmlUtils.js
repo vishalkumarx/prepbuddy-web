@@ -5,5 +5,7 @@
  */
 export function processHtml(html) {
   if (!html) return '';
-  return html.replace(/\\n/g, '<br/>');
+  return html
+    .replace(/\\n/g, '<br/>') // Handles JSON string escaped \n
+    .replace(/\n/g, '<br/>'); // Handles actual newlines from textareas
 }
