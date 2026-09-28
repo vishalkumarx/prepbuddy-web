@@ -883,7 +883,7 @@ export default function CreateTestSeries() {
                               </div>
                             </div>
                             <div className="flex items-center justify-between mt-1">
-                              <p className={`text-xs truncate max-w-[50%] ${isActive ? 'text-indigo-600' : 'text-gray-500'}`}>
+                              <p className={`text-xs ${isActive ? 'text-indigo-600' : 'text-gray-500'}`}>
                                 {group.subcategory}
                               </p>
                               <div className="flex items-center gap-1">
