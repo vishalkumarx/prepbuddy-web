@@ -4,6 +4,7 @@ import { supabase } from '../supabase';
 import { IndianRupee, Layers, Languages, Award, Newspaper, CheckCircle2, Tag, CheckCircle, XCircle, ArrowRight, Clock, Star } from 'lucide-react';
 import TestimonialCarousel from './TestimonialCarousel';
 import { UserManager } from '../utils/UserManager';
+import { processHtml } from '../utils/htmlUtils';
 
 export default function StateHomeFeed() {
   const navigate = useNavigate();
@@ -313,7 +314,7 @@ export default function StateHomeFeed() {
               <div className="p-4 flex flex-col gap-2">
                 <h3 className="font-bold text-base text-gray-900 leading-tight">{ts.title}</h3>
                 {ts.description && (
-                  <p className="text-sm text-gray-600">{ts.description}</p>
+                  <div className="text-xs text-gray-600 html-content line-clamp-3 overflow-hidden" dangerouslySetInnerHTML={{ __html: processHtml(ts.description) }} />
                 )}
 
                 {/* Compact test count summary */}
