@@ -27,6 +27,14 @@
   object-fit: contain;
 }
 
+@media (max-width: 768px) {
+  .html-content img {
+    width: 100% !important;
+    height: auto !important;
+    margin: 0.5rem 0;
+  }
+}
+
 .html-content table {
   border-collapse: collapse;
   font-size: 0.85em;
