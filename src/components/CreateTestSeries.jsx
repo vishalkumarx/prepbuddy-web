@@ -696,13 +696,24 @@ export default function CreateTestSeries() {
   const handleToggleLink = async (course, group) => {
     try {
       const currentLinks = course.linked_tests || [];
-      const isLinked = currentLinks.some(l => l.category === group.category && l.subcategory === group.subcategory);
-      
       let newLinks;
-      if (isLinked) {
-        newLinks = currentLinks.filter(l => !(l.category === group.category && l.subcategory === group.subcategory));
+
+      if (group.isCategoryLink) {
+        const groupsToLink = group.groups;
+        newLinks = [...currentLinks];
+        groupsToLink.forEach(g => {
+          const alreadyLinked = newLinks.some(l => l.category === g.category && l.subcategory === g.subcategory);
+          if (!alreadyLinked) {
+            newLinks.push({ category: g.category, subcategory: g.subcategory });
+          }
+        });
       } else {
-        newLinks = [...currentLinks, { category: group.category, subcategory: group.subcategory }];
+        const isLinked = currentLinks.some(l => l.category === group.category && l.subcategory === group.subcategory);
+        if (isLinked) {
+          newLinks = currentLinks.filter(l => !(l.category === group.category && l.subcategory === group.subcategory));
+        } else {
+          newLinks = [...currentLinks, { category: group.category, subcategory: group.subcategory }];
+        }
       }
       
       // Optimistic update
@@ -810,7 +821,18 @@ export default function CreateTestSeries() {
                     onClick={() => toggleSidebarCategory(cat)}
                     className="flex items-center justify-between cursor-pointer p-2 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
                   >
-                    <h4 className="font-bold text-gray-800">{cat} ({groups.length})</h4>
+                    <div className="flex items-center gap-2">
+                      <h4 className="font-bold text-gray-800">{cat} ({groups.length})</h4>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setLinkModalGroup({ category: cat, groups: groups, isCategoryLink: true });
+                        }}
+                        className="text-[10px] bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded font-bold hover:bg-indigo-200 transition-colors"
+                      >
+                        Link Entire Category
+                      </button>
+                    </div>
                     <span className="text-gray-500 text-xs">{expandedSidebarCategories[cat] ? '▼' : '▶'}</span>
                   </div>
                   
@@ -1395,14 +1417,20 @@ export default function CreateTestSeries() {
             </div>
             <div className="p-4 bg-indigo-50 border-b border-indigo-100">
               <p className="text-xs text-indigo-800 font-medium">Linking Test Series:</p>
-              <p className="text-sm font-bold text-indigo-900">{linkModalGroup.category} &gt; {linkModalGroup.subcategory}</p>
+              <p className="text-sm font-bold text-indigo-900">
+                {linkModalGroup.isCategoryLink 
+                  ? `Entire Category: ${linkModalGroup.category} (${linkModalGroup.groups.length} tests)` 
+                  : `${linkModalGroup.category} > ${linkModalGroup.subcategory}`}
+              </p>
             </div>
             <div className="flex-1 overflow-y-auto p-4 space-y-3">
               {courses.length === 0 ? (
                 <p className="text-center text-sm text-gray-500 py-8 italic">No test series found. Create one in the app first.</p>
               ) : (
                 courses.map(course => {
-                  const isLinked = (course.linked_tests || []).some(l => l.category === linkModalGroup.category && l.subcategory === linkModalGroup.subcategory);
+                  const isLinked = linkModalGroup.isCategoryLink
+                    ? linkModalGroup.groups.every(g => (course.linked_tests || []).some(l => l.category === g.category && l.subcategory === g.subcategory))
+                    : (course.linked_tests || []).some(l => l.category === linkModalGroup.category && l.subcategory === linkModalGroup.subcategory);
                   return (
                     <div key={course.id} className={`p-4 rounded-xl border flex items-center justify-between gap-4 ${isLinked ? 'bg-indigo-50 border-indigo-200' : 'bg-white border-gray-200'}`}>
                       <div className="flex-1 min-w-0">
@@ -1417,7 +1445,7 @@ export default function CreateTestSeries() {
                             : 'bg-indigo-600 text-white hover:bg-indigo-700'
                         }`}
                       >
-                        {isLinked ? 'Remove' : 'Add to Course'}
+                        {isLinked ? (linkModalGroup.isCategoryLink ? 'Remove All' : 'Remove') : (linkModalGroup.isCategoryLink ? 'Add All to Course' : 'Add to Course')}
                       </button>
                     </div>
                   );

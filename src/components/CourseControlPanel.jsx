@@ -15,62 +15,8 @@ export default function CourseControlPanel() {
   const [newUser, setNewUser] = useState('');
   const [activeTab, setActiveTab] = useState('enrollments');
   const [expandedCategories, setExpandedCategories] = useState({});
-  const [showAddTile, setShowAddTile] = useState(false);
-  const [editTileIdx, setEditTileIdx] = useState(null);
-  const [newTile, setNewTile] = useState({ category: '', subcategory: '', totalQuestions: '', duration: '', coming_soon: false });
 
   const toggleCategory = (cat) => setExpandedCategories(prev => ({ [cat]: !prev[cat] }));
-
-  const handleAddTile = async () => {
-    if (!newTile.category.trim() || !newTile.subcategory.trim()) return;
-    setActionLoading(true);
-    try {
-      const existing = selectedCourse.linked_tests || [];
-      const updatedTile = {
-        category: newTile.category.trim(),
-        subcategory: newTile.subcategory.trim(),
-        totalQuestions: parseInt(newTile.totalQuestions) || 0,
-        duration: parseInt(newTile.duration) || 0,
-        coming_soon: newTile.coming_soon
-      };
-      
-      let updated;
-      if (editTileIdx !== null) {
-        updated = [...existing];
-        updated[editTileIdx] = updatedTile;
-      } else {
-        updated = [...existing, updatedTile];
-      }
-      const { data, error } = await supabase
-        .from('prepbuddy_test_series')
-        .update({ linked_tests: updated })
-        .eq('id', selectedCourse.id)
-        .select()
-        .single();
-      if (error) throw error;
-      setSelectedCourse(data);
-      setCourses(prev => prev.map(c => c.id === data.id ? data : c));
-      setNewTile({ category: '', subcategory: '', totalQuestions: '', duration: '', coming_soon: false });
-      setEditTileIdx(null);
-      setShowAddTile(false);
-    } catch (err) {
-      alert('Error adding tile: ' + err.message);
-    } finally {
-      setActionLoading(false);
-    }
-  };
-
-  const handleEditTileStart = (t, idx) => {
-    setNewTile({
-      category: t.category,
-      subcategory: t.subcategory,
-      totalQuestions: t.totalQuestions,
-      duration: t.duration,
-      coming_soon: t.coming_soon || false
-    });
-    setEditTileIdx(idx);
-    setShowAddTile(true);
-  };
 
   const handleDeleteTile = async (tileIdx) => {
     if (!window.confirm('Remove this test tile?')) return;
@@ -396,70 +342,9 @@ export default function CourseControlPanel() {
                   ];
                   return (
                     <div className="p-4">
-                      {/* Add Tile Button */}
                       <div className="flex justify-between items-center mb-4">
                         <h3 className="font-bold text-gray-800">Test Tiles</h3>
-                        <button
-                          onClick={() => {
-                            setEditTileIdx(null);
-                            setNewTile({ category: '', subcategory: '', totalQuestions: '', duration: '', coming_soon: false });
-                            setShowAddTile(v => !v);
-                          }}
-                          className="flex items-center gap-1.5 text-xs bg-primary text-white px-3 py-1.5 rounded-lg font-bold hover:bg-blue-900 transition-colors"
-                        >
-                          <Plus size={14} /> Add Tile
-                        </button>
                       </div>
-
-                      {/* Add Tile Form */}
-                      {showAddTile && (
-                        <div className="mb-5 bg-white border border-indigo-100 rounded-2xl p-4 shadow-sm space-y-3">
-                          <p className="font-bold text-sm text-gray-700">{editTileIdx !== null ? 'Edit Test Tile' : 'New Test Tile'}</p>
-                          <div className="grid grid-cols-2 gap-2">
-                            <input
-                              value={newTile.category}
-                              onChange={e => setNewTile(v => ({ ...v, category: e.target.value }))}
-                              placeholder="Category (e.g. Mock Test)"
-                              className="col-span-2 bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                            />
-                            <input
-                              value={newTile.subcategory}
-                              onChange={e => setNewTile(v => ({ ...v, subcategory: e.target.value }))}
-                              placeholder="Subcategory / Test Name"
-                              className="col-span-2 bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                            />
-                            <input
-                              type="number"
-                              value={newTile.totalQuestions}
-                              onChange={e => setNewTile(v => ({ ...v, totalQuestions: e.target.value }))}
-                              placeholder="Questions"
-                              className="bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                            />
-                            <input
-                              type="number"
-                              value={newTile.duration}
-                              onChange={e => setNewTile(v => ({ ...v, duration: e.target.value }))}
-                              placeholder="Duration (min)"
-                              className="bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                            />
-                          </div>
-                          <label className="flex items-center gap-2 cursor-pointer text-sm font-medium text-gray-600">
-                            <input
-                              type="checkbox"
-                              checked={newTile.coming_soon}
-                              onChange={e => setNewTile(v => ({ ...v, coming_soon: e.target.checked }))}
-                              className="rounded accent-primary"
-                            />
-                            Mark as "Coming Soon"
-                          </label>
-                          <div className="flex gap-2 pt-1">
-                            <button onClick={() => { setShowAddTile(false); setEditTileIdx(null); }} className="flex-1 py-2 bg-gray-100 text-gray-600 rounded-xl text-sm font-bold">Cancel</button>
-                            <button onClick={handleAddTile} disabled={actionLoading || !newTile.category.trim() || !newTile.subcategory.trim()} className="flex-[2] py-2 bg-primary text-white rounded-xl text-sm font-bold disabled:opacity-50">
-                              {actionLoading ? 'Saving...' : (editTileIdx !== null ? 'Update Tile' : 'Save Tile')}
-                            </button>
-                          </div>
-                        </div>
-                      )}
 
                       {linkedTests.length === 0 ? (
                         <p className="text-sm text-gray-500 text-center py-8 bg-white rounded-xl border border-dashed border-gray-200">No tests yet. Add your first tile above!</p>
@@ -515,13 +400,6 @@ export default function CourseControlPanel() {
                                           <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mt-0.5">{t.totalQuestions} Qs • {t.duration} min</p>
                                         </div>
                                         <div className="flex items-center gap-1">
-                                          <button
-                                            onClick={() => handleEditTileStart(t, t._idx)}
-                                            disabled={actionLoading}
-                                            className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                                          >
-                                            <Edit2 size={14} />
-                                          </button>
                                           <button
                                             onClick={() => handleDeleteTile(t._idx)}
                                             disabled={actionLoading}
