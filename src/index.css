@@ -12,6 +12,15 @@
     @apply bg-app-bg text-gray-900;
     touch-action: manipulation;
   }
+
+  /* Make images inside parsed HTML questions/solutions responsive */
+  [dangerouslysetinnerhtml] img,
+  span img,
+  div img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 0.5rem;
+  }
 }
 
 @layer utilities {

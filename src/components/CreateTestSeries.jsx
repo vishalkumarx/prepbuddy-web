@@ -339,11 +339,29 @@ export default function CreateTestSeries() {
       if (Array.isArray(data)) {
         const formatted = data.map(q => {
           const opts = Array.isArray(q.options) ? q.options : [q.optionA, q.optionB, q.optionC, q.optionD].filter(Boolean);
+          
+          // Determine answer: support correct_option_id (0-indexed), answer letter, or answer text
+          let answerText = '';
+          if (q.correct_option_id !== undefined && opts[q.correct_option_id]) {
+            answerText = opts[q.correct_option_id];
+          } else if (q.answer) {
+            const upperAns = String(q.answer).trim().toUpperCase();
+            if (upperAns === 'A' && opts[0]) answerText = opts[0];
+            else if (upperAns === 'B' && opts[1]) answerText = opts[1];
+            else if (upperAns === 'C' && opts[2]) answerText = opts[2];
+            else if (upperAns === 'D' && opts[3]) answerText = opts[3];
+            else answerText = q.answer;
+          } else if (q.correct_answer) {
+            answerText = q.correct_answer;
+          } else {
+            answerText = opts[0] || '';
+          }
+
           return {
             question: q.question || q.q || '',
             options: opts,
-            answer: q.answer || q.correct_answer || opts[0] || '',
-            explanation: q.explanation || q.desc || '',
+            answer: answerText,
+            explanation: q.explanation || q.solution || q.desc || '',
             category: category,
             subcategory: subcategory
           };
@@ -374,13 +392,18 @@ export default function CreateTestSeries() {
         if (opts[2]) setOptionC(opts[2]);
         if (opts[3]) setOptionD(opts[3]);
         
-        let ans = data.answer || data.correct_answer || opts[0];
-        if (ans === opts[0]) setAnswer('A');
-        else if (ans === opts[1]) setAnswer('B');
-        else if (ans === opts[2]) setAnswer('C');
-        else if (ans === opts[3]) setAnswer('D');
+        // Determine answer from correct_option_id or answer field
+        if (data.correct_option_id !== undefined && opts[data.correct_option_id]) {
+          setAnswer(String.fromCharCode(65 + data.correct_option_id));
+        } else {
+          let ans = data.answer || data.correct_answer || opts[0];
+          if (ans === opts[0] || String(ans).toUpperCase() === 'A') setAnswer('A');
+          else if (ans === opts[1] || String(ans).toUpperCase() === 'B') setAnswer('B');
+          else if (ans === opts[2] || String(ans).toUpperCase() === 'C') setAnswer('C');
+          else if (ans === opts[3] || String(ans).toUpperCase() === 'D') setAnswer('D');
+        }
         
-        setExplanation(data.explanation || data.desc || '');
+        setExplanation(data.explanation || data.solution || data.desc || '');
         alert('Fields populated from JSON! Click Add Question to save.');
         setJsonImportText('');
       }

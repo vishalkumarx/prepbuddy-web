@@ -86,9 +86,9 @@ export default function ViewSolution() {
               <div className="absolute -top-3 -left-2 bg-indigo-600 text-white font-black text-xs px-2.5 py-1 rounded-lg shadow-sm">
                 Q{idx + 1}
               </div>
-              <h2 className="text-base font-bold text-gray-900 leading-snug mb-4 mt-2 whitespace-pre-wrap">
-                {q.question?.replace(/\\n/g, '\n')}
-              </h2>
+              <div className="text-base font-bold text-gray-900 leading-snug mb-4 mt-2 whitespace-pre-wrap flex gap-2">
+                <span dangerouslySetInnerHTML={{ __html: q.question?.replace(/\\n/g, '<br/>') || '' }} />
+              </div>
 
               <div className="space-y-2">
                 {options.map((opt, oIdx) => {
@@ -125,7 +125,7 @@ export default function ViewSolution() {
               {q.explanation && (
                 <div className="mt-4 p-3 bg-blue-50/50 border border-blue-100 rounded-xl">
                   <h4 className="text-xs font-bold text-blue-800 mb-1">Explanation:</h4>
-                  <p className="text-xs text-blue-900/80 leading-relaxed whitespace-pre-wrap">{q.explanation?.replace(/\\n/g, '\n')}</p>
+                  <div className="text-xs text-blue-900/80 leading-relaxed whitespace-pre-wrap" dangerouslySetInnerHTML={{ __html: q.explanation?.replace(/\\n/g, '<br/>') || '' }} />
                 </div>
               )}
             </div>
