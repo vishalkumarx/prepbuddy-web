@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../supabase';
 import { ArrowLeft, Plus, Edit2, Trash2, ListPlus, Sparkles, X, RefreshCw, Link2 } from 'lucide-react';
@@ -35,6 +35,13 @@ export default function CreateTestSeries() {
   const [linkModalGroup, setLinkModalGroup] = useState(null);
   const [expandedSidebarCategories, setExpandedSidebarCategories] = useState({});
   const [selectedSidebarItems, setSelectedSidebarItems] = useState([]);
+  const [toastMessage, setToastMessage] = useState('');
+  const shouldScrollToPreviewRef = useRef(false);
+
+  const showToast = (msg) => {
+    setToastMessage(msg);
+    setTimeout(() => setToastMessage(''), 3000);
+  };
 
   const toggleSidebarCategory = (cat) => {
     setExpandedSidebarCategories(prev => ({ ...prev, [cat]: !prev[cat] }));
@@ -83,6 +90,16 @@ export default function CreateTestSeries() {
     fetchSidebarGroups();
     fetchCourses();
   }, []);
+
+  useEffect(() => {
+    if (shouldScrollToPreviewRef.current && questionsList.length > 0) {
+      const previewEl = document.getElementById('preview-section');
+      if (previewEl) {
+        previewEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+      shouldScrollToPreviewRef.current = false;
+    }
+  }, [questionsList]);
 
   const fetchSidebarGroups = async () => {
     try {
@@ -788,7 +805,8 @@ export default function CreateTestSeries() {
                             onClick={() => {
                               setCategory(group.category);
                               setSubcategory(group.subcategory);
-                              window.scrollTo({ top: 0, behavior: 'smooth' });
+                              showToast(`Loaded preview for ${group.subcategory}`);
+                              shouldScrollToPreviewRef.current = true;
                             }}
                             className={`w-full group/sidebar relative cursor-pointer text-left p-3 rounded-xl border text-sm transition-all flex flex-col ${
                               isActive 
@@ -1278,7 +1296,7 @@ export default function CreateTestSeries() {
 
         {/* Preview & Upload Section */}
         {questionsList.length > 0 && (
-          <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm space-y-4">
+          <div id="preview-section" className="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-gray-100 pb-4 gap-3">
               <h3 className="font-bold text-gray-900 text-base flex items-center gap-2">
                 Questions in Database ({questionsList.length})
@@ -1384,6 +1402,14 @@ export default function CreateTestSeries() {
               )}
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Toast Notification */}
+      {toastMessage && (
+        <div className="fixed bottom-6 right-6 bg-gray-900 text-white px-5 py-3 rounded-xl shadow-2xl z-50 animate-in fade-in slide-in-from-bottom-5 font-bold text-sm flex items-center gap-2">
+          <Sparkles size={16} className="text-amber-400" />
+          {toastMessage}
         </div>
       )}
     </div>
