@@ -93,12 +93,6 @@
   padding-left: 1.25rem;
 }
 
-.html-content span[style],
-.html-content p[style],
-.html-content div[style] {
-  /* Allow inline styles (color, background-color, font-weight) to take effect */
-  all: revert;
-}
 
 @layer utilities {
   @keyframes slideUp {

@@ -90,6 +90,7 @@ export default function CreateTestSeries() {
   const [subcategory, setSubcategory] = useState('');
   
   const [question, setQuestion] = useState('');
+  const [showHtmlEditor, setShowHtmlEditor] = useState(false);
   const [optionA, setOptionA] = useState('');
   const [optionB, setOptionB] = useState('');
   const [optionC, setOptionC] = useState('');
@@ -1166,15 +1167,37 @@ export default function CreateTestSeries() {
           
           <form onSubmit={handleAddQuestion} className="space-y-4">
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-1.5">Question</label>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="text-sm font-bold text-gray-700">Question</label>
+                <button
+                  type="button"
+                  onClick={() => setShowHtmlEditor(v => !v)}
+                  className={`text-xs font-bold px-2.5 py-1 rounded-lg border transition-colors ${
+                    showHtmlEditor 
+                      ? 'bg-indigo-600 text-white border-indigo-600' 
+                      : 'bg-gray-100 text-gray-600 border-gray-200 hover:bg-gray-200'
+                  }`}
+                >
+                  {showHtmlEditor ? '✏️ HTML Mode' : '🔤 Plain Text'}
+                </button>
+              </div>
               <textarea
                 value={question}
                 onChange={handleQuestionChange}
                 required
                 rows={3}
-                placeholder="Enter the question text here..."
-                className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:bg-white resize-y"
+                placeholder="Enter the question text or HTML here..."
+                className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:bg-white resize-y font-mono"
               />
+              {showHtmlEditor && question && (
+                <div className="mt-2 p-3 bg-indigo-50 border border-indigo-200 rounded-xl">
+                  <p className="text-[10px] font-bold text-indigo-500 uppercase tracking-wider mb-1">HTML Preview</p>
+                  <div 
+                    className="text-sm html-content text-gray-800 leading-relaxed"
+                    dangerouslySetInnerHTML={{ __html: question.replace(/\\n/g, '<br/>') }}
+                  />
+                </div>
+              )}
             </div>
             
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
