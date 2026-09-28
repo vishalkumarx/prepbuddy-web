@@ -13,6 +13,7 @@ export default function StateHomeFeed() {
   const [enrolledIds, setEnrolledIds] = useState(new Set());
   const [attemptsByCourse, setAttemptsByCourse] = useState({});
   const [freeAttemptsMap, setFreeAttemptsMap] = useState({});
+  const [questionCounts, setQuestionCounts] = useState({}); // { 'category-subcategory': count }
   const [loading, setLoading] = useState(true);
 
   // Promo Code States
@@ -203,9 +204,28 @@ export default function StateHomeFeed() {
       }
     };
 
+    const fetchQuestionCounts = async () => {
+      try {
+        const { data } = await supabase
+          .from('prepbuddy_questions')
+          .select('category, subcategory');
+        if (data) {
+          const counts = {};
+          data.forEach(q => {
+            const key = `${q.category}-${q.subcategory}`;
+            counts[key] = (counts[key] || 0) + 1;
+          });
+          setQuestionCounts(counts);
+        }
+      } catch (err) {
+        console.error('Error fetching question counts:', err);
+      }
+    };
+
     fetchTestSeries();
     fetchEnrollments();
     fetchAttempts();
+    fetchQuestionCounts();
 
     // Subscribe to new test series
     const channel = supabase
@@ -254,7 +274,7 @@ export default function StateHomeFeed() {
               const attempt = freeAttemptsMap[key];
               const progressKey = `test_progress_${UserManager.getUserId()}_free_${test.category}_${test.subcategory}`;
               const isPaused = !!localStorage.getItem(progressKey);
-              const qCount = (test.questions || []).length;
+              const qCount = questionCounts[`${test.category}-${test.subcategory}`] || 0;
 
               return (
                 <div 
