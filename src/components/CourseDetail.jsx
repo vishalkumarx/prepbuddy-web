@@ -24,14 +24,16 @@ export default function CourseDetail() {
   const [showPromoDialog, setShowPromoDialog] = useState(false);
 
   const toggleCategory = (cat) => {
-    setExpandedCategories({ [cat]: true });
+    setExpandedCategories(prev => prev[cat] ? {} : { [cat]: true });
   };
 
-  useEffect(() => {
-    if (course && course.linked_tests && course.linked_tests.length > 0 && Object.keys(expandedCategories).length === 0) {
-      setExpandedCategories({ [course.linked_tests[0].category]: true });
-    }
-  }, [course, expandedCategories]);
+  const [expandedSubgroups, setExpandedSubgroups] = useState({});
+  const toggleSubgroup = (cat, subGroupName) => {
+    setExpandedSubgroups(prev => ({
+      ...prev,
+      [`${cat}::${subGroupName}`]: !prev[`${cat}::${subGroupName}`]
+    }));
+  };
 
   useEffect(() => {
     const fetchCourseDetails = async () => {
@@ -337,12 +339,47 @@ export default function CourseDetail() {
             </div>
           ) : (
             <div className="space-y-6">
-              {Object.entries(grouped).map(([cat, tests]) => (
-                expandedCategories[cat] && (
-                  <div key={cat} className="space-y-3 animate-in fade-in slide-in-from-bottom-2 duration-300">
-                    <h3 className="font-bold text-gray-900 pl-1">{cat} Tests</h3>
-                    <div className="space-y-3">
-                      {tests.map((test, idx) => {
+              {Object.entries(grouped).map(([cat, tests]) => {
+                if (!expandedCategories[cat]) return null;
+                
+                const subGroups = tests.reduce((acc, test) => {
+                  const subGroupName = test.subcategory.includes('-') 
+                    ? test.subcategory.split('-')[0].trim() 
+                    : test.subcategory;
+                  if (!acc[subGroupName]) acc[subGroupName] = [];
+                  acc[subGroupName].push(test);
+                  return acc;
+                }, {});
+
+                return (
+                  <div key={cat} className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                    <h3 className="font-bold text-gray-900 pl-1">{cat} Topics</h3>
+                    <div className="grid grid-cols-1 gap-3">
+                      {Object.entries(subGroups).map(([subGroupName, groupTests]) => {
+                        const isSubExpanded = expandedSubgroups[`${cat}::${subGroupName}`];
+                        return (
+                          <div key={subGroupName} className="border border-gray-200 rounded-2xl bg-white overflow-hidden shadow-sm transition-all">
+                            <div 
+                              onClick={() => toggleSubgroup(cat, subGroupName)}
+                              className="p-4 flex items-center justify-between cursor-pointer hover:bg-gray-50 transition-colors"
+                            >
+                              <div className="flex items-center gap-3">
+                                <div className="bg-indigo-50 p-2 rounded-xl text-indigo-600">
+                                  <Layers size={18} />
+                                </div>
+                                <div>
+                                  <h4 className="font-bold text-gray-900">{subGroupName}</h4>
+                                  <p className="text-xs font-medium text-gray-500">{groupTests.length} {groupTests.length === 1 ? 'Test' : 'Tests'}</p>
+                                </div>
+                              </div>
+                              <span className="text-gray-400 text-xs">
+                                {isSubExpanded ? '▼' : '▶'}
+                              </span>
+                            </div>
+                            
+                            {isSubExpanded && (
+                              <div className="p-3 border-t border-gray-100 bg-gray-50/50 space-y-3">
+                                {groupTests.map((test, idx) => {
                         const attempt = attempts[`${test.category}-${test.subcategory}`];
                         const progressKey = `test_progress_${UserManager.getUserId()}_${course.id}_${test.category}_${test.subcategory}`;
                         const isPaused = !!localStorage.getItem(progressKey);
@@ -435,11 +472,16 @@ export default function CourseDetail() {
                             )}
                           </div>
                         );
+                                })}
+                              </div>
+                            )}
+                          </div>
+                        );
                       })}
                     </div>
                   </div>
-                )
-              ))}
+                );
+              })}
             </div>
           )}
         </div>

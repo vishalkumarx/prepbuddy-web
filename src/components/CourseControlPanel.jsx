@@ -16,7 +16,17 @@ export default function CourseControlPanel() {
   const [activeTab, setActiveTab] = useState('enrollments');
   const [expandedCategories, setExpandedCategories] = useState({});
 
-  const toggleCategory = (cat) => setExpandedCategories(prev => ({ [cat]: !prev[cat] }));
+  const toggleCategory = (cat) => {
+    setExpandedCategories(prev => prev[cat] ? {} : { [cat]: true });
+  };
+
+  const [expandedSubgroups, setExpandedSubgroups] = useState({});
+  const toggleSubgroup = (cat, subGroupName) => {
+    setExpandedSubgroups(prev => ({
+      ...prev,
+      [`${cat}::${subGroupName}`]: !prev[`${cat}::${subGroupName}`]
+    }));
+  };
 
   const handleDeleteTile = async (tileIdx) => {
     if (!window.confirm('Remove this test tile?')) return;
@@ -380,12 +390,47 @@ export default function CourseControlPanel() {
 
                           {/* Expanded Test List with Delete */}
                           <div className="space-y-6">
-                            {Object.entries(grouped).map(([cat, tests]) =>
-                              expandedCategories[cat] && (
-                                <div key={cat} className="space-y-3">
-                                  <h3 className="font-bold text-gray-900 pl-1">{cat} Tests</h3>
-                                  <div className="space-y-2">
-                                    {tests.map((t) => (
+                            {Object.entries(grouped).map(([cat, tests]) => {
+                              if (!expandedCategories[cat]) return null;
+                              
+                              const subGroups = tests.reduce((acc, test) => {
+                                const subGroupName = test.subcategory.includes('-') 
+                                  ? test.subcategory.split('-')[0].trim() 
+                                  : test.subcategory;
+                                if (!acc[subGroupName]) acc[subGroupName] = [];
+                                acc[subGroupName].push(test);
+                                return acc;
+                              }, {});
+
+                              return (
+                                <div key={cat} className="space-y-4">
+                                  <h3 className="font-bold text-gray-900 pl-1">{cat} Topics</h3>
+                                  <div className="grid grid-cols-1 gap-3">
+                                    {Object.entries(subGroups).map(([subGroupName, groupTests]) => {
+                                      const isSubExpanded = expandedSubgroups[`${cat}::${subGroupName}`];
+                                      return (
+                                        <div key={subGroupName} className="border border-gray-200 rounded-2xl bg-white overflow-hidden shadow-sm transition-all">
+                                          <div 
+                                            onClick={() => toggleSubgroup(cat, subGroupName)}
+                                            className="p-4 flex items-center justify-between cursor-pointer hover:bg-gray-50 transition-colors"
+                                          >
+                                            <div className="flex items-center gap-3">
+                                              <div className="bg-indigo-50 p-2 rounded-xl text-indigo-600">
+                                                <Layers size={18} />
+                                              </div>
+                                              <div>
+                                                <h4 className="font-bold text-gray-900">{subGroupName}</h4>
+                                                <p className="text-xs font-medium text-gray-500">{groupTests.length} {groupTests.length === 1 ? 'Test' : 'Tests'}</p>
+                                              </div>
+                                            </div>
+                                            <span className="text-gray-400 text-xs">
+                                              {isSubExpanded ? '▼' : '▶'}
+                                            </span>
+                                          </div>
+                                          
+                                          {isSubExpanded && (
+                                            <div className="p-3 border-t border-gray-100 bg-gray-50/50 space-y-2">
+                                              {groupTests.map((t) => (
                                       <div key={t._idx} className="bg-white p-3 rounded-xl border border-gray-100 shadow-sm flex items-center gap-3">
                                         <div className={`p-2 rounded-xl flex-shrink-0 ${t.coming_soon ? 'bg-amber-50 text-amber-500' : 'bg-indigo-50 text-indigo-600'}`}>
                                           {t.coming_soon ? <Clock size={16} /> : <FileText size={16} />}
@@ -409,11 +454,16 @@ export default function CourseControlPanel() {
                                           </button>
                                         </div>
                                       </div>
-                                    ))}
+                                              ))}
+                                            </div>
+                                          )}
+                                        </div>
+                                      );
+                                    })}
                                   </div>
                                 </div>
-                              )
-                            )}
+                              );
+                            })}
                           </div>
                         </>
                       )}
