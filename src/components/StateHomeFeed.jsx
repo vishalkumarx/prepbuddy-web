@@ -139,8 +139,10 @@ export default function StateHomeFeed() {
         
         // Extract free tests
         const freeCourse = data.find(c => c.title === 'INTERNAL_FREE_TEST_SECTION');
-        if (freeCourse) {
-          setFreeTests(freeCourse.linked_tests || []);
+        const freeTestList = freeCourse ? (freeCourse.linked_tests || []) : [];
+        if (freeTestList.length > 0) {
+          setFreeTests(freeTestList);
+          fetchQuestionCounts(freeTestList);
         }
 
         const filteredData = (data || []).filter(c => c.title !== 'INTERNAL_FREE_TEST_SECTION');
@@ -204,19 +206,19 @@ export default function StateHomeFeed() {
       }
     };
 
-    const fetchQuestionCounts = async () => {
+    const fetchQuestionCounts = async (tests) => {
+      if (!tests || tests.length === 0) return;
       try {
-        const { data } = await supabase
-          .from('prepbuddy_questions')
-          .select('category, subcategory');
-        if (data) {
-          const counts = {};
-          data.forEach(q => {
-            const key = `${q.category}-${q.subcategory}`;
-            counts[key] = (counts[key] || 0) + 1;
-          });
-          setQuestionCounts(counts);
-        }
+        const counts = {};
+        await Promise.all(tests.map(async (test) => {
+          const { count } = await supabase
+            .from('prepbuddy_questions')
+            .select('*', { count: 'exact', head: true })
+            .eq('category', test.category)
+            .eq('subcategory', test.subcategory);
+          counts[`${test.category}-${test.subcategory}`] = count || 0;
+        }));
+        setQuestionCounts(counts);
       } catch (err) {
         console.error('Error fetching question counts:', err);
       }
@@ -225,7 +227,6 @@ export default function StateHomeFeed() {
     fetchTestSeries();
     fetchEnrollments();
     fetchAttempts();
-    fetchQuestionCounts();
 
     // Subscribe to new test series
     const channel = supabase

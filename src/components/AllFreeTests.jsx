@@ -13,6 +13,20 @@ export default function AllFreeTests() {
   const [questionCounts, setQuestionCounts] = useState({});
 
   useEffect(() => {
+    const fetchQuestionCounts = async (tests) => {
+      if (!tests || tests.length === 0) return;
+      const counts = {};
+      await Promise.all(tests.map(async (test) => {
+        const { count } = await supabase
+          .from('prepbuddy_questions')
+          .select('*', { count: 'exact', head: true })
+          .eq('category', test.category)
+          .eq('subcategory', test.subcategory);
+        counts[`${test.category}-${test.subcategory}`] = count || 0;
+      }));
+      setQuestionCounts(counts);
+    };
+
     const fetchData = async () => {
       try {
         const { data } = await supabase
@@ -20,7 +34,11 @@ export default function AllFreeTests() {
           .select('*')
           .eq('title', 'INTERNAL_FREE_TEST_SECTION')
           .single();
-        if (data) setFreeTests(data.linked_tests || []);
+        if (data) {
+          const tests = data.linked_tests || [];
+          setFreeTests(tests);
+          fetchQuestionCounts(tests);
+        }
       } catch (err) {
         console.error(err);
       } finally {
@@ -49,23 +67,8 @@ export default function AllFreeTests() {
       }
     };
 
-    const fetchQuestionCounts = async () => {
-      const { data } = await supabase
-        .from('prepbuddy_questions')
-        .select('category, subcategory');
-      if (data) {
-        const counts = {};
-        data.forEach(q => {
-          const key = `${q.category}-${q.subcategory}`;
-          counts[key] = (counts[key] || 0) + 1;
-        });
-        setQuestionCounts(counts);
-      }
-    };
-
     fetchData();
     fetchAttempts();
-    fetchQuestionCounts();
   }, []);
 
   if (loading) {
