@@ -111,7 +111,7 @@ export default function ViewSolution() {
                   Skipped
                 </div>
               )}
-              <div className="text-base font-bold text-gray-900 leading-snug mb-4 mt-2 html-content flex flex-col gap-2">
+              <div className="text-base font-medium text-gray-900 leading-snug mb-4 mt-2 html-content flex flex-col gap-2">
                 <span className="shrink-0">Q{idx + 1}.</span>
                 <span dangerouslySetInnerHTML={{ __html: processHtml(q.question) }} />
               </div>

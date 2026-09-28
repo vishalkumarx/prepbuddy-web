@@ -226,7 +226,7 @@ export default function TestTaking() {
       {/* Main Content */}
       <div ref={scrollContainerRef} className="flex-1 overflow-y-auto p-5 relative">
         <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 overflow-x-hidden">
-          <div className="text-lg font-bold text-gray-900 leading-snug mb-6 html-content flex flex-col gap-2">
+          <div className="text-lg font-medium text-gray-900 leading-snug mb-6 html-content flex flex-col gap-2">
             <span className="text-indigo-600 shrink-0">Q{currentIdx + 1}.</span>
             <span dangerouslySetInnerHTML={{ __html: processHtml(currentQ.question) }} />
           </div>
