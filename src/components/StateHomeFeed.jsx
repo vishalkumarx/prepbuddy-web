@@ -285,7 +285,7 @@ export default function StateHomeFeed() {
                         </button>
                         <button
                           onClick={(e) => { e.stopPropagation(); navigate(`/test/free/${encodeURIComponent(test.category)}/${encodeURIComponent(test.subcategory)}`); }}
-                          className={`flex-1 text-[10px] font-bold text-white px-2 py-1.5 rounded-lg transition-colors text-center ${ isPaused ? 'bg-orange-500 hover:bg-orange-600' : 'bg-indigo-600 hover:bg-indigo-700'}`}
+                          className={`flex-1 text-[10px] font-bold text-white px-2 py-1.5 rounded-lg transition-colors text-center ${ isPaused ? 'bg-secondary hover:bg-yellow-400 text-gray-900' : 'bg-indigo-600 hover:bg-indigo-700 text-white'}`}
                         >
                           {isPaused ? 'RESUME' : 'ATTEMPT AGAIN'}
                         </button>

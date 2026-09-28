@@ -470,7 +470,7 @@ export default function CourseDetail() {
                                 
                                 {isPaused && (
                                   <div className="mt-2 flex items-center">
-                                    <div className={`flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-md shrink-0 ${isEnrolled ? 'text-orange-700 bg-orange-100/70' : 'text-gray-500 bg-gray-200/60'}`}>
+                                    <div className={`flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-md shrink-0 ${isEnrolled ? 'text-yellow-800 bg-yellow-100/70' : 'text-gray-500 bg-gray-200/60'}`}>
                                       {isEnrolled ? (
                                         <>
                                           <Unlock size={10} strokeWidth={3} />
@@ -503,7 +503,7 @@ export default function CourseDetail() {
                                   </button>
                                   <button 
                                     onClick={(e) => { e.stopPropagation(); navigate(`/test/${course.id}/${encodeURIComponent(test.category)}/${encodeURIComponent(test.subcategory)}`); }}
-                                    className={`px-4 py-1.5 text-[10px] font-bold text-white rounded-md transition-colors text-center ${isPaused ? 'bg-orange-500 hover:bg-orange-600' : 'bg-indigo-600 hover:bg-indigo-700'}`}
+                                    className={`px-4 py-1.5 text-[10px] font-bold text-white rounded-md transition-colors text-center ${isPaused ? 'bg-secondary hover:bg-yellow-400 text-gray-900' : 'bg-indigo-600 hover:bg-indigo-700 text-white'}`}
                                   >
                                     {isPaused ? 'RESUME TEST' : 'ATTEMPT AGAIN'}
                                   </button>
