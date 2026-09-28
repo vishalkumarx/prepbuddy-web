@@ -321,9 +321,9 @@ export default function CourseDetail() {
                     <div className={`p-2 rounded-xl ${isExpanded ? color.iconBg : 'bg-gray-200 text-gray-400'} ${isExpanded ? 'text-white' : ''} shadow-sm transition-colors`}>
                       <Icon size={18} />
                     </div>
-                    <div>
-                      <div className={`font-black text-xl leading-none ${isExpanded ? 'text-gray-900' : 'text-gray-400'}`}>{tests.length}</div>
-                      <div className={`text-[10px] font-bold uppercase tracking-wider mt-1.5 leading-tight line-clamp-2 ${isExpanded ? 'text-gray-700' : 'text-gray-400'}`}>{category}</div>
+                    <div className="flex flex-col gap-1 items-center justify-center h-full">
+                      <div className={`font-bold text-sm leading-tight line-clamp-2 ${isExpanded ? 'text-gray-900' : 'text-gray-700'}`}>{category}</div>
+                      <div className={`text-xs font-medium ${isExpanded ? 'text-gray-500' : 'text-gray-400'}`}>{tests.length} {tests.length === 1 ? 'Test' : 'Tests'}</div>
                     </div>
                   </div>
                 );
