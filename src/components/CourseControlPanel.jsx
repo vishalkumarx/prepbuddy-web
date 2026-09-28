@@ -507,7 +507,7 @@ export default function CourseControlPanel() {
                                         </div>
                                         <div className="flex-1 min-w-0">
                                           <div className="flex items-center gap-2">
-                                            <p className="font-bold text-sm text-gray-900 truncate">{t.subcategory}</p>
+                                            <p className="font-bold text-sm text-gray-900 leading-snug">{t.subcategory}</p>
                                             {t.coming_soon && (
                                               <span className="text-[9px] font-bold bg-amber-100 text-amber-600 px-1.5 py-0.5 rounded-full uppercase tracking-wide flex-shrink-0">Soon</span>
                                             )}

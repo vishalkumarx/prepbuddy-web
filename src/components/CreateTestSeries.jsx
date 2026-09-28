@@ -847,7 +847,7 @@ export default function CreateTestSeries() {
                                     className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer w-3.5 h-3.5"
                                   />
                                 </div>
-                                <p className={`font-bold truncate ${isActive ? 'text-indigo-900' : 'text-gray-800'}`}>
+                                <p className={`font-bold leading-snug ${isActive ? 'text-indigo-900' : 'text-gray-800'}`}>
                                   {group.category}
                                 </p>
                                 <button 
