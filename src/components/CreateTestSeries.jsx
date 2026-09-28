@@ -1212,8 +1212,8 @@ export default function CreateTestSeries() {
                                   : 'bg-gray-50 border-gray-200 text-gray-700'
                               }`}
                             >
-                              <span className="font-bold mr-2 flex-shrink-0">{optLetter}.</span>
-                              <span className="whitespace-pre-wrap flex-1" dangerouslySetInnerHTML={{ __html: opt?.replace(/\\n/g, '<br/>') || '' }} />
+                              <span className="font-bold mr-2">{optLetter}.</span>
+                              <span className="whitespace-pre-wrap">{opt?.replace(/\\n/g, '\n')}</span>
                             </div>
                           )})}
                         </div>
@@ -1278,8 +1278,8 @@ export default function CreateTestSeries() {
                             : 'bg-white border-gray-200 text-gray-700'
                         }`}
                       >
-                        <span className="font-bold mr-2 flex-shrink-0">{optLetter}.</span>
-                        <span className="flex-1" dangerouslySetInnerHTML={{ __html: safeOpt?.replace(/\\n/g, '<br/>') || '' }} />
+                        <span className="font-bold mr-2">{optLetter}.</span>
+                        {opt}
                       </div>
                     )})}
                   </div>
