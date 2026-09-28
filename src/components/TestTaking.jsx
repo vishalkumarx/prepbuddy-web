@@ -15,6 +15,7 @@ export default function TestTaking() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showExitPrompt, setShowExitPrompt] = useState(false);
   const [showSubmitPrompt, setShowSubmitPrompt] = useState(false);
+  const [showStartDialog, setShowStartDialog] = useState(false);
   const scrollContainerRef = useRef(null);
   const isSubmittingRef = useRef(false);
 
@@ -87,6 +88,12 @@ export default function TestTaking() {
 
         if (error) throw error;
         setQuestions(data || []);
+
+        // Show start dialog only when NOT resuming a paused test
+        const saved = localStorage.getItem(`test_progress_${UserManager.getUserId()}_${courseId}_${decodeURIComponent(category)}_${decodeURIComponent(subcategory)}`);
+        if (!saved) {
+          setShowStartDialog(true);
+        }
       } catch (err) {
         console.error("Error fetching test:", err);
       } finally {
@@ -209,6 +216,64 @@ export default function TestTaking() {
 
   return (
     <div className="flex flex-col h-[100dvh] bg-app-bg pb-[80px]">
+
+      {/* Start Dialog Overlay */}
+      {showStartDialog && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-3xl w-full max-w-sm shadow-2xl overflow-hidden">
+            {/* Header band */}
+            <div className="bg-primary px-6 py-5 text-white">
+              <p className="text-xs font-bold uppercase tracking-widest text-white/60 mb-1">{decodeURIComponent(category)}</p>
+              <h2 className="text-xl font-black leading-tight">{decodeURIComponent(subcategory)}</h2>
+            </div>
+
+            {/* Info rows */}
+            <div className="px-6 py-5 space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-2xl bg-indigo-50 flex items-center justify-center">
+                    <svg className="w-5 h-5 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-400 font-medium">Questions</p>
+                    <p className="text-lg font-black text-gray-900">{questions.length}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-2xl bg-amber-50 flex items-center justify-center">
+                    <svg className="w-5 h-5 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-400 font-medium">Time Limit</p>
+                    <p className="text-lg font-black text-gray-900">No Limit</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-blue-50 rounded-2xl px-4 py-3 text-xs text-blue-700 font-medium leading-relaxed">
+                📌 You can navigate between questions freely. Your progress is auto-saved.
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="px-6 pb-6 flex gap-3">
+              <button
+                onClick={() => navigate(-1)}
+                className="flex-1 py-3 rounded-xl border-2 border-gray-200 text-gray-600 font-bold text-sm hover:bg-gray-50 transition-colors"
+              >
+                Go Back
+              </button>
+              <button
+                onClick={() => setShowStartDialog(false)}
+                className="flex-[2] py-3 rounded-xl bg-primary text-white font-black text-sm shadow-lg shadow-primary/30 hover:bg-primary-light transition-colors active:scale-[0.98]"
+              >
+                Start Test →
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <header className="bg-primary flex items-center p-4 shadow-md z-10 sticky top-0 min-h-[58px]">
         <button onClick={() => setShowExitPrompt(true)} className="text-white hover:bg-white/10 p-1.5 rounded-full mr-3">
