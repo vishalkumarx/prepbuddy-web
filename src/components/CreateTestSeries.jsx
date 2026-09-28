@@ -1189,9 +1189,10 @@ export default function CreateTestSeries() {
                             <Trash2 size={14} />
                           </button>
                         </div>
-                        <p className="font-bold text-gray-900 text-sm pr-10 whitespace-pre-wrap">
-                          Q. {q.question?.replace(/\\n/g, '\n')}
-                        </p>
+                        <div className="font-bold text-gray-900 text-sm pr-10 whitespace-pre-wrap flex gap-1">
+                          <span>Q.</span>
+                          <span dangerouslySetInnerHTML={{ __html: q.question?.replace(/\\n/g, '<br/>') || '' }} />
+                        </div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
                           {options.map((opt, oIdx) => {
                             const optLetter = String.fromCharCode(65 + oIdx);
@@ -1211,15 +1212,16 @@ export default function CreateTestSeries() {
                                   : 'bg-gray-50 border-gray-200 text-gray-700'
                               }`}
                             >
-                              <span className="font-bold mr-2">{optLetter}.</span>
-                              <span className="whitespace-pre-wrap">{opt?.replace(/\\n/g, '\n')}</span>
+                              <span className="font-bold mr-2 flex-shrink-0">{optLetter}.</span>
+                              <span className="whitespace-pre-wrap flex-1" dangerouslySetInnerHTML={{ __html: opt?.replace(/\\n/g, '<br/>') || '' }} />
                             </div>
                           )})}
                         </div>
                         {q.explanation && (
-                          <p className="text-gray-500 italic pt-2 border-t border-gray-100 text-xs whitespace-pre-wrap">
-                            <strong>Explanation:</strong> {q.explanation?.replace(/\\n/g, '\n')}
-                          </p>
+                          <div className="text-gray-500 italic pt-2 border-t border-gray-100 text-xs whitespace-pre-wrap flex gap-1">
+                            <strong>Explanation:</strong> 
+                            <span dangerouslySetInnerHTML={{ __html: q.explanation?.replace(/\\n/g, '<br/>') || '' }} />
+                          </div>
                         )}
                       </div>
                     )})}
@@ -1253,9 +1255,10 @@ export default function CreateTestSeries() {
                       <Trash2 size={14} />
                     </button>
                   </div>
-                  <p className="font-bold text-gray-900 text-sm pr-16">
-                    Q. {q.question}
-                  </p>
+                  <div className="font-bold text-gray-900 text-sm pr-16 flex gap-1">
+                    <span>Q.</span>
+                    <span dangerouslySetInnerHTML={{ __html: q.question?.replace(/\\n/g, '<br/>') || '' }} />
+                  </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
                     {options.map((opt, oIdx) => {
                       const optLetter = String.fromCharCode(65 + oIdx);
@@ -1275,15 +1278,16 @@ export default function CreateTestSeries() {
                             : 'bg-white border-gray-200 text-gray-700'
                         }`}
                       >
-                        <span className="font-bold mr-2">{optLetter}.</span>
-                        {opt}
+                        <span className="font-bold mr-2 flex-shrink-0">{optLetter}.</span>
+                        <span className="flex-1" dangerouslySetInnerHTML={{ __html: safeOpt?.replace(/\\n/g, '<br/>') || '' }} />
                       </div>
                     )})}
                   </div>
                   {q.explanation && (
-                    <p className="text-gray-500 italic pt-2 border-t border-gray-200 text-xs">
-                      <strong>Explanation:</strong> {q.explanation}
-                    </p>
+                    <div className="text-gray-500 italic pt-2 border-t border-gray-200 text-xs flex gap-1">
+                      <strong>Explanation:</strong> 
+                      <span dangerouslySetInnerHTML={{ __html: q.explanation?.replace(/\\n/g, '<br/>') || '' }} />
+                    </div>
                   )}
                 </div>
               )})}
