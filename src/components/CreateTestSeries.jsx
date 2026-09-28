@@ -3,6 +3,86 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '../supabase';
 import { ArrowLeft, Plus, Edit2, Trash2, ListPlus, Sparkles, X, RefreshCw, Link2 } from 'lucide-react';
 
+// Reusable sidebar test item to avoid repetition
+function SidebarTestItem({ group, isActive, linkedCoursesCount, selectedSidebarItems, toggleSidebarItemSelection, handleRenameCategory, setLinkModalGroup, handleRenameTestSeries, handleDeleteTestSeries, setCategory, setSubcategory, showToast, shouldScrollToPreviewRef }) {
+  return (
+    <div
+      onClick={() => {
+        setCategory(group.category);
+        setSubcategory(group.subcategory);
+        showToast(`Loaded preview for ${group.subcategory}`);
+        shouldScrollToPreviewRef.current = true;
+      }}
+      className={`w-full group/sidebar relative cursor-pointer text-left p-3 rounded-xl border text-sm transition-all flex flex-col ${
+        isActive
+          ? 'bg-indigo-50 border-indigo-200 shadow-sm ring-1 ring-indigo-500'
+          : 'bg-white border-gray-100 hover:border-gray-300 hover:bg-gray-50'
+      }`}
+    >
+      <div className="flex items-start justify-between">
+        <div className="flex items-center gap-1.5 flex-1 min-w-0 pr-2">
+          <div className="mr-1 flex items-center h-full" onClick={(e) => e.stopPropagation()}>
+            <input
+              type="checkbox"
+              checked={selectedSidebarItems.includes(`${group.category}:::${group.subcategory}`)}
+              onChange={() => toggleSidebarItemSelection(group.category, group.subcategory)}
+              className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer w-3.5 h-3.5"
+            />
+          </div>
+          <p className={`font-bold leading-snug ${isActive ? 'text-indigo-900' : 'text-gray-800'}`}>
+            {group.category}
+          </p>
+          <button
+            onClick={(e) => handleRenameCategory(e, group.category, group.subcategory)}
+            className="p-1 text-gray-400 hover:text-indigo-600 transition-colors flex-shrink-0 opacity-0 group-hover/sidebar:opacity-100"
+            title="Rename Category"
+          >
+            <Edit2 size={12} />
+          </button>
+        </div>
+        <div className="opacity-0 group-hover/sidebar:opacity-100 flex items-center gap-1 z-10 transition-opacity">
+          <button
+            onClick={(e) => { e.stopPropagation(); setLinkModalGroup(group); }}
+            title="Link to Course"
+            className="p-1.5 bg-white text-indigo-600 rounded-md shadow-sm border border-indigo-100 hover:bg-indigo-50 transition-opacity"
+          >
+            <Link2 size={12} />
+          </button>
+          <button
+            onClick={(e) => handleRenameTestSeries(e, group.category, group.subcategory)}
+            title="Rename test series"
+            className="p-1.5 bg-white text-gray-600 rounded-md shadow-sm border border-gray-200 hover:bg-gray-50 transition-opacity"
+          >
+            <Edit2 size={12} />
+          </button>
+          <button
+            onClick={(e) => handleDeleteTestSeries(e, group.category, group.subcategory)}
+            title="Delete entire test series"
+            className="p-1.5 bg-white text-red-600 rounded-md shadow-sm border border-red-100 hover:bg-red-50 transition-opacity"
+          >
+            <Trash2 size={12} />
+          </button>
+        </div>
+      </div>
+      <div className="flex items-center justify-between mt-1">
+        <p className={`text-xs ${isActive ? 'text-indigo-600' : 'text-gray-500'}`}>
+          {group.subcategory}
+        </p>
+        <div className="flex items-center gap-1">
+          {linkedCoursesCount > 0 && (
+            <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold whitespace-nowrap ${isActive ? 'bg-indigo-200 text-indigo-800' : 'bg-indigo-100 text-indigo-700'}`}>
+              🔗 {linkedCoursesCount}
+            </span>
+          )}
+          <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold whitespace-nowrap ${isActive ? 'bg-indigo-100 text-indigo-700' : 'bg-gray-100 text-gray-600'}`}>
+            {group.count} Qs
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function CreateTestSeries() {
   const navigate = useNavigate();
   
@@ -34,6 +114,7 @@ export default function CreateTestSeries() {
   const [courses, setCourses] = useState([]);
   const [linkModalGroup, setLinkModalGroup] = useState(null);
   const [expandedSidebarCategories, setExpandedSidebarCategories] = useState({});
+  const [expandedSidebarSubgroups, setExpandedSidebarSubgroups] = useState({});
   const [selectedSidebarItems, setSelectedSidebarItems] = useState([]);
   const [toastMessage, setToastMessage] = useState('');
   const shouldScrollToPreviewRef = useRef(false);
@@ -43,8 +124,30 @@ export default function CreateTestSeries() {
     setTimeout(() => setToastMessage(''), 3000);
   };
 
+  const getMonthWeightSidebar = (name) => {
+    const lowerName = name.toLowerCase();
+    let year = 2024;
+    const yearMatch = name.match(/\b(20\d{2})\b/);
+    if (yearMatch) year = parseInt(yearMatch[1], 10);
+    const monthOrder = {
+      january: 1, february: 2, march: 3, april: 4, may: 5, june: 6,
+      july: 7, august: 8, september: 9, october: 10, november: 11, december: 12
+    };
+    let monthVal = 0;
+    for (const [month, weight] of Object.entries(monthOrder)) {
+      if (lowerName.includes(month)) { monthVal = weight; break; }
+    }
+    if (monthVal === 0) return 999999;
+    return (year * 100) + monthVal;
+  };
+
   const toggleSidebarCategory = (cat) => {
     setExpandedSidebarCategories(prev => ({ ...prev, [cat]: !prev[cat] }));
+  };
+
+  const toggleSidebarSubgroup = (cat, subGroupName) => {
+    const key = `${cat}::${subGroupName}`;
+    setExpandedSidebarSubgroups(prev => ({ ...prev, [key]: !prev[key] }));
   };
 
   const toggleSidebarItemSelection = (cat, subcat) => {
@@ -836,94 +939,103 @@ export default function CreateTestSeries() {
                     <span className="text-gray-500 text-xs">{expandedSidebarCategories[cat] ? '▼' : '▶'}</span>
                   </div>
                   
-                  {expandedSidebarCategories[cat] && (
-                    <div className="space-y-2 pl-2">
-                      {groups.map((group, idx) => {
-                        const isActive = group.category === category && group.subcategory === subcategory;
-                        const linkedCoursesCount = courses.filter(c => 
-                          (c.linked_tests || []).some(l => l.category === group.category && l.subcategory === group.subcategory)
-                        ).length;
+                  {expandedSidebarCategories[cat] && (() => {
+                    // Build subgroups by prefix (e.g. "January CA" -> "January")
+                    const subGroupMap = {};
+                    groups.forEach(group => {
+                      const subGroupName = group.subcategory.includes('-')
+                        ? group.subcategory.split('-')[0].trim()
+                        : group.subcategory;
+                      if (!subGroupMap[subGroupName]) subGroupMap[subGroupName] = [];
+                      subGroupMap[subGroupName].push(group);
+                    });
 
-                        return (
-                          <div
-                            key={idx}
-                            onClick={() => {
-                              setCategory(group.category);
-                              setSubcategory(group.subcategory);
-                              showToast(`Loaded preview for ${group.subcategory}`);
-                              shouldScrollToPreviewRef.current = true;
-                            }}
-                            className={`w-full group/sidebar relative cursor-pointer text-left p-3 rounded-xl border text-sm transition-all flex flex-col ${
-                              isActive 
-                                ? 'bg-indigo-50 border-indigo-200 shadow-sm ring-1 ring-indigo-500' 
-                                : 'bg-white border-gray-100 hover:border-gray-300 hover:bg-gray-50'
-                            }`}
-                          >
-                            <div className="flex items-start justify-between">
-                              <div className="flex items-center gap-1.5 flex-1 min-w-0 pr-2">
-                                <div className="mr-1 flex items-center h-full" onClick={(e) => e.stopPropagation()}>
-                                  <input 
-                                    type="checkbox"
-                                    checked={selectedSidebarItems.includes(`${group.category}:::${group.subcategory}`)}
-                                    onChange={() => toggleSidebarItemSelection(group.category, group.subcategory)}
-                                    className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer w-3.5 h-3.5"
-                                  />
-                                </div>
-                                <p className={`font-bold leading-snug ${isActive ? 'text-indigo-900' : 'text-gray-800'}`}>
-                                  {group.category}
-                                </p>
-                                <button 
-                                  onClick={(e) => handleRenameCategory(e, group.category, group.subcategory)}
-                                  className="p-1 text-gray-400 hover:text-indigo-600 transition-colors flex-shrink-0 opacity-0 group-hover/sidebar:opacity-100"
-                                  title="Rename Category"
-                                >
-                                  <Edit2 size={12} />
-                                </button>
-                              </div>
-                              <div className="opacity-0 group-hover/sidebar:opacity-100 flex items-center gap-1 z-10 transition-opacity">
-                                <button 
-                                  onClick={(e) => { e.stopPropagation(); setLinkModalGroup(group); }}
-                                  title="Link to Course"
-                                  className="p-1.5 bg-white text-indigo-600 rounded-md shadow-sm border border-indigo-100 hover:bg-indigo-50 transition-opacity"
-                                >
-                                  <Link2 size={12} />
-                                </button>
-                                <button 
-                                  onClick={(e) => handleRenameTestSeries(e, group.category, group.subcategory)}
-                                  title="Rename test series"
-                                  className="p-1.5 bg-white text-gray-600 rounded-md shadow-sm border border-gray-200 hover:bg-gray-50 transition-opacity"
-                                >
-                                  <Edit2 size={12} />
-                                </button>
-                                <button 
-                                  onClick={(e) => handleDeleteTestSeries(e, group.category, group.subcategory)}
-                                  title="Delete entire test series"
-                                  className="p-1.5 bg-white text-red-600 rounded-md shadow-sm border border-red-100 hover:bg-red-50 transition-opacity"
-                                >
-                                  <Trash2 size={12} />
-                                </button>
-                              </div>
-                            </div>
-                            <div className="flex items-center justify-between mt-1">
-                              <p className={`text-xs ${isActive ? 'text-indigo-600' : 'text-gray-500'}`}>
-                                {group.subcategory}
-                              </p>
-                              <div className="flex items-center gap-1">
-                                {linkedCoursesCount > 0 && (
-                                  <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold whitespace-nowrap ${isActive ? 'bg-indigo-200 text-indigo-800' : 'bg-indigo-100 text-indigo-700'}`}>
-                                    🔗 {linkedCoursesCount}
-                                  </span>
-                                )}
-                                <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold whitespace-nowrap ${isActive ? 'bg-indigo-100 text-indigo-700' : 'bg-gray-100 text-gray-600'}`}>
-                                  {group.count} Qs
+                    const sortedSubGroups = Object.entries(subGroupMap).sort(
+                      (a, b) => getMonthWeightSidebar(a[0]) - getMonthWeightSidebar(b[0])
+                    );
+
+                    return (
+                      <div className="space-y-1.5 pl-2">
+                        {sortedSubGroups.map(([subGroupName, subGroupTests]) => {
+                          const subKey = `${cat}::${subGroupName}`;
+                          const isSubExpanded = expandedSidebarSubgroups[subKey];
+                          // If only 1 member & same name as the group, render flat (no nesting)
+                          const renderFlat = subGroupTests.length === 1 && subGroupTests[0].subcategory === subGroupName;
+
+                          if (renderFlat) {
+                            const group = subGroupTests[0];
+                            const isActive = group.category === category && group.subcategory === subcategory;
+                            const linkedCoursesCount = courses.filter(c =>
+                              (c.linked_tests || []).some(l => l.category === group.category && l.subcategory === group.subcategory)
+                            ).length;
+                            return (
+                              <SidebarTestItem
+                                key={group.subcategory}
+                                group={group}
+                                isActive={isActive}
+                                linkedCoursesCount={linkedCoursesCount}
+                                selectedSidebarItems={selectedSidebarItems}
+                                toggleSidebarItemSelection={toggleSidebarItemSelection}
+                                handleRenameCategory={handleRenameCategory}
+                                setLinkModalGroup={setLinkModalGroup}
+                                handleRenameTestSeries={handleRenameTestSeries}
+                                handleDeleteTestSeries={handleDeleteTestSeries}
+                                setCategory={setCategory}
+                                setSubcategory={setSubcategory}
+                                showToast={showToast}
+                                shouldScrollToPreviewRef={shouldScrollToPreviewRef}
+                              />
+                            );
+                          }
+
+                          return (
+                            <div key={subGroupName}>
+                              {/* Subgroup header */}
+                              <div
+                                onClick={() => toggleSidebarSubgroup(cat, subGroupName)}
+                                className="flex items-center justify-between cursor-pointer px-2 py-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+                              >
+                                <span className="text-xs font-bold text-gray-600 uppercase tracking-wider">{subGroupName}</span>
+                                <span className="text-gray-400 text-[10px] flex items-center gap-1">
+                                  <span className="bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded font-bold">{subGroupTests.length}</span>
+                                  {isSubExpanded ? '▼' : '▶'}
                                 </span>
                               </div>
+
+                              {isSubExpanded && (
+                                <div className="space-y-1.5 pl-2 mt-1">
+                                  {subGroupTests.map((group, idx) => {
+                                    const isActive = group.category === category && group.subcategory === subcategory;
+                                    const linkedCoursesCount = courses.filter(c =>
+                                      (c.linked_tests || []).some(l => l.category === group.category && l.subcategory === group.subcategory)
+                                    ).length;
+                                    return (
+                                      <SidebarTestItem
+                                        key={idx}
+                                        group={group}
+                                        isActive={isActive}
+                                        linkedCoursesCount={linkedCoursesCount}
+                                        selectedSidebarItems={selectedSidebarItems}
+                                        toggleSidebarItemSelection={toggleSidebarItemSelection}
+                                        handleRenameCategory={handleRenameCategory}
+                                        setLinkModalGroup={setLinkModalGroup}
+                                        handleRenameTestSeries={handleRenameTestSeries}
+                                        handleDeleteTestSeries={handleDeleteTestSeries}
+                                        setCategory={setCategory}
+                                        setSubcategory={setSubcategory}
+                                        showToast={showToast}
+                                        shouldScrollToPreviewRef={shouldScrollToPreviewRef}
+                                      />
+                                    );
+                                  })}
+                                </div>
+                              )}
                             </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
+                          );
+                        })}
+                      </div>
+                    );
+                  })()}
                 </div>
               ))}
             </div>
