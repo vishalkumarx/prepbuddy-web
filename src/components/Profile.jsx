@@ -91,6 +91,13 @@ export default function Profile({ onLogout }) {
                 <Image size={18} />
                 Banner Control Panel
               </Link>
+              <Link 
+                to="/admin/free-tests"
+                className="w-full py-3.5 mb-3 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold rounded-xl flex items-center justify-center gap-2 transition-colors border border-emerald-100 shadow-sm"
+              >
+                <CheckCircle size={18} />
+                Free Tests Control Panel
+              </Link>
             </>
           )}
 

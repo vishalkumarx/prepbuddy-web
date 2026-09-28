@@ -8,6 +8,7 @@ import { UserManager } from '../utils/UserManager';
 export default function StateHomeFeed() {
   const navigate = useNavigate();
   const [testSeries, setTestSeries] = useState([]);
+  const [freeTests, setFreeTests] = useState([]);
   const [enrolledIds, setEnrolledIds] = useState(new Set());
   const [attemptsByCourse, setAttemptsByCourse] = useState({});
   const [loading, setLoading] = useState(true);
@@ -132,7 +133,16 @@ export default function StateHomeFeed() {
           .order('created_at', { ascending: false });
 
         if (error) throw error;
-        const sortedData = (data || []).sort((a, b) => {
+        
+        // Extract free tests
+        const freeCourse = data.find(c => c.title === 'INTERNAL_FREE_TEST_SECTION');
+        if (freeCourse) {
+          setFreeTests(freeCourse.linked_tests || []);
+        }
+
+        const filteredData = (data || []).filter(c => c.title !== 'INTERNAL_FREE_TEST_SECTION');
+        
+        const sortedData = filteredData.sort((a, b) => {
           if (a.is_popular && !b.is_popular) return -1;
           if (!a.is_popular && b.is_popular) return 1;
           return 0;
@@ -215,6 +225,49 @@ export default function StateHomeFeed() {
     <div className="p-4 space-y-4 pb-24">
       {/* Testimonials Carousel */}
       <TestimonialCarousel />
+
+      {/* Free Test Series Section */}
+      {freeTests.length > 0 && (
+        <div className="pt-2 pb-2">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-xl font-bold text-gray-900 tracking-tight flex items-center gap-2">
+              <span className="bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded text-sm uppercase tracking-wider">Free</span>
+              Tests To Try
+            </h2>
+          </div>
+          <div className="flex overflow-x-auto pb-4 -mx-4 px-4 gap-4 snap-x snap-mandatory hide-scrollbar">
+            {freeTests.map((test, idx) => {
+              // Check if user has attempted it using "free" courseId
+              const courseAttempts = attemptsByCourse['free'] || new Set();
+              const isAttempted = courseAttempts.has(`${test.category}-${test.subcategory}`);
+
+              return (
+                <div 
+                  key={idx}
+                  onClick={() => navigate(isAttempted 
+                    ? `/solution/free/${encodeURIComponent(test.category)}/${encodeURIComponent(test.subcategory)}` 
+                    : `/test/free/${encodeURIComponent(test.category)}/${encodeURIComponent(test.subcategory)}`
+                  )}
+                  className="min-w-[240px] w-[240px] sm:min-w-[280px] bg-white rounded-2xl shadow-sm border border-emerald-100 overflow-hidden flex flex-col snap-start cursor-pointer hover:shadow-md hover:border-emerald-200 transition-all active:scale-[0.98]"
+                >
+                  <div className="p-4 flex-1">
+                    <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider mb-1">{test.category}</p>
+                    <h3 className="font-bold text-gray-900 leading-tight mb-2 line-clamp-2">{test.subcategory}</h3>
+                  </div>
+                  <div className="px-4 py-3 bg-emerald-50/50 border-t border-emerald-50 flex items-center justify-between">
+                    <span className="text-xs font-bold text-emerald-700">
+                      {isAttempted ? 'View Analysis' : 'Attempt Now'}
+                    </span>
+                    <span className="text-emerald-500 bg-white p-1 rounded-full shadow-sm">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Section Title */}
       <div className="pt-2 pb-1">

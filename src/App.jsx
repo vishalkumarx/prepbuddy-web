@@ -6,6 +6,7 @@ import PostDetail from './components/PostDetail';
 import Store from './components/Store';
 import UploadMains from './components/UploadMains';
 import UploadResource from './components/UploadResource';
+import FreeTestManager from './components/FreeTestManager';
 import ResourceDetail from './components/ResourceDetail';
 import UploadPost from './components/UploadPost';
 import Profile from './components/Profile';
@@ -281,6 +282,7 @@ function App() {
         <Route path="/upload-json" element={<UploadJSONQuestions />} />
         <Route path="/admin/create-test" element={<CreateTestSeries />} />
         <Route path="/admin/courses" element={<CourseControlPanel />} />
+        <Route path="/admin/free-tests" element={<FreeTestManager />} />
         <Route path="/payment/:type/:id" element={<DummyPaymentGateway />} />
 
         {/* Main Application Routes */}
