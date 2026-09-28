@@ -12,15 +12,37 @@
     @apply bg-app-bg text-gray-900;
     touch-action: manipulation;
   }
+}
 
-  /* Make images inside parsed HTML questions/solutions responsive */
-  [dangerouslysetinnerhtml] img,
-  span img,
-  div img {
-    max-width: 100%;
-    height: auto;
-    border-radius: 0.5rem;
-  }
+/* Responsive HTML content (questions, options, explanations with embedded HTML) */
+.html-content img,
+.html-content table {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+.html-content img {
+  border-radius: 0.5rem;
+  object-fit: contain;
+}
+
+.html-content table {
+  border-collapse: collapse;
+  font-size: 0.85em;
+  overflow-x: auto;
+}
+
+.html-content td,
+.html-content th {
+  border: 1px solid #d1d5db;
+  padding: 4px 8px;
+}
+
+/* Fallback: any img anywhere in the app */
+img {
+  max-width: 100%;
+  height: auto;
 }
 
 @layer utilities {

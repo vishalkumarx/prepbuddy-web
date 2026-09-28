@@ -110,7 +110,8 @@ export default function ViewSolution() {
                   Skipped
                 </div>
               )}
-              <div className="text-base font-bold text-gray-900 leading-snug mb-4 mt-2 whitespace-pre-wrap flex gap-2">
+              <div className="text-base font-bold text-gray-900 leading-snug mb-4 mt-2 html-content flex gap-2">
+                <span className="shrink-0">Q{idx + 1}.</span>
                 <span dangerouslySetInnerHTML={{ __html: q.question?.replace(/\\n/g, '<br/>') || '' }} />
               </div>
 
@@ -144,7 +145,7 @@ export default function ViewSolution() {
                       </div>
                       <div className="flex-1 min-w-0 flex flex-col">
                         <span 
-                          className={`text-sm ${textClass}`}
+                          className={`text-sm html-content ${textClass}`}
                           dangerouslySetInnerHTML={{ __html: opt?.replace(/\\n/g, '<br/>') || '' }}
                         />
                         {isUserSelected && (
