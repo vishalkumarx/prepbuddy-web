@@ -71,8 +71,11 @@
 }
 
 .html-content u,
-.html-content ins {
+.html-content ins,
+.html-content insp {
   text-decoration: underline !important;
+  text-underline-offset: 2px !important;
+  text-decoration-thickness: 2px !important;
 }
 
 .html-content mark {
