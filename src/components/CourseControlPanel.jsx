@@ -370,7 +370,7 @@ export default function CourseControlPanel() {
                                 <div
                                   key={category}
                                   onClick={() => toggleCategory(category)}
-                                  className={`flex flex-col items-center justify-center gap-2 text-center border p-3 rounded-2xl cursor-pointer hover:scale-[1.02] active:scale-[0.98] transition-all ${
+                                  className={`flex flex-col items-center justify-center gap-2 text-center border p-3 rounded-2xl cursor-pointer hover:scale-[1.02] active:scale-[0.98] h-full transition-all ${
                                     isExpanded
                                       ? `${color.bg} ${color.border} shadow-sm ring-1 ring-black/5`
                                       : 'bg-white border-gray-200 hover:bg-gray-50'

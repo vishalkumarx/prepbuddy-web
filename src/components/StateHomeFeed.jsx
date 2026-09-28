@@ -245,7 +245,7 @@ export default function StateHomeFeed() {
             <div 
               key={ts.id} 
               onClick={() => navigate(`/course/${ts.id}`)}
-              className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex flex-col cursor-pointer hover:shadow-md hover:border-indigo-100 transition-all active:scale-[0.99]"
+              className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex flex-col h-full cursor-pointer hover:shadow-md hover:border-indigo-100 transition-all active:scale-[0.99]"
             >
               <div className="relative">
                 {ts.banner_url ? (
@@ -341,12 +341,14 @@ export default function StateHomeFeed() {
 
               {/* Full-width Buy Now button at bottom — non-enrolled only */}
               {!enrolledIds.has(ts.id) && (
-                <button
-                  onClick={(e) => handleBuyClick(e, ts)}
-                  className="w-full bg-[#0B2457] text-white font-bold py-3 text-sm active:scale-[0.98] transition-all shadow-sm animate-pulse"
-                >
-                  {ts.price > 0 ? 'Buy Now' : 'Enroll Now'}
-                </button>
+                <div className="mt-auto">
+                  <button
+                    onClick={(e) => handleBuyClick(e, ts)}
+                    className="w-full bg-[#0B2457] text-white font-bold py-3 text-sm active:scale-[0.98] transition-all shadow-sm"
+                  >
+                    {ts.price > 0 ? 'Buy Now' : 'Enroll Now'}
+                  </button>
+                </div>
               )}
             </div>
           );
