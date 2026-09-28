@@ -94,6 +94,7 @@ export default function CreateTestSeries() {
   const [optionB, setOptionB] = useState('');
   const [optionC, setOptionC] = useState('');
   const [optionD, setOptionD] = useState('');
+  const [optionE, setOptionE] = useState('');
   const [answer, setAnswer] = useState('A');
   const [explanation, setExplanation] = useState('');
   
@@ -280,10 +281,11 @@ export default function CreateTestSeries() {
     if (answer === 'B') answerText = optionB;
     if (answer === 'C') answerText = optionC;
     if (answer === 'D') answerText = optionD;
+    if (answer === 'E') answerText = optionE;
 
     const questionData = {
       question,
-      options: [optionA, optionB, optionC, optionD],
+      options: [optionA, optionB, optionC, optionD, optionE].filter(Boolean),
       answer: answerText,
       explanation,
       category,
@@ -302,6 +304,7 @@ export default function CreateTestSeries() {
       setOptionB('');
       setOptionC('');
       setOptionD('');
+      setOptionE('');
       setAnswer('A');
       setExplanation('');
       return;
@@ -329,6 +332,7 @@ export default function CreateTestSeries() {
       setOptionB('');
       setOptionC('');
       setOptionD('');
+      setOptionE('');
       setAnswer('A');
       setExplanation('');
       setEditingId(null);
@@ -352,17 +356,19 @@ export default function CreateTestSeries() {
         if (Array.isArray(data)) data = data[0]; // If array pasted, just take the first one
         if (data && typeof data === 'object') {
           setQuestion(data.question || data.q || '');
-          const opts = Array.isArray(data.options) ? data.options : [data.optionA, data.optionB, data.optionC, data.optionD];
+          const opts = Array.isArray(data.options) ? data.options : [data.optionA, data.optionB, data.optionC, data.optionD, data.optionE];
           if (opts[0]) setOptionA(opts[0]);
           if (opts[1]) setOptionB(opts[1]);
           if (opts[2]) setOptionC(opts[2]);
           if (opts[3]) setOptionD(opts[3]);
+          if (opts[4]) setOptionE(opts[4]);
           
           let ans = data.answer || data.correct_answer || opts[0];
           if (ans === opts[0] || String(ans).toUpperCase() === 'A') setAnswer('A');
           else if (ans === opts[1] || String(ans).toUpperCase() === 'B') setAnswer('B');
           else if (ans === opts[2] || String(ans).toUpperCase() === 'C') setAnswer('C');
           else if (ans === opts[3] || String(ans).toUpperCase() === 'D') setAnswer('D');
+          else if (ans === opts[4] || String(ans).toUpperCase() === 'E') setAnswer('E');
           
           setExplanation(data.explanation || data.desc || '');
           return;
@@ -441,7 +447,7 @@ export default function CreateTestSeries() {
       let data = JSON.parse(textToParse);
       if (Array.isArray(data)) {
         const formatted = data.map(q => {
-          const opts = Array.isArray(q.options) ? q.options : [q.optionA, q.optionB, q.optionC, q.optionD].filter(Boolean);
+          const opts = Array.isArray(q.options) ? q.options : [q.optionA, q.optionB, q.optionC, q.optionD, q.optionE].filter(Boolean);
           
           // Determine answer: support correct_option_id (0-indexed), answer letter, or answer text
           let answerText = '';
@@ -453,6 +459,7 @@ export default function CreateTestSeries() {
             else if (upperAns === 'B' && opts[1]) answerText = opts[1];
             else if (upperAns === 'C' && opts[2]) answerText = opts[2];
             else if (upperAns === 'D' && opts[3]) answerText = opts[3];
+            else if (upperAns === 'E' && opts[4]) answerText = opts[4];
             else answerText = q.answer;
           } else if (q.correct_answer) {
             answerText = q.correct_answer;
@@ -489,7 +496,7 @@ export default function CreateTestSeries() {
       } else {
         // Single object populates the form (no immediate db insertion)
         setQuestion(data.question || data.q || '');
-        const opts = Array.isArray(data.options) ? data.options : [data.optionA, data.optionB, data.optionC, data.optionD];
+        const opts = Array.isArray(data.options) ? data.options : [data.optionA, data.optionB, data.optionC, data.optionD, data.optionE];
         if (opts[0]) setOptionA(opts[0]);
         if (opts[1]) setOptionB(opts[1]);
         if (opts[2]) setOptionC(opts[2]);
@@ -629,6 +636,7 @@ export default function CreateTestSeries() {
     setOptionB(opts[1] || '');
     setOptionC(opts[2] || '');
     setOptionD(opts[3] || '');
+    setOptionE(opts[4] || '');
     
     let ansLetter = 'A';
     if (opts[1] && q.answer === opts[1]) ansLetter = 'B';
@@ -858,6 +866,7 @@ export default function CreateTestSeries() {
     if (opts[1]) setOptionB(opts[1]);
     if (opts[2]) setOptionC(opts[2]);
     if (opts[3]) setOptionD(opts[3]);
+    if (opts[4]) setOptionE(opts[4]);
     
     if (q.answer === opts[0]) setAnswer('A');
     else if (q.answer === opts[1]) setAnswer('B');
@@ -1197,6 +1206,16 @@ export default function CreateTestSeries() {
                   className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:bg-white"
                 />
               </div>
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-1.5">Option E (Optional)</label>
+                <input
+                  type="text"
+                  value={optionE}
+                  onChange={(e) => setOptionE(e.target.value)}
+                  className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:bg-white"
+                  placeholder="Leave empty if only 4 options"
+                />
+              </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
@@ -1211,6 +1230,7 @@ export default function CreateTestSeries() {
                   <option value="B">Option B</option>
                   <option value="C">Option C</option>
                   <option value="D">Option D</option>
+                  <option value="E">Option E</option>
                 </select>
               </div>
             </div>
@@ -1246,6 +1266,7 @@ export default function CreateTestSeries() {
                     setOptionB('');
                     setOptionC('');
                     setOptionD('');
+                    setOptionE('');
                     setAnswer('A');
                     setExplanation('');
                   }}

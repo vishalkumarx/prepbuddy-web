@@ -58,12 +58,13 @@ export default function UploadJSONQuestions() {
           else if (lowerAns === 'optionb' || lowerAns === 'b') answerVal = q.optionB || optsArray[1] || answerVal;
           else if (lowerAns === 'optionc' || lowerAns === 'c') answerVal = q.optionC || optsArray[2] || answerVal;
           else if (lowerAns === 'optiond' || lowerAns === 'd') answerVal = q.optionD || optsArray[3] || answerVal;
+          else if (lowerAns === 'optione' || lowerAns === 'e') answerVal = q.optionE || optsArray[4] || answerVal;
         }
 
         return {
           id: idx + 1,
           question: q.question || q.q || q.title || '',
-          options: Array.isArray(q.options) ? q.options : [q.optionA, q.optionB, q.optionC, q.optionD].filter(Boolean),
+          options: Array.isArray(q.options) ? q.options : [q.optionA, q.optionB, q.optionC, q.optionD, q.optionE].filter(Boolean),
           answer: answerVal,
           explanation: q.explanation || q.desc || q.solution || '',
           category: q.category || category,
