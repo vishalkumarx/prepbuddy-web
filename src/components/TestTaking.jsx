@@ -166,6 +166,10 @@ export default function TestTaking() {
       
       // Clear saved progress on successful submission
       localStorage.removeItem(progressKey);
+
+      // Save answers for analysis
+      const analysisKey = `test_analysis_${userId}_${courseId}_${decodeURIComponent(category)}_${decodeURIComponent(subcategory)}`;
+      localStorage.setItem(analysisKey, JSON.stringify(answers));
       
       // Clean up the dummy history state we pushed for the back button
       navigate(-1);

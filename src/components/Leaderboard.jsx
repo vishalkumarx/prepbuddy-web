@@ -126,6 +126,15 @@ export default function Leaderboard() {
           )}
         </div>
       </div>
+      {/* Sticky Bottom Actions */}
+      <div className="sticky bottom-0 bg-white p-4 border-t border-gray-100 shadow-[0_-4px_20px_rgba(0,0,0,0.05)] z-20">
+        <button 
+          onClick={() => navigate(`/solution/${courseId}/${encodeURIComponent(category)}/${encodeURIComponent(subcategory)}`)}
+          className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-md transition-colors flex items-center justify-center gap-2"
+        >
+          View Analysis
+        </button>
+      </div>
     </div>
   );
 }

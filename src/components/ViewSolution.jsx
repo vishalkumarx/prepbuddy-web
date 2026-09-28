@@ -1,13 +1,29 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../supabase';
-import { ArrowLeft, CheckCircle2 } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, XCircle } from 'lucide-react';
+import { UserManager } from '../utils/UserManager';
 
 export default function ViewSolution() {
   const { courseId, category, subcategory } = useParams();
   const navigate = useNavigate();
   const [questions, setQuestions] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [userAnswers, setUserAnswers] = useState({});
+  
+  const userId = UserManager.getUserId();
+  const analysisKey = `test_analysis_${userId}_${courseId}_${decodeURIComponent(category)}_${decodeURIComponent(subcategory)}`;
+
+  useEffect(() => {
+    const saved = localStorage.getItem(analysisKey);
+    if (saved) {
+      try {
+        setUserAnswers(JSON.parse(saved));
+      } catch (e) {
+        console.error("Failed to parse saved analysis", e);
+      }
+    }
+  }, [analysisKey]);
 
   useEffect(() => {
     const fetchQuestions = async () => {
@@ -81,11 +97,19 @@ export default function ViewSolution() {
             }
           });
 
+          const userSelectedOpt = userAnswers[q.id];
+          const isSkipped = !userSelectedOpt;
+
           return (
             <div key={idx} className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 relative">
               <div className="absolute -top-3 -left-2 bg-indigo-600 text-white font-black text-xs px-2.5 py-1 rounded-lg shadow-sm">
                 Q{idx + 1}
               </div>
+              {isSkipped && (
+                <div className="absolute -top-3 right-4 bg-gray-100 text-gray-500 font-bold text-[10px] uppercase tracking-wider px-2 py-1 rounded-lg border border-gray-200">
+                  Skipped
+                </div>
+              )}
               <div className="text-base font-bold text-gray-900 leading-snug mb-4 mt-2 whitespace-pre-wrap flex gap-2">
                 <span dangerouslySetInnerHTML={{ __html: q.question?.replace(/\\n/g, '<br/>') || '' }} />
               </div>
@@ -94,26 +118,42 @@ export default function ViewSolution() {
                 {options.map((opt, oIdx) => {
                   const optLetter = String.fromCharCode(65 + oIdx);
                   const isCorrect = String(opt).trim().toLowerCase() === String(correctOptionText).trim().toLowerCase();
+                  const isUserSelected = userSelectedOpt && String(opt).trim().toLowerCase() === String(userSelectedOpt).trim().toLowerCase();
+                  
+                  let borderClass = 'border-gray-50 bg-gray-50 opacity-50';
+                  let iconBgClass = 'bg-gray-200 text-gray-400';
+                  let textClass = 'font-medium text-gray-500';
+                  
+                  if (isCorrect) {
+                    borderClass = 'border-emerald-500 bg-emerald-50/50 shadow-sm opacity-100';
+                    iconBgClass = 'bg-emerald-500 text-white';
+                    textClass = 'font-bold text-emerald-900';
+                  } else if (isUserSelected) {
+                    borderClass = 'border-rose-400 bg-rose-50/50 shadow-sm opacity-100';
+                    iconBgClass = 'bg-rose-500 text-white';
+                    textClass = 'font-bold text-rose-900';
+                  }
                   
                   return (
                     <div 
                       key={oIdx}
-                      className={`flex items-start p-3 rounded-xl border-2 transition-all ${
-                        isCorrect 
-                          ? 'border-emerald-500 bg-emerald-50/50 shadow-sm' 
-                          : 'border-gray-50 bg-gray-50 opacity-50'
-                      }`}
+                      className={`flex items-start p-3 rounded-xl border-2 transition-all ${borderClass}`}
                     >
-                      <div className={`w-5 h-5 rounded-full flex items-center justify-center font-bold text-[10px] mr-3 mt-0.5 ${
-                        isCorrect ? 'bg-emerald-500 text-white' : 'bg-gray-200 text-gray-400'
-                      }`}>
+                      <div className={`w-5 h-5 rounded-full flex items-center justify-center font-bold text-[10px] mr-3 mt-0.5 ${iconBgClass}`}>
                         {optLetter}
                       </div>
-                      <span className={`text-sm whitespace-pre-wrap ${isCorrect ? 'font-bold text-emerald-900' : 'font-medium text-gray-500'}`}>
-                        {opt?.replace(/\\n/g, '\n')}
-                      </span>
+                      <div className="flex-1 min-w-0 flex flex-col">
+                        <span className={`text-sm whitespace-pre-wrap ${textClass}`}>
+                          {opt?.replace(/\\n/g, '\n')}
+                        </span>
+                        {isUserSelected && (
+                          <span className={`text-[10px] font-bold mt-1 ${isCorrect ? 'text-emerald-600' : 'text-rose-500'}`}>
+                            {isCorrect ? 'Your correct answer' : 'Your incorrect answer'}
+                          </span>
+                        )}
+                      </div>
                       {isCorrect && (
-                        <div className="ml-auto mt-0.5 text-emerald-500">
+                        <div className="ml-auto mt-0.5 text-emerald-500 flex-shrink-0">
                           <CheckCircle2 size={16} />
                         </div>
                       )}
