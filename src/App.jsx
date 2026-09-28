@@ -7,6 +7,7 @@ import Store from './components/Store';
 import UploadMains from './components/UploadMains';
 import UploadResource from './components/UploadResource';
 import FreeTestManager from './components/FreeTestManager';
+import AllFreeTests from './components/AllFreeTests';
 import ResourceDetail from './components/ResourceDetail';
 import UploadPost from './components/UploadPost';
 import Profile from './components/Profile';
@@ -283,6 +284,7 @@ function App() {
         <Route path="/admin/create-test" element={<CreateTestSeries />} />
         <Route path="/admin/courses" element={<CourseControlPanel />} />
         <Route path="/admin/free-tests" element={<FreeTestManager />} />
+        <Route path="/free-tests" element={<AllFreeTests />} />
         <Route path="/payment/:type/:id" element={<DummyPaymentGateway />} />
 
         {/* Main Application Routes */}
