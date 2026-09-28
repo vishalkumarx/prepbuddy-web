@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../supabase';
 import { ArrowLeft, CheckCircle2, XCircle } from 'lucide-react';
 import { UserManager } from '../utils/UserManager';
+import { processHtml } from '../utils/htmlUtils';
 
 export default function ViewSolution() {
   const { courseId, category, subcategory } = useParams();
@@ -112,7 +113,7 @@ export default function ViewSolution() {
               )}
               <div className="text-base font-bold text-gray-900 leading-snug mb-4 mt-2 html-content flex gap-2">
                 <span className="shrink-0">Q{idx + 1}.</span>
-                <span dangerouslySetInnerHTML={{ __html: q.question?.replace(/\\n/g, '<br/>') || '' }} />
+                <span dangerouslySetInnerHTML={{ __html: processHtml(q.question) }} />
               </div>
 
               <div className="space-y-2">
@@ -146,7 +147,7 @@ export default function ViewSolution() {
                       <div className="flex-1 min-w-0 flex flex-col">
                         <span 
                           className={`text-sm html-content ${textClass}`}
-                          dangerouslySetInnerHTML={{ __html: opt?.replace(/\\n/g, '<br/>') || '' }}
+                          dangerouslySetInnerHTML={{ __html: processHtml(opt) }}
                         />
                         {isUserSelected && (
                           <span className={`text-[10px] font-bold mt-1 ${isCorrect ? 'text-emerald-600' : 'text-rose-500'}`}>
@@ -167,7 +168,7 @@ export default function ViewSolution() {
               {q.explanation && (
                 <div className="mt-4 p-3 bg-blue-50/50 border border-blue-100 rounded-xl">
                   <h4 className="text-xs font-bold text-blue-800 mb-1">Explanation:</h4>
-                  <div className="text-xs text-blue-900/80 leading-relaxed whitespace-pre-wrap" dangerouslySetInnerHTML={{ __html: q.explanation?.replace(/\\n/g, '<br/>') || '' }} />
+                  <div className="text-xs text-blue-900/80 leading-relaxed html-content" dangerouslySetInnerHTML={{ __html: processHtml(q.explanation) }} />
                 </div>
               )}
             </div>

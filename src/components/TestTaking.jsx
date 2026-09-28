@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../supabase';
 import { ArrowLeft, CheckCircle2, ChevronRight, ChevronLeft } from 'lucide-react';
 import { UserManager } from '../utils/UserManager';
+import { processHtml } from '../utils/htmlUtils';
 
 export default function TestTaking() {
   const { courseId, category, subcategory } = useParams();
@@ -227,7 +228,7 @@ export default function TestTaking() {
         <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 overflow-x-hidden">
           <div className="text-lg font-bold text-gray-900 leading-snug mb-6 html-content flex gap-2">
             <span className="text-indigo-600 shrink-0">Q{currentIdx + 1}.</span>
-            <span dangerouslySetInnerHTML={{ __html: currentQ.question?.replace(/\\n/g, '<br/>') || '' }} />
+            <span dangerouslySetInnerHTML={{ __html: processHtml(currentQ.question) }} />
           </div>
 
           <div className="space-y-3">
@@ -252,7 +253,7 @@ export default function TestTaking() {
                   </div>
                   <span 
                     className={`text-sm html-content ${isSelected ? 'font-bold text-indigo-900' : 'font-medium text-gray-700'}`}
-                    dangerouslySetInnerHTML={{ __html: opt?.replace(/\\n/g, '<br/>') || '' }}
+                    dangerouslySetInnerHTML={{ __html: processHtml(opt) }}
                   />
                 </div>
               );

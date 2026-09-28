@@ -1194,7 +1194,7 @@ export default function CreateTestSeries() {
                   <p className="text-[10px] font-bold text-indigo-500 uppercase tracking-wider mb-1">HTML Preview</p>
                   <div 
                     className="text-sm html-content text-gray-800 leading-relaxed"
-                    dangerouslySetInnerHTML={{ __html: question.replace(/\\n/g, '<br/>') }}
+                    dangerouslySetInnerHTML={{ __html: processHtml(question) }}
                   />
                 </div>
               )}
@@ -1466,7 +1466,7 @@ export default function CreateTestSeries() {
                         </div>
                         <div className="font-bold text-gray-900 text-sm pr-10 whitespace-pre-wrap flex gap-1">
                           <span>Q.</span>
-                          <span dangerouslySetInnerHTML={{ __html: q.question?.replace(/\\n/g, '<br/>') || '' }} />
+                          <span dangerouslySetInnerHTML={{ __html: processHtml(q.question) }} />
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
                           {options.map((opt, oIdx) => {
@@ -1488,14 +1488,14 @@ export default function CreateTestSeries() {
                               }`}
                             >
                               <span className="font-bold mr-2">{optLetter}.</span>
-                              <span dangerouslySetInnerHTML={{ __html: opt?.replace(/\\n/g, '<br/>') || '' }} />
+                              <span dangerouslySetInnerHTML={{ __html: processHtml(opt) }} />
                             </div>
                           )})}
                         </div>
                         {q.explanation && (
                           <div className="text-gray-500 italic pt-2 border-t border-gray-100 text-xs whitespace-pre-wrap flex gap-1">
                             <strong>Explanation:</strong> 
-                            <span dangerouslySetInnerHTML={{ __html: q.explanation?.replace(/\\n/g, '<br/>') || '' }} />
+                            <span dangerouslySetInnerHTML={{ __html: processHtml(q.explanation) }} />
                           </div>
                         )}
                       </div>
@@ -1532,7 +1532,7 @@ export default function CreateTestSeries() {
                   </div>
                   <div className="font-bold text-gray-900 text-sm pr-16 flex gap-1">
                     <span>Q.</span>
-                    <span dangerouslySetInnerHTML={{ __html: q.question?.replace(/\\n/g, '<br/>') || '' }} />
+                    <span dangerouslySetInnerHTML={{ __html: processHtml(q.question) }} />
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
                     {options.map((opt, oIdx) => {
@@ -1554,14 +1554,14 @@ export default function CreateTestSeries() {
                         }`}
                       >
                         <span className="font-bold mr-2">{optLetter}.</span>
-                        <span dangerouslySetInnerHTML={{ __html: opt?.replace(/\\n/g, '<br/>') || '' }} />
+                        <span dangerouslySetInnerHTML={{ __html: processHtml(opt) }} />
                       </div>
                     )})}
                   </div>
                   {q.explanation && (
                     <div className="text-gray-500 italic pt-2 border-t border-gray-200 text-xs flex gap-1">
                       <strong>Explanation:</strong> 
-                      <span dangerouslySetInnerHTML={{ __html: q.explanation?.replace(/\\n/g, '<br/>') || '' }} />
+                      <span dangerouslySetInnerHTML={{ __html: processHtml(q.explanation) }} />
                     </div>
                   )}
                 </div>
