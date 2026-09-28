@@ -39,6 +39,66 @@
   padding: 4px 8px;
 }
 
+/* Restore semantic HTML styles that Tailwind's preflight resets.
+   Without these, <b>, <mark>, <u>, <em> etc. look plain on mobile. */
+.html-content b,
+.html-content strong {
+  font-weight: bold;
+}
+
+.html-content i,
+.html-content em {
+  font-style: italic;
+}
+
+.html-content u {
+  text-decoration: underline;
+}
+
+.html-content mark {
+  background-color: #fef08a;
+  color: inherit;
+  padding: 0 2px;
+  border-radius: 2px;
+}
+
+.html-content s,
+.html-content strike,
+.html-content del {
+  text-decoration: line-through;
+}
+
+.html-content sub {
+  vertical-align: sub;
+  font-size: 0.75em;
+}
+
+.html-content sup {
+  vertical-align: super;
+  font-size: 0.75em;
+}
+
+.html-content h1, .html-content h2, .html-content h3,
+.html-content h4, .html-content h5, .html-content h6 {
+  font-weight: bold;
+}
+
+.html-content ul {
+  list-style-type: disc;
+  padding-left: 1.25rem;
+}
+
+.html-content ol {
+  list-style-type: decimal;
+  padding-left: 1.25rem;
+}
+
+.html-content span[style],
+.html-content p[style],
+.html-content div[style] {
+  /* Allow inline styles (color, background-color, font-weight) to take effect */
+  all: revert;
+}
 
 @layer utilities {
   @keyframes slideUp {
