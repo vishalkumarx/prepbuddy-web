@@ -16,6 +16,7 @@ export default function TestTaking() {
   const [showExitPrompt, setShowExitPrompt] = useState(false);
   const [showSubmitPrompt, setShowSubmitPrompt] = useState(false);
   const [showStartDialog, setShowStartDialog] = useState(false);
+  const [testStarted, setTestStarted] = useState(false);
   const scrollContainerRef = useRef(null);
   const isSubmittingRef = useRef(false);
 
@@ -69,12 +70,12 @@ export default function TestTaking() {
     }
   }, [progressKey]);
 
-  // Save progress continuously
+  // Save progress continuously — only after test has actually started
   useEffect(() => {
-    if (questions.length > 0) {
+    if (testStarted && questions.length > 0) {
       localStorage.setItem(progressKey, JSON.stringify({ currentIdx, answers }));
     }
-  }, [currentIdx, answers, questions, progressKey]);
+  }, [testStarted, currentIdx, answers, questions, progressKey]);
 
   useEffect(() => {
     const fetchQuestions = async () => {
@@ -89,9 +90,11 @@ export default function TestTaking() {
         if (error) throw error;
         setQuestions(data || []);
 
-        // Show start dialog only when NOT resuming a paused test
+        // If resuming a paused test, skip dialog and start immediately
         const saved = localStorage.getItem(`test_progress_${UserManager.getUserId()}_${courseId}_${decodeURIComponent(category)}_${decodeURIComponent(subcategory)}`);
-        if (!saved) {
+        if (saved) {
+          setTestStarted(true);
+        } else {
           setShowStartDialog(true);
         }
       } catch (err) {
@@ -264,7 +267,7 @@ export default function TestTaking() {
                 Go Back
               </button>
               <button
-                onClick={() => setShowStartDialog(false)}
+                onClick={() => { setShowStartDialog(false); setTestStarted(true); }}
                 className="flex-[2] py-3 rounded-xl bg-primary text-white font-black text-sm shadow-lg shadow-primary/30 hover:bg-primary-light transition-colors active:scale-[0.98]"
               >
                 Start Test →
@@ -273,6 +276,9 @@ export default function TestTaking() {
           </div>
         </div>
       )}
+
+      {/* Test Body — only render after Start Test is confirmed */}
+      {testStarted && <>
 
       {/* Header */}
       <header className="bg-primary flex items-center p-4 shadow-md z-10 sticky top-0 min-h-[58px]">
@@ -423,6 +429,9 @@ export default function TestTaking() {
           </div>
         </div>
       )}
+
+      {/* End testStarted gate */}
+      </>}
     </div>
   );
 }
