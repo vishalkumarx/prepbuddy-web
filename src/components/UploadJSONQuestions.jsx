@@ -71,9 +71,19 @@ export default function UploadJSONQuestions() {
           subcategory: q.subcategory || subcategory
         };
       });
+      
+      const uniqueFormatted = [];
+      const seenQuestions = new Set();
+      formatted.forEach(q => {
+        const normQ = q.question.trim().toLowerCase();
+        if (!seenQuestions.has(normQ)) {
+          seenQuestions.add(normQ);
+          uniqueFormatted.push(q);
+        }
+      });
 
-      setParsedQuestions(formatted);
-      setMessage({ type: 'success', text: `Successfully parsed ${formatted.length} question(s)!` });
+      setParsedQuestions(uniqueFormatted);
+      setMessage({ type: 'success', text: `Successfully parsed ${uniqueFormatted.length} unique question(s)! (Omitted ${formatted.length - uniqueFormatted.length} duplicates).` });
     } catch (err) {
       setParsedQuestions([]);
       setMessage({ type: 'error', text: 'Invalid JSON format. Click "Format with AI" if pasting raw text!' });

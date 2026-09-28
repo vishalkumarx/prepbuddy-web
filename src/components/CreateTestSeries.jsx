@@ -476,23 +476,35 @@ export default function CreateTestSeries() {
             subcategory: subcategory
           };
         });
+        
+        // Deduplicate questions to omit exact duplicates
+        const uniqueFormatted = [];
+        const seenQuestions = new Set();
+        formatted.forEach(q => {
+          const normQ = q.question.trim().toLowerCase();
+          if (!seenQuestions.has(normQ)) {
+            seenQuestions.add(normQ);
+            uniqueFormatted.push(q);
+          }
+        });
+
         const size = parseInt(chunkSize, 10);
         if (saveInChunks && !isNaN(size) && size > 0) {
           const newChunks = [];
-          for (let i = 0; i < formatted.length; i += size) {
+          for (let i = 0; i < uniqueFormatted.length; i += size) {
             const testNum = Math.floor(i / size) + 1;
             newChunks.push({
               name: `${subcategory} - Test ${String(testNum).padStart(2, '0')}`,
-              questions: formatted.slice(i, i + size)
+              questions: uniqueFormatted.slice(i, i + size)
             });
           }
           setStagedChunks(newChunks);
         } else {
-          setStagedChunks([{ name: subcategory, questions: formatted }]);
+          setStagedChunks([{ name: subcategory, questions: uniqueFormatted }]);
         }
         
         setJsonImportText('');
-        alert(`Successfully parsed ${formatted.length} questions! Review them below and click 'Save All to Database'.`);
+        alert(`Successfully parsed ${uniqueFormatted.length} unique questions! (Omitted ${formatted.length - uniqueFormatted.length} duplicates). Review them below and click 'Save All to Database'.`);
       } else {
         // Single object populates the form (no immediate db insertion)
         setQuestion(data.question || data.q || '');
