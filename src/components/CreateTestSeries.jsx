@@ -1465,7 +1465,7 @@ export default function CreateTestSeries() {
                               }`}
                             >
                               <span className="font-bold mr-2">{optLetter}.</span>
-                              <span className="whitespace-pre-wrap">{opt?.replace(/\\n/g, '\n')}</span>
+                              <span dangerouslySetInnerHTML={{ __html: opt?.replace(/\\n/g, '<br/>') || '' }} />
                             </div>
                           )})}
                         </div>
@@ -1531,7 +1531,7 @@ export default function CreateTestSeries() {
                         }`}
                       >
                         <span className="font-bold mr-2">{optLetter}.</span>
-                        {opt}
+                        <span dangerouslySetInnerHTML={{ __html: opt?.replace(/\\n/g, '<br/>') || '' }} />
                       </div>
                     )})}
                   </div>

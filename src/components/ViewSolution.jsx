@@ -143,9 +143,10 @@ export default function ViewSolution() {
                         {optLetter}
                       </div>
                       <div className="flex-1 min-w-0 flex flex-col">
-                        <span className={`text-sm whitespace-pre-wrap ${textClass}`}>
-                          {opt?.replace(/\\n/g, '\n')}
-                        </span>
+                        <span 
+                          className={`text-sm ${textClass}`}
+                          dangerouslySetInnerHTML={{ __html: opt?.replace(/\\n/g, '<br/>') || '' }}
+                        />
                         {isUserSelected && (
                           <span className={`text-[10px] font-bold mt-1 ${isCorrect ? 'text-emerald-600' : 'text-rose-500'}`}>
                             {isCorrect ? 'Your correct answer' : 'Your incorrect answer'}

@@ -250,9 +250,10 @@ export default function TestTaking() {
                   }`}>
                     {optLetter}
                   </div>
-                  <span className={`text-sm whitespace-pre-wrap ${isSelected ? 'font-bold text-indigo-900' : 'font-medium text-gray-700'}`}>
-                    {opt?.replace(/\\n/g, '\n')}
-                  </span>
+                  <span 
+                    className={`text-sm ${isSelected ? 'font-bold text-indigo-900' : 'font-medium text-gray-700'}`}
+                    dangerouslySetInnerHTML={{ __html: opt?.replace(/\\n/g, '<br/>') || '' }}
+                  />
                 </div>
               );
             })}
