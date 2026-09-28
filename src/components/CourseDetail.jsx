@@ -46,15 +46,33 @@ export default function CourseDetail() {
   const [showPromoDialog, setShowPromoDialog] = useState(false);
 
   const toggleCategory = (cat) => {
-    setExpandedCategories(prev => prev[cat] ? {} : { [cat]: true });
+    setExpandedCategories(prev => {
+      if (!prev[cat]) {
+        setTimeout(() => {
+          const el = document.getElementById(`category-content-${cat}`);
+          if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 100);
+        return { [cat]: true };
+      }
+      return {};
+    });
   };
 
   const [expandedSubgroups, setExpandedSubgroups] = useState({});
   const toggleSubgroup = (cat, subGroupName) => {
-    setExpandedSubgroups(prev => ({
-      ...prev,
-      [`${cat}::${subGroupName}`]: !prev[`${cat}::${subGroupName}`]
-    }));
+    setExpandedSubgroups(prev => {
+      const key = `${cat}::${subGroupName}`;
+      if (!prev[key]) {
+        setTimeout(() => {
+          const el = document.getElementById(`subgroup-${cat}-${subGroupName}`);
+          if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 100);
+      }
+      return {
+        ...prev,
+        [key]: !prev[key]
+      };
+    });
   };
 
   useEffect(() => {
@@ -374,13 +392,13 @@ export default function CourseDetail() {
                 }, {});
 
                 return (
-                  <div key={cat} className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                  <div key={cat} id={`category-content-${cat}`} style={{ scrollMarginTop: '80px' }} className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
                     <h3 className="font-bold text-gray-900 pl-1">{cat} Topics</h3>
                     <div className="grid grid-cols-1 gap-3">
                       {Object.entries(subGroups).sort((a, b) => getMonthWeight(a[0]) - getMonthWeight(b[0])).map(([subGroupName, groupTests]) => {
                         const isSubExpanded = expandedSubgroups[`${cat}::${subGroupName}`];
                         return (
-                          <div key={subGroupName} className="border border-gray-200 rounded-2xl bg-white overflow-hidden shadow-sm transition-all">
+                          <div key={subGroupName} id={`subgroup-${cat}-${subGroupName}`} style={{ scrollMarginTop: '80px' }} className="border border-gray-200 rounded-2xl bg-white overflow-hidden shadow-sm transition-all">
                             <div 
                               onClick={() => toggleSubgroup(cat, subGroupName)}
                               className="p-4 flex items-center justify-between cursor-pointer hover:bg-gray-50 transition-colors"
@@ -401,7 +419,7 @@ export default function CourseDetail() {
                             
                             {isSubExpanded && (
                               <div className="p-3 border-t border-gray-100 bg-gray-50/50 space-y-3">
-                                {groupTests.map((test, idx) => {
+                                {groupTests.sort((a, b) => a.subcategory.localeCompare(b.subcategory, undefined, { numeric: true, sensitivity: 'base' })).map((test, idx) => {
                         const attempt = attempts[`${test.category}-${test.subcategory}`];
                         const progressKey = `test_progress_${UserManager.getUserId()}_${course.id}_${test.category}_${test.subcategory}`;
                         const isPaused = !!localStorage.getItem(progressKey);
