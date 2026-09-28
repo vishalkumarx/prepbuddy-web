@@ -5,6 +5,28 @@ import { Shield, Search, UserPlus, Trash2, ArrowLeft, RefreshCw, Layers, Tag, Se
 import { useNavigate } from 'react-router-dom';
 import CouponManager from './CouponManager';
 
+const getMonthWeight = (name) => {
+  const lowerName = name.toLowerCase();
+  let year = 2024;
+  const yearMatch = name.match(/\b(20\d{2})\b/);
+  if (yearMatch) {
+    year = parseInt(yearMatch[1], 10);
+  }
+  const monthOrder = {
+    january: 1, february: 2, march: 3, april: 4, may: 5, june: 6,
+    july: 7, august: 8, september: 9, october: 10, november: 11, december: 12
+  };
+  let monthVal = 0;
+  for (const [month, weight] of Object.entries(monthOrder)) {
+    if (lowerName.includes(month)) {
+      monthVal = weight;
+      break;
+    }
+  }
+  if (monthVal === 0) return 999999;
+  return (year * 100) + monthVal;
+};
+
 export default function CourseControlPanel() {
   const navigate = useNavigate();
   const [courses, setCourses] = useState([]);
@@ -406,7 +428,7 @@ export default function CourseControlPanel() {
                                 <div key={cat} className="space-y-4">
                                   <h3 className="font-bold text-gray-900 pl-1">{cat} Topics</h3>
                                   <div className="grid grid-cols-1 gap-3">
-                                    {Object.entries(subGroups).map(([subGroupName, groupTests]) => {
+                                    {Object.entries(subGroups).sort((a, b) => getMonthWeight(a[0]) - getMonthWeight(b[0])).map(([subGroupName, groupTests]) => {
                                       const isSubExpanded = expandedSubgroups[`${cat}::${subGroupName}`];
                                       return (
                                         <div key={subGroupName} className="border border-gray-200 rounded-2xl bg-white overflow-hidden shadow-sm transition-all">
