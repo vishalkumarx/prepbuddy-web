@@ -34,9 +34,35 @@ export default function CreateTestSeries() {
   const [courses, setCourses] = useState([]);
   const [linkModalGroup, setLinkModalGroup] = useState(null);
   const [expandedSidebarCategories, setExpandedSidebarCategories] = useState({});
+  const [selectedSidebarItems, setSelectedSidebarItems] = useState([]);
 
   const toggleSidebarCategory = (cat) => {
     setExpandedSidebarCategories(prev => ({ ...prev, [cat]: !prev[cat] }));
+  };
+
+  const toggleSidebarItemSelection = (cat, subcat) => {
+    const key = `${cat}:::${subcat}`;
+    setSelectedSidebarItems(prev => prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key]);
+  };
+
+  const handleBulkDeleteTestSeries = async () => {
+    if (selectedSidebarItems.length === 0) return;
+    if (!window.confirm(`Are you sure you want to delete ${selectedSidebarItems.length} test series?`)) return;
+    try {
+      for (const item of selectedSidebarItems) {
+        const [cat, subcat] = item.split(':::');
+        await supabase
+          .from('prepbuddy_questions')
+          .delete()
+          .eq('category', cat)
+          .eq('subcategory', subcat);
+      }
+      setSelectedSidebarItems([]);
+      fetchQuestions();
+      fetchSidebarGroups();
+    } catch (err) {
+      alert("Failed to delete: " + err.message);
+    }
   };
 
   const fetchCourses = async () => {
@@ -716,7 +742,17 @@ export default function CreateTestSeries() {
         
         {/* Sidebar */}
         <div className="w-full md:w-1/3 bg-white p-4 rounded-2xl border border-gray-200 shadow-sm sticky top-20 max-h-[85vh] overflow-y-auto">
-          <h3 className="font-bold text-gray-900 text-sm uppercase tracking-wider mb-4 border-b border-gray-100 pb-2">Your Uploaded Tests</h3>
+          <div className="flex items-center justify-between mb-4 border-b border-gray-100 pb-2">
+            <h3 className="font-bold text-gray-900 text-sm uppercase tracking-wider">Your Uploaded Tests</h3>
+            {selectedSidebarItems.length > 0 && (
+              <button 
+                onClick={handleBulkDeleteTestSeries}
+                className="text-xs bg-red-50 text-red-600 px-2 py-1 rounded border border-red-100 hover:bg-red-100 font-bold transition-colors flex items-center gap-1"
+              >
+                <Trash2 size={12} /> Delete Selected
+              </button>
+            )}
+          </div>
           
           {sidebarGroups.length === 0 ? (
             <p className="text-xs text-gray-500 italic">No tests found in database.</p>
@@ -762,6 +798,14 @@ export default function CreateTestSeries() {
                           >
                             <div className="flex items-start justify-between">
                               <div className="flex items-center gap-1.5 flex-1 min-w-0 pr-2">
+                                <div className="mr-1 flex items-center h-full" onClick={(e) => e.stopPropagation()}>
+                                  <input 
+                                    type="checkbox"
+                                    checked={selectedSidebarItems.includes(`${group.category}:::${group.subcategory}`)}
+                                    onChange={() => toggleSidebarItemSelection(group.category, group.subcategory)}
+                                    className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer w-3.5 h-3.5"
+                                  />
+                                </div>
                                 <p className={`font-bold truncate ${isActive ? 'text-indigo-900' : 'text-gray-800'}`}>
                                   {group.category}
                                 </p>
