@@ -12,6 +12,7 @@ export default function StateHomeFeed() {
   const [freeTests, setFreeTests] = useState([]);
   const [enrolledIds, setEnrolledIds] = useState(new Set());
   const [attemptsByCourse, setAttemptsByCourse] = useState({});
+  const [freeAttemptsMap, setFreeAttemptsMap] = useState({});
   const [loading, setLoading] = useState(true);
 
   // Promo Code States
@@ -178,15 +179,24 @@ export default function StateHomeFeed() {
       try {
         const { data } = await supabase
           .from('prepbuddy_test_attempts')
-          .select('course_id, test_category, test_subcategory')
+          .select('course_id, category, subcategory, score, total')
           .eq('user_id', userId);
         if (data) {
           const grouped = {};
+          const freeMap = {};
           data.forEach(d => {
-            if (!grouped[d.course_id]) grouped[d.course_id] = new Set();
-            grouped[d.course_id].add(`${d.test_category}-${d.test_subcategory}`);
+            const cId = d.course_id;
+            if (!grouped[cId]) grouped[cId] = new Set();
+            grouped[cId].add(`${d.category}-${d.subcategory}`);
+            if (cId === 'free') {
+              const key = `${d.category}-${d.subcategory}`;
+              if (!freeMap[key] || d.score > freeMap[key].score) {
+                freeMap[key] = d;
+              }
+            }
           });
           setAttemptsByCourse(grouped);
+          setFreeAttemptsMap(freeMap);
         }
       } catch (err) {
         console.error('Error fetching attempts:', err);
@@ -238,30 +248,56 @@ export default function StateHomeFeed() {
           </div>
           <div className="flex overflow-x-auto pb-4 -mx-4 px-4 gap-4 snap-x snap-mandatory hide-scrollbar">
             {freeTests.map((test, idx) => {
-              // Check if user has attempted it using "free" courseId
               const courseAttempts = attemptsByCourse['free'] || new Set();
-              const isAttempted = courseAttempts.has(`${test.category}-${test.subcategory}`);
+              const key = `${test.category}-${test.subcategory}`;
+              const isAttempted = courseAttempts.has(key);
+              const attempt = freeAttemptsMap[key];
+              const progressKey = `test_progress_${UserManager.getUserId()}_free_${test.category}_${test.subcategory}`;
+              const isPaused = !!localStorage.getItem(progressKey);
+              const qCount = (test.questions || []).length;
 
               return (
                 <div 
                   key={idx}
-                  onClick={() => navigate(isAttempted 
-                    ? `/solution/free/${encodeURIComponent(test.category)}/${encodeURIComponent(test.subcategory)}` 
-                    : `/test/free/${encodeURIComponent(test.category)}/${encodeURIComponent(test.subcategory)}`
-                  )}
-                  className="min-w-[240px] w-[240px] sm:min-w-[280px] bg-white rounded-2xl shadow-sm border border-emerald-100 overflow-hidden flex flex-col snap-start cursor-pointer hover:shadow-md hover:border-emerald-200 transition-all active:scale-[0.98]"
+                  className="min-w-[240px] w-[240px] sm:min-w-[280px] bg-white rounded-2xl shadow-sm border border-emerald-100 overflow-hidden flex flex-col snap-start hover:shadow-md hover:border-emerald-200 transition-all"
                 >
                   <div className="p-4 flex-1">
                     <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider mb-1">{test.category}</p>
                     <h3 className="font-bold text-gray-900 leading-tight mb-2 line-clamp-2">{test.subcategory}</h3>
+                    {qCount > 0 && (
+                      <p className="text-xs text-gray-400 font-medium">{qCount} Questions</p>
+                    )}
+                    {attempt && (
+                      <div className="mt-2 flex items-center justify-between bg-emerald-50 rounded-xl px-3 py-1.5">
+                        <span className="text-[10px] font-bold text-gray-500">Best Score</span>
+                        <span className="text-sm font-black text-emerald-700">{attempt.score}<span className="text-xs font-medium text-gray-400">/{attempt.total}</span></span>
+                      </div>
+                    )}
                   </div>
-                  <div className="px-4 py-3 bg-emerald-50/50 border-t border-emerald-50 flex items-center justify-between">
-                    <span className="text-xs font-bold text-emerald-700">
-                      {isAttempted ? 'View Analysis' : 'Attempt Now'}
-                    </span>
-                    <span className="text-emerald-500 bg-white p-1 rounded-full shadow-sm">
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>
-                    </span>
+                  <div className="px-3 py-2.5 border-t border-emerald-50 flex items-center gap-2">
+                    {isAttempted ? (
+                      <>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); navigate(`/solution/free/${encodeURIComponent(test.category)}/${encodeURIComponent(test.subcategory)}`); }}
+                          className="flex-1 text-[10px] font-bold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 px-2 py-1.5 rounded-lg transition-colors text-center"
+                        >
+                          VIEW ANALYSIS
+                        </button>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); navigate(`/test/free/${encodeURIComponent(test.category)}/${encodeURIComponent(test.subcategory)}`); }}
+                          className={`flex-1 text-[10px] font-bold text-white px-2 py-1.5 rounded-lg transition-colors text-center ${ isPaused ? 'bg-orange-500 hover:bg-orange-600' : 'bg-indigo-600 hover:bg-indigo-700'}`}
+                        >
+                          {isPaused ? 'RESUME' : 'ATTEMPT AGAIN'}
+                        </button>
+                      </>
+                    ) : (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); navigate(`/test/free/${encodeURIComponent(test.category)}/${encodeURIComponent(test.subcategory)}`); }}
+                        className="flex-1 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 px-3 py-2 rounded-lg transition-colors text-center"
+                      >
+                        {isPaused ? 'RESUME TEST' : 'ATTEMPT NOW →'}
+                      </button>
+                    )}
                   </div>
                 </div>
               );
