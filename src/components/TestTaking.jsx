@@ -336,9 +336,10 @@ export default function TestTaking() {
       </header>
 
       {/* Main Content */}
-      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto p-5 relative">
-        <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 overflow-x-hidden">
-          <div className="text-lg font-medium text-gray-900 leading-snug mb-6 html-content flex flex-col gap-2">
+      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto p-4 md:p-8 relative">
+        <div className="max-w-4xl mx-auto w-full">
+          <div className="bg-white p-5 md:p-8 rounded-2xl shadow-sm border border-gray-100 overflow-x-hidden">
+            <div className="text-lg font-medium text-gray-900 leading-snug mb-6 html-content flex flex-col gap-2">
             <span className="text-indigo-600 shrink-0">Q{currentIdx + 1}.</span>
             <span dangerouslySetInnerHTML={{ __html: processHtml(currentQ.question) }} />
           </div>
@@ -372,36 +373,39 @@ export default function TestTaking() {
             })}
           </div>
         </div>
+        </div>
       </div>
 
       {/* Footer Navigation */}
-      <div className="fixed bottom-0 w-full max-w-md bg-white border-t border-gray-100 p-4 shadow-[0_-10px_20px_-10px_rgba(0,0,0,0.05)] z-50 flex items-center justify-between">
-        <button 
-          onClick={handlePrev}
-          disabled={currentIdx === 0}
-          className={`px-6 py-3.5 rounded-xl font-bold flex items-center justify-center gap-1 transition-colors ${currentIdx === 0 ? 'opacity-0 pointer-events-none' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
-        >
-          <ChevronLeft size={18} /> Prev
-        </button>
-        
-        {isLast ? (
+      <div className="fixed bottom-0 left-0 right-0 w-full bg-white border-t border-gray-100 p-4 shadow-[0_-10px_20px_-10px_rgba(0,0,0,0.05)] z-50">
+        <div className="max-w-4xl mx-auto w-full flex items-center justify-between">
           <button 
-            onClick={() => setShowSubmitPrompt(true)}
-            disabled={isSubmitting}
-            className="px-8 py-3.5 rounded-xl font-bold flex items-center justify-center gap-1.5 bg-emerald-600 text-white hover:bg-emerald-700 shadow-md transition-all active:scale-95"
+            onClick={handlePrev}
+            disabled={currentIdx === 0}
+            className={`px-6 py-3.5 rounded-xl font-bold flex items-center justify-center gap-1 transition-colors ${currentIdx === 0 ? 'opacity-0 pointer-events-none' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
           >
-            <>
-              <CheckCircle2 size={18} /> Submit
-            </>
+            <ChevronLeft size={18} /> Prev
           </button>
-        ) : (
-          <button 
-            onClick={handleNext}
-            className="px-8 py-3.5 rounded-xl font-bold flex items-center justify-center gap-1 bg-[#0B2457] text-white hover:bg-blue-900 shadow-md transition-all active:scale-95"
-          >
-            Next <ChevronRight size={18} />
-          </button>
-        )}
+          
+          {isLast ? (
+            <button 
+              onClick={() => setShowSubmitPrompt(true)}
+              disabled={isSubmitting}
+              className="px-8 py-3.5 rounded-xl font-bold flex items-center justify-center gap-1.5 bg-emerald-600 text-white hover:bg-emerald-700 shadow-md transition-all active:scale-95"
+            >
+              <>
+                <CheckCircle2 size={18} /> Submit
+              </>
+            </button>
+          ) : (
+            <button 
+              onClick={handleNext}
+              className="px-8 py-3.5 rounded-xl font-bold flex items-center justify-center gap-1 bg-[#0B2457] text-white hover:bg-blue-900 shadow-md transition-all active:scale-95"
+            >
+              Next <ChevronRight size={18} />
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Exit Prompt Modal */}
