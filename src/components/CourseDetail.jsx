@@ -294,10 +294,25 @@ export default function CourseDetail() {
       <div className="px-5 pt-6 pb-8 -mt-6 bg-white rounded-t-3xl relative shadow-[0_-8px_20px_-10px_rgba(0,0,0,0.15)] flex-1">
         
         {/* Title & Price */}
-        <div className="flex items-start justify-between gap-4 mb-4">
-          <h1 className="text-lg font-black text-[#0B2457] leading-tight flex-1">
-            {course.title}
-          </h1>
+        <div className="mb-4">
+          {(() => {
+            const isComingSoon = course.is_coming_soon || course.title?.toLowerCase().includes('coming soon') || course.description?.toLowerCase().includes('coming soon');
+            return isComingSoon ? (
+              <div className="inline-flex bg-gray-100 text-gray-600 font-bold text-[10px] uppercase tracking-wider px-2 py-1 rounded-full items-center gap-1.5 shadow-sm border border-gray-200 mb-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-gray-400"></span>
+                Coming Soon
+              </div>
+            ) : (
+              <div className="inline-flex bg-red-600 text-white font-bold text-[10px] uppercase tracking-wider px-2 py-1 rounded-full items-center gap-1.5 shadow-sm mb-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse"></span>
+                Live
+              </div>
+            );
+          })()}
+          <div className="flex items-start justify-between gap-4">
+            <h1 className="text-lg font-black text-[#0B2457] leading-tight flex-1">
+              {course.title}
+            </h1>
           {!isEnrolled && (
             <div className="flex flex-col items-end gap-1 flex-shrink-0 mt-1">
               <div className="bg-[#0B2457] text-white font-bold px-3 py-1.5 rounded-xl shadow-sm whitespace-nowrap flex items-center">
@@ -322,6 +337,7 @@ export default function CourseDetail() {
               )}
             </div>
           )}
+        </div>
         </div>
 
         {/* Progress Bar (If Enrolled) */}
