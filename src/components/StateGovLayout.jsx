@@ -67,8 +67,8 @@ export default function StateGovLayout({ onLogout }) {
               </span>
             )}
           </div>
-          <span className="text-white/80 text-[10px] font-bold tracking-widest uppercase">
-            State Government
+          <span className="text-white/80 text-[10px] font-bold tracking-widest uppercase mt-0.5">
+            Practice | Analyse | Achieve
           </span>
         </header>
         )}
