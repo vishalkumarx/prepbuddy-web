@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Routes, Route, Link, useLocation } from 'react-router-dom';
-import { Home, User, Plus } from 'lucide-react';
+import { Home, User, Plus, Search, X } from 'lucide-react';
+import { SearchContext } from '../App';
 import StateHomeFeed from './StateHomeFeed';
 import Profile from './Profile';
 import UploadTestSeries from './UploadTestSeries';
@@ -15,6 +16,8 @@ import { UserManager } from '../utils/UserManager';
 export default function StateGovLayout({ onLogout }) {
   const location = useLocation();
   const [showUploadModal, setShowUploadModal] = useState(false);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const isAdmin = UserManager.isAdmin();
 
   const isHome = location.pathname === '/' || location.pathname === '/state-home';
@@ -27,7 +30,8 @@ export default function StateGovLayout({ onLogout }) {
   ];
 
   return (
-    <div className="flex flex-col md:flex-row h-[100dvh] w-full bg-gray-50 overflow-hidden relative">
+    <SearchContext.Provider value={{ searchQuery, setSearchQuery }}>
+      <div className="flex flex-col md:flex-row h-[100dvh] w-full bg-gray-50 overflow-hidden relative">
       
       {/* Desktop Sidebar (Left) */}
       {!isTestRoute && (
@@ -58,19 +62,49 @@ export default function StateGovLayout({ onLogout }) {
       <div className="flex-1 flex flex-col h-full overflow-hidden relative min-w-0">
         {/* Mobile Header */}
         {!isTestRoute && (
-          <header className="md:hidden bg-primary flex flex-col items-center justify-center py-2 px-4 shadow-md z-10 sticky top-0 min-h-[58px] flex-shrink-0">
-          <div className="flex items-center justify-center gap-2">
-            <img src="/logo.png" alt="GoalPrep" className="h-9 w-auto object-contain max-w-[220px]" />
-            {isAdmin && (
-              <span className="bg-secondary/20 text-secondary text-[10px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wide border border-secondary/30">
-                Admin
-              </span>
+          <header className="md:hidden bg-primary flex items-center justify-between py-2 px-4 shadow-md z-10 sticky top-0 min-h-[58px] flex-shrink-0">
+            {isSearchOpen ? (
+              <div className="flex items-center w-full bg-white/10 rounded-xl px-3 py-1 border border-white/20">
+                <Search size={18} className="text-white/70" />
+                <input
+                  type="text"
+                  autoFocus
+                  placeholder="Search..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="flex-1 bg-transparent border-none outline-none text-white px-3 py-1.5 placeholder-white/50 text-sm"
+                />
+                <button 
+                  onClick={() => { setIsSearchOpen(false); setSearchQuery(''); }}
+                  className="p-1 rounded-full text-white/70 hover:bg-white/20 hover:text-white transition-colors"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+            ) : (
+              <div className="flex items-center justify-between w-full">
+                <div className="flex flex-col justify-center">
+                  <div className="flex items-center gap-2">
+                    <img src="/logo.png" alt="GoalPrep" className="h-9 w-auto object-contain max-w-[220px]" />
+                    {isAdmin && (
+                      <span className="bg-secondary/20 text-secondary text-[10px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wide border border-secondary/30 mt-1">
+                        Admin
+                      </span>
+                    )}
+                  </div>
+                  <span className="text-white/80 text-[10px] font-bold tracking-widest uppercase mt-0.5">
+                    Practice | Analyse | Achieve
+                  </span>
+                </div>
+                <button 
+                  onClick={() => setIsSearchOpen(true)}
+                  className="text-white/90 hover:text-white p-2 rounded-full hover:bg-white/10 transition-colors"
+                >
+                  <Search size={22} />
+                </button>
+              </div>
             )}
-          </div>
-          <span className="text-white/80 text-[10px] font-bold tracking-widest uppercase mt-0.5">
-            Practice | Analyse | Achieve
-          </span>
-        </header>
+          </header>
         )}
 
         {/* Main Content Area */}
@@ -130,6 +164,6 @@ export default function StateGovLayout({ onLogout }) {
           />
         )}
       </div>
-    </div>
+    </SearchContext.Provider>
   );
 }

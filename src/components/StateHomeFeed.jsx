@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { SearchContext } from '../App';
 import { supabase } from '../supabase';
 import { IndianRupee, Layers, Languages, Award, Newspaper, CheckCircle2, Tag, CheckCircle, XCircle, ArrowRight, Clock, Star } from 'lucide-react';
 import TestimonialCarousel from './TestimonialCarousel';
@@ -15,6 +16,7 @@ export default function StateHomeFeed() {
   const [freeAttemptsMap, setFreeAttemptsMap] = useState({});
   const [questionCounts, setQuestionCounts] = useState({}); // { 'category-subcategory': count }
   const [loading, setLoading] = useState(true);
+  const { searchQuery } = useContext(SearchContext) || { searchQuery: '' };
 
   // Promo Code States
   const [showPromoDialog, setShowPromoDialog] = useState(false);
@@ -252,6 +254,8 @@ export default function StateHomeFeed() {
       </div>
     );
   }
+  const filteredTestSeries = testSeries.filter(ts => ts.title.toLowerCase().includes((searchQuery || '').toLowerCase()));
+  const filteredFreeTests = freeTests.filter(ft => ft.subcategory.toLowerCase().includes((searchQuery || '').toLowerCase()) || ft.category.toLowerCase().includes((searchQuery || '').toLowerCase()));
 
   return (
     <div className="p-4 space-y-4 pb-24">
@@ -268,7 +272,7 @@ export default function StateHomeFeed() {
             </h2>
           </div>
           <div className="flex overflow-x-auto pb-4 -mx-4 px-4 gap-4 snap-x snap-mandatory hide-scrollbar">
-            {freeTests.slice(0, 5).map((test, idx) => {
+            {filteredFreeTests.slice(0, 5).map((test, idx) => {
               const courseAttempts = attemptsByCourse['free'] || new Set();
               const key = `${test.category}-${test.subcategory}`;
               const isAttempted = courseAttempts.has(key);
@@ -360,13 +364,13 @@ export default function StateHomeFeed() {
         <h2 className="text-xl font-bold text-gray-900 tracking-tight">Popular Test Series</h2>
       </div>
 
-      {testSeries.length === 0 ? (
+      {filteredTestSeries.length === 0 ? (
         <div className="text-center py-20 text-gray-500 bg-white rounded-2xl shadow-sm border border-gray-100">
-          <p>No test series available yet.</p>
+          <p>No test series found matching your search.</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {testSeries.map((ts) => {
+          {filteredTestSeries.map((ts) => {
           const showFeatures = ts.title?.toLowerCase().includes('senior') || ts.title?.toLowerCase().includes('assistant') || ts.title?.toLowerCase().includes('asi') || true;
 
           let progressPercent = 0;
