@@ -70,6 +70,27 @@ export default function CourseControlPanel() {
       setActionLoading(false);
     }
   };
+
+  const handleUpdateTile = async (tileIdx, updates) => {
+    setActionLoading(true);
+    try {
+      const updated = [...(selectedCourse.linked_tests || [])];
+      updated[tileIdx] = { ...updated[tileIdx], ...updates };
+      const { data, error } = await supabase
+        .from('prepbuddy_test_series')
+        .update({ linked_tests: updated })
+        .eq('id', selectedCourse.id)
+        .select()
+        .single();
+      if (error) throw error;
+      setSelectedCourse(data);
+      setCourses(prev => prev.map(c => c.id === data.id ? data : c));
+    } catch (err) {
+      alert('Error updating tile: ' + err.message);
+    } finally {
+      setActionLoading(false);
+    }
+  };
   
   // All known users (from sessions or enrollments) to help autocomplete
   const [knownUsers, setKnownUsers] = useState([]);
@@ -467,6 +488,16 @@ export default function CourseControlPanel() {
                                           <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mt-0.5">{t.totalQuestions} Qs • {t.duration} min</p>
                                         </div>
                                         <div className="flex items-center gap-1">
+                                          <select
+                                            value={t.prep_mode || ''}
+                                            onChange={(e) => handleUpdateTile(t._idx, { prep_mode: e.target.value })}
+                                            disabled={actionLoading}
+                                            className="text-xs bg-gray-50 border border-gray-200 rounded-lg px-2 py-1 text-gray-700 outline-none focus:ring-1 focus:ring-primary mr-2 cursor-pointer"
+                                          >
+                                            <option value="">Both/None</option>
+                                            <option value="state_gov">State Govt</option>
+                                            <option value="central_gov">Central Govt</option>
+                                          </select>
                                           <button
                                             onClick={() => handleDeleteTile(t._idx)}
                                             disabled={actionLoading}
