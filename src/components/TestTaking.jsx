@@ -202,12 +202,26 @@ export default function TestTaking() {
     const username = UserManager.getUsername() || "Anonymous User";
     
     try {
+      let submitCourseId = courseId;
+      
+      // If taking a free test, we need to map 'free' to the actual UUID of the free course
+      if (courseId === 'free') {
+        const { data: freeCourse } = await supabase
+          .from('prepbuddy_test_series')
+          .select('id')
+          .eq('title', 'INTERNAL_FREE_TEST_SECTION')
+          .single();
+        if (freeCourse) {
+          submitCourseId = freeCourse.id;
+        }
+      }
+
       const { error } = await supabase
         .from('prepbuddy_test_attempts')
         .insert([{
           user_id: userId,
           username: username,
-          course_id: courseId,
+          course_id: submitCourseId,
           category: decodeURIComponent(category),
           subcategory: decodeURIComponent(subcategory),
           score: score,

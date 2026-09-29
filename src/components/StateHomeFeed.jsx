@@ -182,6 +182,14 @@ export default function StateHomeFeed({ onlyEnrolled = false }) {
       const userId = UserManager.getUserId();
       if (!userId) return;
       try {
+        // Fetch free course ID to correctly map free attempts
+        const { data: freeCourse } = await supabase
+          .from('prepbuddy_test_series')
+          .select('id')
+          .eq('title', 'INTERNAL_FREE_TEST_SECTION')
+          .single();
+        const freeCourseId = freeCourse?.id;
+
         const { data } = await supabase
           .from('prepbuddy_test_attempts')
           .select('course_id, category, subcategory, score, total')
@@ -193,11 +201,16 @@ export default function StateHomeFeed({ onlyEnrolled = false }) {
             const cId = d.course_id;
             if (!grouped[cId]) grouped[cId] = new Set();
             grouped[cId].add(`${d.category}-${d.subcategory}`);
-            if (cId === 'free') {
+            
+            // Map free attempts by checking if cId matches freeCourseId or 'free' (legacy)
+            if (cId === 'free' || cId === freeCourseId) {
               const key = `${d.category}-${d.subcategory}`;
               if (!freeMap[key] || d.score > freeMap[key].score) {
                 freeMap[key] = d;
               }
+              // Also add to 'free' group so UI works without changes
+              if (!grouped['free']) grouped['free'] = new Set();
+              grouped['free'].add(`${d.category}-${d.subcategory}`);
             }
           });
           setAttemptsByCourse(grouped);
