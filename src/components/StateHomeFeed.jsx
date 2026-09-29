@@ -428,12 +428,20 @@ export default function StateHomeFeed({ onlyEnrolled = false }) {
               </div>
               
               <div className="p-4 flex flex-col gap-2">
-                {!(ts.title?.toLowerCase().includes('coming soon') || ts.description?.toLowerCase().includes('coming soon')) && (
-                  <div className="self-start bg-red-600 text-white font-bold text-[10px] uppercase tracking-wider px-2 py-1 rounded-full flex items-center gap-1.5 shadow-sm">
-                    <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse"></span>
-                    Live
-                  </div>
-                )}
+                {(() => {
+                  const isComingSoon = ts.title?.toLowerCase().includes('coming soon') || ts.description?.toLowerCase().includes('coming soon');
+                  return isComingSoon ? (
+                    <div className="self-start bg-gray-100 text-gray-600 font-bold text-[10px] uppercase tracking-wider px-2 py-1 rounded-full flex items-center gap-1.5 shadow-sm border border-gray-200">
+                      <span className="w-1.5 h-1.5 rounded-full bg-gray-400"></span>
+                      Coming Soon
+                    </div>
+                  ) : (
+                    <div className="self-start bg-red-600 text-white font-bold text-[10px] uppercase tracking-wider px-2 py-1 rounded-full flex items-center gap-1.5 shadow-sm">
+                      <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse"></span>
+                      Live
+                    </div>
+                  );
+                })()}
                 <h3 className="font-bold text-base text-gray-900 leading-tight">{ts.title}</h3>
                 {ts.description && (
                   <div className="text-xs text-gray-600 html-content line-clamp-3 overflow-hidden" dangerouslySetInnerHTML={{ __html: processHtml(ts.description) }} />
