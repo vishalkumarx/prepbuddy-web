@@ -2,7 +2,7 @@ import React, { useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { SearchContext } from '../App';
 import { supabase } from '../supabase';
-import { IndianRupee, Layers, Languages, Award, Newspaper, CheckCircle2, Tag, CheckCircle, XCircle, ArrowRight, Clock, Star } from 'lucide-react';
+import { IndianRupee, Layers, Languages, Award, Newspaper, CheckCircle2, Tag, CheckCircle, XCircle, ArrowRight, Clock, Star, ShoppingCart, Unlock } from 'lucide-react';
 import TestimonialCarousel from './TestimonialCarousel';
 import { UserManager } from '../utils/UserManager';
 import { processHtml } from '../utils/htmlUtils';
@@ -532,9 +532,9 @@ export default function StateHomeFeed({ onlyEnrolled = false }) {
                 <div className="mt-auto">
                   <button
                     onClick={(e) => handleBuyClick(e, ts)}
-                    className="w-full bg-[#0B2457] text-white font-bold py-3 text-sm active:scale-[0.98] transition-all shadow-sm"
+                    className="w-full bg-[#0B2457] text-white font-bold py-3 text-sm active:scale-[0.98] transition-all shadow-sm flex items-center justify-center gap-2"
                   >
-                    {ts.price > 0 ? 'Buy Now' : 'Enroll Now'}
+                    {ts.price > 0 ? <><ShoppingCart size={16} /> Buy Now</> : <><Unlock size={16} /> Enroll Now</>}
                   </button>
                 </div>
               )}

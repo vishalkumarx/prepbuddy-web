@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../supabase';
-import { ArrowLeft, IndianRupee, Layers, FileText, CheckCircle2, Lock, Unlock, ChevronDown, ChevronUp, Tag, CheckCircle, XCircle, Languages, Newspaper, Award, Clock, Star } from 'lucide-react';
+import { ArrowLeft, IndianRupee, Layers, FileText, CheckCircle2, Lock, Unlock, ChevronDown, ChevronUp, Tag, CheckCircle, XCircle, Languages, Newspaper, Award, Clock, Star, ShoppingCart } from 'lucide-react';
 import { UserManager } from '../utils/UserManager';
 import CouponManager from './CouponManager';
 
@@ -572,7 +572,7 @@ export default function CourseDetail() {
             disabled={enrollLoading}
             className="w-full font-bold py-4 rounded-xl text-base shadow-lg transition-all flex items-center justify-center gap-2 bg-[#0B2457] text-white hover:bg-blue-900 active:scale-[0.98]"
           >
-            {enrollLoading ? 'Processing...' : ((discountedPrice !== null ? discountedPrice : course.price) === 0 ? 'Enroll Now for Free' : `Buy Now — ₹${discountedPrice !== null ? discountedPrice : course.price}`)}
+            {enrollLoading ? 'Processing...' : ((discountedPrice !== null ? discountedPrice : course.price) === 0 ? <><Unlock size={18} /> Enroll Now for Free</> : <><ShoppingCart size={18} /> Buy Now — ₹{discountedPrice !== null ? discountedPrice : course.price}</>)}
           </button>
         </div>
       )}
