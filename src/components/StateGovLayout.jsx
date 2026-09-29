@@ -18,6 +18,7 @@ export default function StateGovLayout({ onLogout }) {
   const isAdmin = UserManager.isAdmin();
 
   const isHome = location.pathname === '/' || location.pathname === '/state-home';
+  const isTestRoute = location.pathname.startsWith('/test/');
   const showBottomNav = location.pathname === '/' || location.pathname === '/profile' || location.pathname === '/state-home';
 
   const navItems = [
@@ -29,7 +30,8 @@ export default function StateGovLayout({ onLogout }) {
     <div className="flex flex-col md:flex-row h-[100dvh] w-full bg-gray-50 overflow-hidden relative">
       
       {/* Desktop Sidebar (Left) */}
-      <nav className="hidden md:flex flex-col w-64 bg-white border-r border-gray-200 h-full py-6 flex-shrink-0 z-20">
+      {!isTestRoute && (
+        <nav className="hidden md:flex flex-col w-64 bg-white border-r border-gray-200 h-full py-6 flex-shrink-0 z-20">
         <div className="px-6 mb-8">
           <img src="/goalprep-logo.png" alt="GoalPrep" className="h-12 w-auto object-contain" />
           {isAdmin && (
@@ -50,11 +52,13 @@ export default function StateGovLayout({ onLogout }) {
             );
           })}
         </div>
-      </nav>
+        </nav>
+      )}
 
       <div className="flex-1 flex flex-col h-full overflow-hidden relative min-w-0">
         {/* Mobile Header */}
-        <header className="md:hidden bg-primary flex flex-col items-center justify-center py-2 px-4 shadow-md z-10 sticky top-0 min-h-[58px] flex-shrink-0">
+        {!isTestRoute && (
+          <header className="md:hidden bg-primary flex flex-col items-center justify-center py-2 px-4 shadow-md z-10 sticky top-0 min-h-[58px] flex-shrink-0">
           <div className="flex items-center justify-center gap-2">
             <img src="/logo.png" alt="GoalPrep" className="h-9 w-auto object-contain max-w-[220px]" />
             {isAdmin && (
@@ -67,10 +71,11 @@ export default function StateGovLayout({ onLogout }) {
             State Government
           </span>
         </header>
+        )}
 
         {/* Main Content Area */}
         <main className={`flex-1 overflow-y-auto overflow-x-hidden relative scroll-smooth bg-app-bg md:bg-gray-50/50 ${showBottomNav ? 'pb-[70px] md:pb-0' : 'md:pb-0'}`}>
-          <div className="h-full w-full max-w-[1000px] mx-auto md:p-6 md:pb-20 relative">
+          <div className={`h-full w-full mx-auto relative ${isTestRoute ? 'max-w-none md:p-0' : 'max-w-[1000px] md:p-6 md:pb-20'}`}>
             <Routes>
               <Route path="/" element={<StateHomeFeed />} />
               <Route path="/profile" element={<Profile onLogout={onLogout} />} />
