@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Routes, Route, Link, useLocation } from 'react-router-dom';
-import { Home, User, Plus, Search, X } from 'lucide-react';
+import { Home, User, Plus, Search, X, BookOpen } from 'lucide-react';
 import { SearchContext } from '../App';
 import StateHomeFeed from './StateHomeFeed';
 import Profile from './Profile';
@@ -22,10 +22,11 @@ export default function StateGovLayout({ onLogout }) {
 
   const isHome = location.pathname === '/' || location.pathname === '/state-home';
   const isTestRoute = location.pathname.startsWith('/test/');
-  const showBottomNav = location.pathname === '/' || location.pathname === '/profile' || location.pathname === '/state-home';
+  const showBottomNav = location.pathname === '/' || location.pathname === '/profile' || location.pathname === '/state-home' || location.pathname === '/my-tests';
 
   const navItems = [
     { path: '/', icon: Home, label: 'Home' },
+    { path: '/my-tests', icon: BookOpen, label: 'My Tests' },
     { path: '/profile', icon: User, label: 'Profile' },
   ];
 
@@ -112,6 +113,7 @@ export default function StateGovLayout({ onLogout }) {
           <div className={`h-full w-full mx-auto relative ${isTestRoute ? 'max-w-none md:p-0' : 'max-w-[1000px] md:p-6 md:pb-20'}`}>
             <Routes>
               <Route path="/" element={<StateHomeFeed />} />
+              <Route path="/my-tests" element={<StateHomeFeed onlyEnrolled={true} />} />
               <Route path="/profile" element={<Profile onLogout={onLogout} />} />
               <Route path="/admin/upload-json" element={<UploadJSONQuestions />} />
               <Route path="/course/:id" element={<CourseDetail />} />

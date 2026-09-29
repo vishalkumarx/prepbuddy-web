@@ -7,7 +7,7 @@ import TestimonialCarousel from './TestimonialCarousel';
 import { UserManager } from '../utils/UserManager';
 import { processHtml } from '../utils/htmlUtils';
 
-export default function StateHomeFeed() {
+export default function StateHomeFeed({ onlyEnrolled = false }) {
   const navigate = useNavigate();
   const [testSeries, setTestSeries] = useState([]);
   const [freeTests, setFreeTests] = useState([]);
@@ -255,15 +255,20 @@ export default function StateHomeFeed() {
     );
   }
   const filteredTestSeries = testSeries.filter(ts => ts.title.toLowerCase().includes((searchQuery || '').toLowerCase()));
+  const myTestSeries = filteredTestSeries.filter(ts => enrolledIds.has(ts.id));
+  const finalTestSeries = onlyEnrolled ? myTestSeries : filteredTestSeries;
+
   const filteredFreeTests = freeTests.filter(ft => ft.subcategory.toLowerCase().includes((searchQuery || '').toLowerCase()) || ft.category.toLowerCase().includes((searchQuery || '').toLowerCase()));
 
   return (
     <div className="p-4 space-y-4 pb-24">
-      {/* Testimonials Carousel */}
-      <TestimonialCarousel />
+      {!onlyEnrolled && (
+        <>
+          {/* Testimonials Carousel */}
+          <TestimonialCarousel />
 
-      {/* Free Test Series Section */}
-      {freeTests.length > 0 && (
+          {/* Free Test Series Section */}
+          {freeTests.length > 0 && (
         <div className="pt-2 pb-2">
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-xl font-bold text-gray-900 tracking-tight flex items-center gap-2">
@@ -358,19 +363,23 @@ export default function StateHomeFeed() {
           </div>
         </div>
       )}
+      </>
+      )}
 
       {/* Section Title */}
       <div className="pt-2 pb-1">
-        <h2 className="text-xl font-bold text-gray-900 tracking-tight">Popular Test Series</h2>
+        <h2 className="text-xl font-bold text-gray-900 tracking-tight">
+          {onlyEnrolled ? 'My Test Series' : 'Popular Test Series'}
+        </h2>
       </div>
 
-      {filteredTestSeries.length === 0 ? (
+      {finalTestSeries.length === 0 ? (
         <div className="text-center py-20 text-gray-500 bg-white rounded-2xl shadow-sm border border-gray-100">
-          <p>No test series found matching your search.</p>
+          <p>{onlyEnrolled ? "You haven't enrolled in any test series yet." : "No test series found matching your search."}</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {filteredTestSeries.map((ts) => {
+          {finalTestSeries.map((ts) => {
           const showFeatures = ts.title?.toLowerCase().includes('senior') || ts.title?.toLowerCase().includes('assistant') || ts.title?.toLowerCase().includes('asi') || true;
 
           let progressPercent = 0;
