@@ -298,8 +298,8 @@ export default function CourseDetail() {
           {(() => {
             const isComingSoon = course.is_coming_soon || course.title?.toLowerCase().includes('coming soon') || course.description?.toLowerCase().includes('coming soon');
             return isComingSoon ? (
-              <div className="inline-flex bg-gray-100 text-gray-600 font-bold text-[10px] uppercase tracking-wider px-2 py-1 rounded-full items-center gap-1.5 shadow-sm border border-gray-200 mb-2">
-                <span className="w-1.5 h-1.5 rounded-full bg-gray-400"></span>
+              <div className="inline-flex bg-orange-100 text-orange-700 font-bold text-[10px] uppercase tracking-wider px-2 py-1 rounded-full items-center gap-1.5 shadow-sm border border-orange-200 mb-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-orange-500"></span>
                 Coming Soon
               </div>
             ) : (

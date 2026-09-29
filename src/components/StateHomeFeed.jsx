@@ -435,8 +435,8 @@ export default function StateHomeFeed({ onlyEnrolled = false }) {
                 {(() => {
                   const isComingSoon = isTsComingSoon(ts);
                   return isComingSoon ? (
-                    <div className="self-start bg-gray-100 text-gray-600 font-bold text-[10px] uppercase tracking-wider px-2 py-1 rounded-full flex items-center gap-1.5 shadow-sm border border-gray-200">
-                      <span className="w-1.5 h-1.5 rounded-full bg-gray-400"></span>
+                    <div className="self-start bg-orange-100 text-orange-700 font-bold text-[10px] uppercase tracking-wider px-2 py-1 rounded-full flex items-center gap-1.5 shadow-sm border border-orange-200">
+                      <span className="w-1.5 h-1.5 rounded-full bg-orange-500"></span>
                       Coming Soon
                     </div>
                   ) : (
@@ -552,7 +552,7 @@ export default function StateHomeFeed({ onlyEnrolled = false }) {
               Coming Soon
             </h2>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 opacity-75 grayscale-[0.2]">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {finalTestSeriesComingSoon.map((ts) => {
               return (
                 <div 
@@ -570,8 +570,8 @@ export default function StateHomeFeed({ onlyEnrolled = false }) {
                   </div>
                   
                   <div className="p-4 flex flex-col gap-2">
-                    <div className="self-start bg-gray-100 text-gray-600 font-bold text-[10px] uppercase tracking-wider px-2 py-1 rounded-full flex items-center gap-1.5 shadow-sm border border-gray-200">
-                      <span className="w-1.5 h-1.5 rounded-full bg-gray-400"></span>
+                    <div className="self-start bg-orange-100 text-orange-700 font-bold text-[10px] uppercase tracking-wider px-2 py-1 rounded-full flex items-center gap-1.5 shadow-sm border border-orange-200">
+                      <span className="w-1.5 h-1.5 rounded-full bg-orange-500"></span>
                       Coming Soon
                     </div>
                     <h3 className="font-bold text-base text-gray-900 leading-tight">{ts.title}</h3>
