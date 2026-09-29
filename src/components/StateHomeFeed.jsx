@@ -400,6 +400,12 @@ export default function StateHomeFeed({ onlyEnrolled = false }) {
               className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex flex-col h-full cursor-pointer hover:shadow-md hover:border-indigo-100 transition-all active:scale-[0.99]"
             >
               <div className="relative">
+                {!(ts.title?.toLowerCase().includes('coming soon') || ts.description?.toLowerCase().includes('coming soon')) && (
+                  <div className="absolute top-3 left-3 bg-red-50 text-red-600 font-bold text-[10px] uppercase tracking-wider px-2 py-1 rounded-full flex items-center gap-1.5 shadow-sm border border-red-100 z-10">
+                    <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></span>
+                    Live
+                  </div>
+                )}
                 {ts.banner_url ? (
                   <img src={ts.banner_url} alt={ts.title} className="w-full h-48 md:h-52 object-contain bg-white" />
                 ) : (
