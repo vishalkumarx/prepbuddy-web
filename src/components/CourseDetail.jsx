@@ -299,14 +299,26 @@ export default function CourseDetail() {
             {course.title}
           </h1>
           {!isEnrolled && (
-            <div className="bg-[#0B2457] text-white font-bold px-3 py-1.5 rounded-xl shadow-sm whitespace-nowrap flex items-center flex-shrink-0 mt-1">
-              {course.price > 0 ? (
-                <>
-                  <IndianRupee size={16} className="mr-0.5" />
-                  {course.price}
-                </>
-              ) : (
-                'Free'
+            <div className="flex flex-col items-end gap-1 flex-shrink-0 mt-1">
+              <div className="bg-[#0B2457] text-white font-bold px-3 py-1.5 rounded-xl shadow-sm whitespace-nowrap flex items-center">
+                {course.price > 0 ? (
+                  <>
+                    <IndianRupee size={16} className="mr-0.5" />
+                    {course.price}
+                  </>
+                ) : (
+                  'Free'
+                )}
+              </div>
+              {course.mrp && course.mrp > course.price && (
+                <div className="flex items-center gap-1.5 mr-1">
+                  <span className="text-xs text-gray-400 line-through flex items-center font-semibold">
+                    <IndianRupee size={10} className="mr-0" />{course.mrp}
+                  </span>
+                  <span className="bg-green-100 text-green-700 font-black text-[9px] px-1.5 py-0.5 rounded uppercase tracking-wider">
+                    {Math.round((course.mrp - course.price) / course.mrp * 100)}% OFF
+                  </span>
+                </div>
               )}
             </div>
           )}
