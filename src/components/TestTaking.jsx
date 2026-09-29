@@ -39,6 +39,47 @@ export default function TestTaking() {
     }
   }, [currentIdx]);
 
+  // Handle image loading in question content
+  useEffect(() => {
+    if (!scrollContainerRef.current || !testStarted) return;
+    
+    const images = scrollContainerRef.current.querySelectorAll('.html-content img');
+    images.forEach(img => {
+      if (img.parentElement.classList.contains('image-wrapper')) return;
+      
+      const wrapper = document.createElement('div');
+      wrapper.className = 'image-wrapper relative min-h-[120px] w-full bg-slate-50 rounded-xl flex items-center justify-center my-3 border border-slate-100 overflow-hidden';
+      
+      const loadingText = document.createElement('span');
+      loadingText.className = 'absolute text-xs text-slate-400 font-medium tracking-wide flex items-center gap-2';
+      loadingText.innerHTML = '<svg class="animate-spin h-3.5 w-3.5 text-slate-400" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Loading image...';
+      
+      img.parentNode.insertBefore(wrapper, img);
+      wrapper.appendChild(loadingText);
+      wrapper.appendChild(img);
+      
+      img.classList.add('opacity-0', 'transition-opacity', 'duration-500', 'z-10', 'relative', 'w-full', 'object-contain', 'rounded-xl');
+      
+      const handleLoad = () => {
+        img.classList.remove('opacity-0');
+        img.classList.add('opacity-100');
+        loadingText.remove();
+        wrapper.classList.remove('min-h-[120px]', 'bg-slate-50', 'border-slate-100', 'border');
+      };
+      
+      if (img.complete && img.naturalHeight > 0) {
+        handleLoad();
+      } else {
+        img.onload = handleLoad;
+        img.onerror = () => {
+          loadingText.innerHTML = '⚠️ Failed to load image';
+          loadingText.classList.replace('text-slate-400', 'text-red-400');
+          img.classList.add('hidden');
+        };
+      }
+    });
+  }, [currentIdx, questions, testStarted]);
+
   // Handle browser back button
   useEffect(() => {
     const handlePopState = (e) => {
