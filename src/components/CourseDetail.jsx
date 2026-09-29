@@ -37,6 +37,7 @@ export default function CourseDetail() {
   const [enrollLoading, setEnrollLoading] = useState(false);
   const [expandedCategories, setExpandedCategories] = useState({});
   const [attempts, setAttempts] = useState({});
+  const [questionCounts, setQuestionCounts] = useState({});
 
   // Coupon state
   const [couponCode, setCouponCode] = useState('');
@@ -116,6 +117,20 @@ export default function CourseDetail() {
             });
             setAttempts(attemptsMap);
           }
+        }
+
+        // Fetch question counts using EXACT API
+        if (data && data.linked_tests && data.linked_tests.length > 0) {
+          const counts = {};
+          await Promise.all(data.linked_tests.map(async (test) => {
+            const { count } = await supabase
+              .from('prepbuddy_questions')
+              .select('*', { count: 'exact', head: true })
+              .eq('category', test.category)
+              .eq('subcategory', test.subcategory);
+            counts[`${test.category}-${test.subcategory}`] = count || 0;
+          }));
+          setQuestionCounts(counts);
         }
 
       } catch (err) {
@@ -448,6 +463,16 @@ export default function CourseDetail() {
                                   {test.coming_soon && (
                                     <span className="text-[9px] font-bold bg-amber-50 text-amber-500 border border-amber-200 px-1.5 py-0.5 rounded-full uppercase tracking-wide flex-shrink-0">Coming Soon</span>
                                   )}
+                                </div>
+                                <div className="flex items-center gap-1.5 mt-1.5 mb-0.5">
+                                  <div className="w-5 h-5 rounded-md bg-indigo-50 flex items-center justify-center flex-shrink-0">
+                                    <svg className="w-3 h-3 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                                  </div>
+                                  <span className="text-[10px] font-bold text-gray-500">{questionCounts[`${test.category}-${test.subcategory}`] || 0} Qs</span>
+                                  <div className="w-5 h-5 rounded-md bg-amber-50 flex items-center justify-center flex-shrink-0 ml-1.5">
+                                    <svg className="w-3 h-3 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                                  </div>
+                                  <span className="text-[10px] font-bold text-gray-500">{test.time_limit ? `${test.time_limit} min` : 'No Limit'}</span>
                                 </div>
                                 
                                 {!attempt && !isPaused && (
