@@ -271,6 +271,10 @@ export default function StateHomeFeed({ onlyEnrolled = false }) {
   const myTestSeries = filteredTestSeries.filter(ts => enrolledIds.has(ts.id));
   const finalTestSeries = onlyEnrolled ? myTestSeries : filteredTestSeries;
 
+  const isTsComingSoon = (ts) => ts.is_coming_soon || ts.title?.toLowerCase().includes('coming soon') || ts.description?.toLowerCase().includes('coming soon');
+  const finalTestSeriesRegular = finalTestSeries.filter(ts => !isTsComingSoon(ts));
+  const finalTestSeriesComingSoon = finalTestSeries.filter(ts => isTsComingSoon(ts));
+
   const filteredFreeTests = freeTests.filter(ft => ft.subcategory.toLowerCase().includes((searchQuery || '').toLowerCase()) || ft.category.toLowerCase().includes((searchQuery || '').toLowerCase()));
 
   return (
@@ -391,13 +395,13 @@ export default function StateHomeFeed({ onlyEnrolled = false }) {
         </h2>
       </div>
 
-      {finalTestSeries.length === 0 ? (
+      {finalTestSeriesRegular.length === 0 ? (
         <div className="text-center py-20 text-gray-500 bg-white rounded-2xl shadow-sm border border-gray-100">
           <p>{onlyEnrolled ? "You haven't enrolled in any test series yet." : "No test series found matching your search."}</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {finalTestSeries.map((ts) => {
+          {finalTestSeriesRegular.map((ts) => {
           const showFeatures = ts.title?.toLowerCase().includes('senior') || ts.title?.toLowerCase().includes('assistant') || ts.title?.toLowerCase().includes('asi') || true;
 
           let progressPercent = 0;
@@ -429,7 +433,7 @@ export default function StateHomeFeed({ onlyEnrolled = false }) {
               
               <div className="p-4 flex flex-col gap-2">
                 {(() => {
-                  const isComingSoon = ts.title?.toLowerCase().includes('coming soon') || ts.description?.toLowerCase().includes('coming soon');
+                  const isComingSoon = isTsComingSoon(ts);
                   return isComingSoon ? (
                     <div className="self-start bg-gray-100 text-gray-600 font-bold text-[10px] uppercase tracking-wider px-2 py-1 rounded-full flex items-center gap-1.5 shadow-sm border border-gray-200">
                       <span className="w-1.5 h-1.5 rounded-full bg-gray-400"></span>
@@ -538,6 +542,48 @@ export default function StateHomeFeed({ onlyEnrolled = false }) {
           );
           })}
         </div>
+      )}
+
+      {/* Coming Soon Section */}
+      {!onlyEnrolled && finalTestSeriesComingSoon.length > 0 && (
+        <>
+          <div className="pt-8 pb-1">
+            <h2 className="text-xl font-bold text-gray-900 tracking-tight">
+              Coming Soon
+            </h2>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 opacity-75 grayscale-[0.2]">
+            {finalTestSeriesComingSoon.map((ts) => {
+              return (
+                <div 
+                  key={ts.id} 
+                  className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex flex-col h-full"
+                >
+                  <div className="relative">
+                    {ts.banner_url ? (
+                      <img src={ts.banner_url} alt={ts.title} className="w-full h-48 md:h-52 object-contain bg-white" />
+                    ) : (
+                      <div className="w-full h-48 md:h-52 bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center border-b border-gray-100">
+                        <span className="text-gray-400 font-bold text-base">{ts.title}</span>
+                      </div>
+                    )}
+                  </div>
+                  
+                  <div className="p-4 flex flex-col gap-2">
+                    <div className="self-start bg-gray-100 text-gray-600 font-bold text-[10px] uppercase tracking-wider px-2 py-1 rounded-full flex items-center gap-1.5 shadow-sm border border-gray-200">
+                      <span className="w-1.5 h-1.5 rounded-full bg-gray-400"></span>
+                      Coming Soon
+                    </div>
+                    <h3 className="font-bold text-base text-gray-900 leading-tight">{ts.title}</h3>
+                    {ts.description && (
+                      <div className="text-xs text-gray-600 html-content line-clamp-3 overflow-hidden" dangerouslySetInnerHTML={{ __html: processHtml(ts.description) }} />
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </>
       )}
 
       {/* Promo Code Dialog */}
