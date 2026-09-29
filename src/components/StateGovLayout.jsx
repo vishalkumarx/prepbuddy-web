@@ -164,6 +164,7 @@ export default function StateGovLayout({ onLogout }) {
           />
         )}
       </div>
+      </div>
     </SearchContext.Provider>
   );
 }
