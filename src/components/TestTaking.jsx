@@ -82,6 +82,8 @@ export default function TestTaking() {
 
   // Handle browser back button
   useEffect(() => {
+    if (!testStarted) return;
+    
     const handlePopState = (e) => {
       if (isSubmittingRef.current) return;
       e.preventDefault();
@@ -95,7 +97,7 @@ export default function TestTaking() {
     return () => {
       window.removeEventListener('popstate', handlePopState);
     };
-  }, []);
+  }, [testStarted]);
 
   // Load saved progress
   useEffect(() => {
