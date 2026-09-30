@@ -71,6 +71,26 @@ export default function CourseControlPanel() {
     }
   };
 
+  const handleRemoveAllTiles = async () => {
+    if (!window.confirm('Are you sure you want to remove all tests from this course? This will NOT delete the original tests from the database, but will delink them from this course.')) return;
+    setActionLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('prepbuddy_test_series')
+        .update({ linked_tests: [] })
+        .eq('id', selectedCourse.id)
+        .select()
+        .single();
+      if (error) throw error;
+      setSelectedCourse(data);
+      setCourses(prev => prev.map(c => c.id === data.id ? data : c));
+    } catch (err) {
+      alert('Error removing tiles: ' + err.message);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   const handleUpdateTile = async (tileIdx, updates) => {
     setActionLoading(true);
     try {
@@ -397,6 +417,15 @@ export default function CourseControlPanel() {
                     <div className="p-4">
                       <div className="flex justify-between items-center mb-4">
                         <h3 className="font-bold text-gray-800">Test Tiles</h3>
+                        {linkedTests.length > 0 && (
+                          <button
+                            onClick={handleRemoveAllTiles}
+                            disabled={actionLoading}
+                            className="bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 hover:text-red-700 font-bold px-3 py-1.5 rounded-lg text-xs flex items-center gap-1.5 transition-colors"
+                          >
+                            <Trash2 size={14} /> Remove All Contents
+                          </button>
+                        )}
                       </div>
 
                       {linkedTests.length === 0 ? (
@@ -488,16 +517,7 @@ export default function CourseControlPanel() {
                                           <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mt-0.5">{t.totalQuestions} Qs • {t.duration} min</p>
                                         </div>
                                         <div className="flex items-center gap-1">
-                                          <select
-                                            value={t.prep_mode || ''}
-                                            onChange={(e) => handleUpdateTile(t._idx, { prep_mode: e.target.value })}
-                                            disabled={actionLoading}
-                                            className="text-xs bg-gray-50 border border-gray-200 rounded-lg px-2 py-1 text-gray-700 outline-none focus:ring-1 focus:ring-primary mr-2 cursor-pointer"
-                                          >
-                                            <option value="">Both/None</option>
-                                            <option value="state_gov">State Govt</option>
-                                            <option value="central_gov">Central Govt</option>
-                                          </select>
+
                                           <button
                                             onClick={() => handleDeleteTile(t._idx)}
                                             disabled={actionLoading}
