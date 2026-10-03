@@ -455,16 +455,17 @@ export default function CreateTestSeries() {
           let answerText = '';
           if (q.correct_option_id !== undefined && opts[q.correct_option_id]) {
             answerText = opts[q.correct_option_id];
-          } else if (q.answer) {
-            const upperAns = String(q.answer).trim().toUpperCase();
-            if (upperAns === 'A' && opts[0]) answerText = opts[0];
-            else if (upperAns === 'B' && opts[1]) answerText = opts[1];
-            else if (upperAns === 'C' && opts[2]) answerText = opts[2];
-            else if (upperAns === 'D' && opts[3]) answerText = opts[3];
-            else if (upperAns === 'E' && opts[4]) answerText = opts[4];
-            else answerText = q.answer;
-          } else if (q.correct_answer) {
-            answerText = q.correct_answer;
+          } else if (q.answer !== undefined || q.correct_answer !== undefined) {
+            const ansRaw = q.answer !== undefined ? q.answer : q.correct_answer;
+            const upperAns = String(ansRaw).replace(/<[^>]*>?/gm, '').trim().toUpperCase();
+            const cleanOpts = opts.map(o => String(o).replace(/<[^>]*>?/gm, '').trim().toUpperCase());
+            
+            if ((upperAns === 'A' || upperAns === '1' || upperAns === 'OPTION A' || upperAns === cleanOpts[0]) && opts[0]) answerText = opts[0];
+            else if ((upperAns === 'B' || upperAns === '2' || upperAns === 'OPTION B' || upperAns === cleanOpts[1]) && opts[1]) answerText = opts[1];
+            else if ((upperAns === 'C' || upperAns === '3' || upperAns === 'OPTION C' || upperAns === cleanOpts[2]) && opts[2]) answerText = opts[2];
+            else if ((upperAns === 'D' || upperAns === '4' || upperAns === 'OPTION D' || upperAns === cleanOpts[3]) && opts[3]) answerText = opts[3];
+            else if ((upperAns === 'E' || upperAns === '5' || upperAns === 'OPTION E' || upperAns === cleanOpts[4]) && opts[4]) answerText = opts[4];
+            else answerText = ansRaw;
           } else {
             answerText = opts[0] || '';
           }
@@ -520,11 +521,16 @@ export default function CreateTestSeries() {
         if (data.correct_option_id !== undefined && opts[data.correct_option_id]) {
           setAnswer(String.fromCharCode(65 + data.correct_option_id));
         } else {
-          let ans = data.answer || data.correct_answer || opts[0];
-          if (ans === opts[0] || String(ans).toUpperCase() === 'A') setAnswer('A');
-          else if (ans === opts[1] || String(ans).toUpperCase() === 'B') setAnswer('B');
-          else if (ans === opts[2] || String(ans).toUpperCase() === 'C') setAnswer('C');
-          else if (ans === opts[3] || String(ans).toUpperCase() === 'D') setAnswer('D');
+          let ansRaw = data.answer !== undefined ? data.answer : (data.correct_answer !== undefined ? data.correct_answer : opts[0]);
+          let upperAns = String(ansRaw).replace(/<[^>]*>?/gm, '').trim().toUpperCase();
+          let cleanOpts = opts.map(o => String(o).replace(/<[^>]*>?/gm, '').trim().toUpperCase());
+          
+          if (upperAns === cleanOpts[0] || upperAns === 'A' || upperAns === '1' || upperAns === 'OPTION A') setAnswer('A');
+          else if (upperAns === cleanOpts[1] || upperAns === 'B' || upperAns === '2' || upperAns === 'OPTION B') setAnswer('B');
+          else if (upperAns === cleanOpts[2] || upperAns === 'C' || upperAns === '3' || upperAns === 'OPTION C') setAnswer('C');
+          else if (upperAns === cleanOpts[3] || upperAns === 'D' || upperAns === '4' || upperAns === 'OPTION D') setAnswer('D');
+          else if (opts[4] && (upperAns === cleanOpts[4] || upperAns === 'E' || upperAns === '5' || upperAns === 'OPTION E')) setAnswer('E');
+          else setAnswer('A');
         }
         
         setExplanation(data.explanation || data.solution || data.desc || '');
@@ -1474,11 +1480,16 @@ export default function CreateTestSeries() {
                             const optLetter = String.fromCharCode(65 + oIdx);
                             const safeOpt = opt || "";
                             const safeAns = q.answer || "";
+                            
+                            const safeOptClean = String(safeOpt).replace(/<[^>]*>?/gm, '').trim();
+                            const safeAnsClean = String(safeAns).replace(/<[^>]*>?/gm, '').trim();
+
                             const isCorrect = 
-                              String(safeOpt).trim() === String(safeAns).trim() || 
-                              String(safeOpt).trim().toLowerCase() === String(safeAns).trim().toLowerCase() ||
-                              optLetter.toLowerCase() === String(safeAns).trim().toLowerCase() ||
-                              String(safeAns).trim().toUpperCase() === optLetter;
+                              safeOptClean === safeAnsClean || 
+                              safeOptClean.toLowerCase() === safeAnsClean.toLowerCase() ||
+                              optLetter.toLowerCase() === safeAnsClean.toLowerCase() ||
+                              safeAnsClean.toUpperCase() === optLetter ||
+                              safeAnsClean.toUpperCase() === `OPTION ${optLetter}`;
                             return (
                             <div 
                               key={oIdx} 
@@ -1540,11 +1551,16 @@ export default function CreateTestSeries() {
                       const optLetter = String.fromCharCode(65 + oIdx);
                       const safeOpt = opt || "";
                       const safeAns = q.answer || "";
+                      
+                      const safeOptClean = String(safeOpt).replace(/<[^>]*>?/gm, '').trim();
+                      const safeAnsClean = String(safeAns).replace(/<[^>]*>?/gm, '').trim();
+
                       const isCorrect = 
-                        String(safeOpt).trim() === String(safeAns).trim() || 
-                        String(safeOpt).trim().toLowerCase() === String(safeAns).trim().toLowerCase() ||
-                        optLetter.toLowerCase() === String(safeAns).trim().toLowerCase() ||
-                        String(safeAns).trim().toUpperCase() === optLetter;
+                        safeOptClean === safeAnsClean || 
+                        safeOptClean.toLowerCase() === safeAnsClean.toLowerCase() ||
+                        optLetter.toLowerCase() === safeAnsClean.toLowerCase() ||
+                        safeAnsClean.toUpperCase() === optLetter ||
+                        safeAnsClean.toUpperCase() === `OPTION ${optLetter}`;
                       return (
                       <div 
                         key={oIdx} 

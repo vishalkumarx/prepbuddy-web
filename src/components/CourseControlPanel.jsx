@@ -71,6 +71,31 @@ export default function CourseControlPanel() {
     }
   };
 
+  const handleDeleteCategory = async (category) => {
+    if (!window.confirm(`Are you sure you want to remove the entire "${category}" tile and all its tests from this course?`)) return;
+    setActionLoading(true);
+    try {
+      const updated = (selectedCourse.linked_tests || []).filter(t => t.category !== category);
+      const { data, error } = await supabase
+        .from('prepbuddy_test_series')
+        .update({ linked_tests: updated })
+        .eq('id', selectedCourse.id)
+        .select()
+        .single();
+      if (error) throw error;
+      setSelectedCourse(data);
+      setCourses(prev => prev.map(c => c.id === data.id ? data : c));
+      
+      if (expandedCategories[category]) {
+        toggleCategory(category);
+      }
+    } catch (err) {
+      alert('Error removing category tile: ' + err.message);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   const handleRemoveAllTiles = async () => {
     if (!window.confirm('Are you sure you want to remove all tests from this course? This will NOT delete the original tests from the database, but will delink them from this course.')) return;
     setActionLoading(true);
@@ -442,12 +467,23 @@ export default function CourseControlPanel() {
                                 <div
                                   key={category}
                                   onClick={() => toggleCategory(category)}
-                                  className={`flex flex-col items-center justify-center gap-2 text-center border p-3 rounded-2xl cursor-pointer hover:scale-[1.02] active:scale-[0.98] h-full transition-all ${
+                                  className={`flex flex-col items-center justify-center gap-2 text-center border p-3 rounded-2xl cursor-pointer hover:scale-[1.02] active:scale-[0.98] h-full transition-all relative group ${
                                     isExpanded
                                       ? `${color.bg} ${color.border} shadow-sm ring-1 ring-black/5`
                                       : 'bg-white border-gray-200 hover:bg-gray-50'
                                   }`}
                                 >
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleDeleteCategory(category);
+                                    }}
+                                    disabled={actionLoading}
+                                    className="absolute top-2 right-2 p-1.5 bg-red-50 text-red-500 hover:text-red-700 hover:bg-red-100 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                                    title="Remove this category and all its tests"
+                                  >
+                                    <Trash2 size={14} />
+                                  </button>
                                   <div className={`p-2 rounded-xl ${isExpanded ? color.iconBg : 'bg-gray-200'} ${isExpanded ? 'text-white' : 'text-gray-400'} shadow-sm transition-colors`}>
                                     <Icon size={18} />
                                   </div>
