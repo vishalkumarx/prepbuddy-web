@@ -524,15 +524,7 @@ export default function CreateTestSeries() {
 
         const size = parseInt(chunkSize, 10);
         if (saveInChunks && !isNaN(size) && size > 0) {
-          const newChunks = [];
-          for (let i = 0; i < uniqueFormatted.length; i += size) {
-            const testNum = Math.floor(i / size) + 1;
-            newChunks.push({
-              name: `${finalSubcategory} - Test ${String(testNum).padStart(2, '0')}`,
-              questions: uniqueFormatted.slice(i, i + size)
-            });
-          }
-          setStagedChunks(newChunks);
+          setStagedChunks(generateChunks(uniqueFormatted, size, finalCategory, finalSubcategory));
         } else {
           setStagedChunks([{ name: finalSubcategory, questions: uniqueFormatted }]);
         }
@@ -636,6 +628,32 @@ export default function CreateTestSeries() {
     }
   };
 
+  const generateChunks = (allQs, size, cat, subcat) => {
+    if (isNaN(size) || size <= 0) {
+      return [{ name: subcat, questions: allQs }];
+    }
+    
+    let startTestNum = 1;
+    const existingGroups = sidebarGroups.filter(g => g.category === cat && g.subcategory.startsWith(`${subcat} - Test `));
+    if (existingGroups.length > 0) {
+      const maxNum = Math.max(...existingGroups.map(g => {
+        const match = g.subcategory.match(/Test (\d+)$/);
+        return match ? parseInt(match[1], 10) : 0;
+      }));
+      startTestNum = maxNum + 1;
+    }
+
+    const newChunks = [];
+    for (let i = 0; i < allQs.length; i += size) {
+      const testNum = startTestNum + Math.floor(i / size);
+      newChunks.push({
+        name: `${subcat} - Test ${String(testNum).padStart(2, '0')}`,
+        questions: allQs.slice(i, i + size)
+      });
+    }
+    return newChunks;
+  };
+
   const handleChunkSizeChange = (e) => {
     const newSize = e.target.value;
     setChunkSize(newSize);
@@ -649,15 +667,7 @@ export default function CreateTestSeries() {
       return;
     }
     
-    const newChunks = [];
-    for (let i = 0; i < allQs.length; i += size) {
-      const testNum = Math.floor(i / size) + 1;
-      newChunks.push({
-        name: `${subcategory} - Test ${String(testNum).padStart(2, '0')}`,
-        questions: allQs.slice(i, i + size)
-      });
-    }
-    setStagedChunks(newChunks);
+    setStagedChunks(generateChunks(allQs, size, category, subcategory));
   };
 
   const handleBulkUpload = async () => {
@@ -1434,15 +1444,7 @@ export default function CreateTestSeries() {
                           const allQs = stagedChunks.flatMap(c => c.questions);
                           const size = parseInt(chunkSize, 10);
                           if (!isNaN(size) && size > 0) {
-                            const newChunks = [];
-                            for (let i = 0; i < allQs.length; i += size) {
-                              const testNum = Math.floor(i / size) + 1;
-                              newChunks.push({
-                                name: `${subcategory} - Test ${String(testNum).padStart(2, '0')}`,
-                                questions: allQs.slice(i, i + size)
-                              });
-                            }
-                            setStagedChunks(newChunks);
+                            setStagedChunks(generateChunks(allQs, size, category, subcategory));
                           }
                         }}
                         className="w-4 h-4 text-amber-600 focus:ring-amber-500"
