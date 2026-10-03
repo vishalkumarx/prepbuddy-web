@@ -775,6 +775,32 @@ export default function CreateTestSeries() {
     }
   };
 
+  const handleDeleteSubGroup = async (e, groupCategory, subGroupName, subGroupTests) => {
+    e.stopPropagation();
+    if (!window.confirm(`Are you sure you want to permanently delete the ENTIRE "${subGroupName}" subcategory and all its ${subGroupTests.length} tests?`)) return;
+    
+    try {
+      const subcategoriesToDelete = subGroupTests.map(g => g.subcategory);
+      
+      const { error } = await supabase
+        .from('prepbuddy_questions')
+        .delete()
+        .eq('category', groupCategory)
+        .in('subcategory', subcategoriesToDelete);
+        
+      if (error) throw error;
+      
+      if (category === groupCategory && subcategoriesToDelete.includes(subcategory)) {
+        setQuestionsList([]);
+      }
+      
+      fetchSidebarGroups();
+      alert(`Subcategory "${subGroupName}" deleted successfully!`);
+    } catch (err) {
+      alert("Failed to delete subcategory: " + err.message);
+    }
+  };
+
 
   const handleRenameCategory = async (e, groupCategory, groupSubcategory) => {
     e.stopPropagation();
@@ -1066,13 +1092,22 @@ export default function CreateTestSeries() {
                               {/* Subgroup header */}
                               <div
                                 onClick={() => toggleSidebarSubgroup(cat, subGroupName)}
-                                className="flex items-center justify-between cursor-pointer px-2 py-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+                                className="flex items-center justify-between cursor-pointer px-2 py-1.5 rounded-lg hover:bg-gray-100 transition-colors group/sgrp"
                               >
                                 <span className="text-xs font-bold text-gray-600 uppercase tracking-wider">{subGroupName}</span>
-                                <span className="text-gray-400 text-[10px] flex items-center gap-1">
-                                  <span className="bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded font-bold">{subGroupTests.length}</span>
-                                  {isSubExpanded ? '▼' : '▶'}
-                                </span>
+                                <div className="flex items-center gap-2">
+                                  <button
+                                    onClick={(e) => handleDeleteSubGroup(e, cat, subGroupName, subGroupTests)}
+                                    className="p-1 text-red-400 hover:text-red-600 hover:bg-red-50 rounded opacity-0 group-hover/sgrp:opacity-100 transition-opacity"
+                                    title="Delete all tests in this subcategory"
+                                  >
+                                    <Trash2 size={12} />
+                                  </button>
+                                  <span className="text-gray-400 text-[10px] flex items-center gap-1">
+                                    <span className="bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded font-bold">{subGroupTests.length}</span>
+                                    {isSubExpanded ? '▼' : '▶'}
+                                  </span>
+                                </div>
                               </div>
 
                               {isSubExpanded && (
