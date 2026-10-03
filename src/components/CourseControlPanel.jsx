@@ -96,6 +96,28 @@ export default function CourseControlPanel() {
     }
   };
 
+  const handleDeleteSubcategory = async (cat, subGroupName, groupTests) => {
+    if (!window.confirm(`Are you sure you want to remove the entire "${subGroupName}" subcategory and all its tests from this course?`)) return;
+    setActionLoading(true);
+    try {
+      const idxsToRemove = new Set(groupTests.map(t => t._idx));
+      const updated = (selectedCourse.linked_tests || []).filter((_, i) => !idxsToRemove.has(i));
+      const { data, error } = await supabase
+        .from('prepbuddy_test_series')
+        .update({ linked_tests: updated })
+        .eq('id', selectedCourse.id)
+        .select()
+        .single();
+      if (error) throw error;
+      setSelectedCourse(data);
+      setCourses(prev => prev.map(c => c.id === data.id ? data : c));
+    } catch (err) {
+      alert('Error removing subcategory: ' + err.message);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   const handleRemoveAllTiles = async () => {
     if (!window.confirm('Are you sure you want to remove all tests from this course? This will NOT delete the original tests from the database, but will delink them from this course.')) return;
     setActionLoading(true);
@@ -520,7 +542,7 @@ export default function CourseControlPanel() {
                                         <div key={subGroupName} className="border border-gray-200 rounded-2xl bg-white overflow-hidden shadow-sm transition-all">
                                           <div 
                                             onClick={() => toggleSubgroup(cat, subGroupName)}
-                                            className="p-4 flex items-center justify-between cursor-pointer hover:bg-gray-50 transition-colors"
+                                            className="p-4 flex items-center justify-between cursor-pointer hover:bg-gray-50 transition-colors group/sub"
                                           >
                                             <div className="flex items-center gap-3">
                                               <div className="bg-indigo-50 p-2 rounded-xl text-indigo-600">
@@ -531,9 +553,22 @@ export default function CourseControlPanel() {
                                                 <p className="text-xs font-medium text-gray-500">{groupTests.length} {groupTests.length === 1 ? 'Test' : 'Tests'}</p>
                                               </div>
                                             </div>
-                                            <span className="text-gray-400 text-xs">
-                                              {isSubExpanded ? '▼' : '▶'}
-                                            </span>
+                                            <div className="flex items-center gap-2">
+                                              <button
+                                                onClick={(e) => {
+                                                  e.stopPropagation();
+                                                  handleDeleteSubcategory(cat, subGroupName, groupTests);
+                                                }}
+                                                disabled={actionLoading}
+                                                className="p-1.5 bg-red-50 text-red-500 hover:text-red-700 hover:bg-red-100 rounded-lg opacity-0 group-hover/sub:opacity-100 transition-opacity"
+                                                title="Remove this subcategory and all its tests"
+                                              >
+                                                <Trash2 size={14} />
+                                              </button>
+                                              <span className="text-gray-400 text-xs">
+                                                {isSubExpanded ? '▼' : '▶'}
+                                              </span>
+                                            </div>
                                           </div>
                                           
                                           {isSubExpanded && (
