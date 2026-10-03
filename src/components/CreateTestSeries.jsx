@@ -439,14 +439,32 @@ export default function CreateTestSeries() {
   };
 
   const handleImportJson = async (overrideText = null) => {
-    if (!category.trim() || !subcategory.trim()) {
-      alert('Please fill out the Category and Subcategory fields before importing JSON.');
-      return;
-    }
     const textToParse = typeof overrideText === 'string' ? overrideText : jsonImportText;
     if (!textToParse.trim()) return;
     try {
       let data = JSON.parse(textToParse);
+      
+      let finalCategory = category;
+      let finalSubcategory = subcategory;
+      
+      if (!finalCategory.trim() || !finalSubcategory.trim()) {
+         if (Array.isArray(data) && data.length > 0) {
+            finalCategory = data[0].category || finalCategory;
+            finalSubcategory = data[0].subcategory || finalSubcategory;
+         } else if (data && !Array.isArray(data)) {
+            finalCategory = data.category || finalCategory;
+            finalSubcategory = data.subcategory || finalSubcategory;
+         }
+      }
+      
+      if (!finalCategory.trim() || !finalSubcategory.trim()) {
+        alert('Please fill out the Category and Subcategory fields before importing JSON (or include them in the JSON).');
+        return;
+      }
+      
+      if (finalCategory !== category) setCategory(finalCategory);
+      if (finalSubcategory !== subcategory) setSubcategory(finalSubcategory);
+      
       if (Array.isArray(data)) {
         const formatted = data.map(q => {
           let opts = [];
@@ -488,8 +506,8 @@ export default function CreateTestSeries() {
             options: opts,
             answer: answerText,
             explanation: q.explanation || q.solution || q.desc || '',
-            category: category,
-            subcategory: subcategory
+            category: finalCategory,
+            subcategory: finalSubcategory
           };
         });
         
@@ -510,13 +528,13 @@ export default function CreateTestSeries() {
           for (let i = 0; i < uniqueFormatted.length; i += size) {
             const testNum = Math.floor(i / size) + 1;
             newChunks.push({
-              name: `${subcategory} - Test ${String(testNum).padStart(2, '0')}`,
+              name: `${finalSubcategory} - Test ${String(testNum).padStart(2, '0')}`,
               questions: uniqueFormatted.slice(i, i + size)
             });
           }
           setStagedChunks(newChunks);
         } else {
-          setStagedChunks([{ name: subcategory, questions: uniqueFormatted }]);
+          setStagedChunks([{ name: finalSubcategory, questions: uniqueFormatted }]);
         }
         
         setJsonImportText('');
