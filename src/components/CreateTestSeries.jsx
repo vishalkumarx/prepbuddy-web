@@ -449,7 +449,20 @@ export default function CreateTestSeries() {
       let data = JSON.parse(textToParse);
       if (Array.isArray(data)) {
         const formatted = data.map(q => {
-          const opts = Array.isArray(q.options) ? q.options : [q.optionA, q.optionB, q.optionC, q.optionD, q.optionE].filter(Boolean);
+          let opts = [];
+          if (Array.isArray(q.options)) {
+            opts = q.options;
+          } else if (q.options && typeof q.options === 'object') {
+            opts = [
+              q.options.a || q.options.A || q.options.optionA || q.options['1'] || q.optionA,
+              q.options.b || q.options.B || q.options.optionB || q.options['2'] || q.optionB,
+              q.options.c || q.options.C || q.options.optionC || q.options['3'] || q.optionC,
+              q.options.d || q.options.D || q.options.optionD || q.options['4'] || q.optionD,
+              q.options.e || q.options.E || q.options.optionE || q.options['5'] || q.optionE
+            ].filter(Boolean);
+          } else {
+            opts = [q.optionA, q.optionB, q.optionC, q.optionD, q.optionE].filter(Boolean);
+          }
           
           // Determine answer: support correct_option_id (0-indexed), answer letter, or answer text
           let answerText = '';
@@ -511,7 +524,20 @@ export default function CreateTestSeries() {
       } else {
         // Single object populates the form (no immediate db insertion)
         setQuestion(data.question || data.q || '');
-        const opts = Array.isArray(data.options) ? data.options : [data.optionA, data.optionB, data.optionC, data.optionD, data.optionE];
+        let opts = [];
+        if (Array.isArray(data.options)) {
+          opts = data.options;
+        } else if (data.options && typeof data.options === 'object') {
+          opts = [
+            data.options.a || data.options.A || data.options.optionA || data.options['1'] || data.optionA,
+            data.options.b || data.options.B || data.options.optionB || data.options['2'] || data.optionB,
+            data.options.c || data.options.C || data.options.optionC || data.options['3'] || data.optionC,
+            data.options.d || data.options.D || data.options.optionD || data.options['4'] || data.optionD,
+            data.options.e || data.options.E || data.options.optionE || data.options['5'] || data.optionE
+          ].filter(Boolean);
+        } else {
+          opts = [data.optionA, data.optionB, data.optionC, data.optionD, data.optionE].filter(Boolean);
+        }
         if (opts[0]) setOptionA(opts[0]);
         if (opts[1]) setOptionB(opts[1]);
         if (opts[2]) setOptionC(opts[2]);
