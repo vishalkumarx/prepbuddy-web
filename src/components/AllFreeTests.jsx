@@ -36,8 +36,20 @@ export default function AllFreeTests() {
           .single();
         if (data) {
           const tests = data.linked_tests || [];
-          setFreeTests(tests);
-          fetchQuestionCounts(tests);
+          // Validate each test still exists in the questions table
+          const validationResults = await Promise.all(
+            tests.map(async (t) => {
+              const { count } = await supabase
+                .from('prepbuddy_questions')
+                .select('*', { count: 'exact', head: true })
+                .eq('category', t.category)
+                .eq('subcategory', t.subcategory);
+              return { test: t, count: count || 0 };
+            })
+          );
+          const validTests = validationResults.filter(r => r.count > 0).map(r => r.test);
+          setFreeTests(validTests);
+          fetchQuestionCounts(validTests);
         }
       } catch (err) {
         console.error(err);

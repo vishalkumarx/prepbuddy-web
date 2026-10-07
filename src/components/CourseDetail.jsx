@@ -256,7 +256,11 @@ export default function CourseDetail() {
     );
   }
 
-  const linkedTests = course.linked_tests || [];
+  const linkedTests = (course.linked_tests || []).filter(t => {
+    // Hide tests deleted from the questions table (count will be 0 or missing)
+    const count = questionCounts[`${t.category}-${t.subcategory}`];
+    return count === undefined || count > 0; // show if count not yet loaded or has questions
+  });
   
   // Group tests by category
   const grouped = linkedTests.reduce((acc, test) => {

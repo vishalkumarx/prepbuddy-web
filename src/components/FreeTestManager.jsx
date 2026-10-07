@@ -69,7 +69,32 @@ export default function FreeTestManager() {
       }
 
       setFreeCourseId(freeCourse.id);
-      setFreeTests(freeCourse.linked_tests || []);
+      const rawTests = freeCourse.linked_tests || [];
+      
+      // Auto-prune stale tests (those deleted from questions table)
+      const validationResults = await Promise.all(
+        rawTests.map(async (t) => {
+          const { count } = await supabase
+            .from('prepbuddy_questions')
+            .select('*', { count: 'exact', head: true })
+            .eq('category', t.category)
+            .eq('subcategory', t.subcategory);
+          return { test: t, count: count || 0 };
+        })
+      );
+      const validTests = validationResults.filter(r => r.count > 0).map(r => r.test);
+      const staleCount = rawTests.length - validTests.length;
+      
+      // If stale entries found, auto-clean from DB
+      if (staleCount > 0) {
+        await supabase
+          .from('prepbuddy_test_series')
+          .update({ linked_tests: validTests })
+          .eq('id', freeCourse.id);
+        console.log(`Auto-removed ${staleCount} stale free test(s) from DB.`);
+      }
+      
+      setFreeTests(validTests);
       
     } catch (err) {
       console.error(err);

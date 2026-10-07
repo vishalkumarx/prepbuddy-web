@@ -139,12 +139,23 @@ export default function StateHomeFeed({ onlyEnrolled = false }) {
 
         if (error) throw error;
         
-        // Extract free tests
+        // Extract free tests and validate they still exist in the questions table
         const freeCourse = data.find(c => c.title === 'INTERNAL_FREE_TEST_SECTION');
         const freeTestList = freeCourse ? (freeCourse.linked_tests || []) : [];
         if (freeTestList.length > 0) {
-          setFreeTests(freeTestList);
-          fetchQuestionCounts(freeTestList);
+          const counts = await Promise.all(
+            freeTestList.map(async (t) => {
+              const { count } = await supabase
+                .from('prepbuddy_questions')
+                .select('*', { count: 'exact', head: true })
+                .eq('category', t.category)
+                .eq('subcategory', t.subcategory);
+              return { test: t, count: count || 0 };
+            })
+          );
+          const validTests = counts.filter(r => r.count > 0).map(r => r.test);
+          setFreeTests(validTests);
+          fetchQuestionCounts(validTests);
         }
 
         const filteredData = (data || []).filter(c => c.title !== 'INTERNAL_FREE_TEST_SECTION');
