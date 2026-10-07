@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabase';
 import { UserManager } from '../utils/UserManager';
-import { Shield, Search, UserPlus, Trash2, ArrowLeft, RefreshCw, Layers, Tag, Settings, FileText, Languages, Award, Newspaper, Plus, Clock, X, Edit2, Star } from 'lucide-react';
+import { Shield, Search, UserPlus, Trash2, ArrowLeft, RefreshCw, Layers, Tag, Settings, FileText, Languages, Award, Newspaper, Plus, Clock, X, Edit2, Star, Eye, EyeOff, Lock, Unlock } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import CouponManager from './CouponManager';
 
@@ -574,24 +574,46 @@ export default function CourseControlPanel() {
                                           {isSubExpanded && (
                                             <div className="p-3 border-t border-gray-100 bg-gray-50/50 space-y-2">
                                               {groupTests.map((t) => (
-                                      <div key={t._idx} className="bg-white p-3 rounded-xl border border-gray-100 shadow-sm flex items-center gap-3">
-                                        <div className={`p-2 rounded-xl flex-shrink-0 ${t.coming_soon ? 'bg-amber-50 text-amber-500' : 'bg-indigo-50 text-indigo-600'}`}>
-                                          {t.coming_soon ? <Clock size={16} /> : <FileText size={16} />}
+                                      <div key={t._idx} className={`bg-white p-3 rounded-xl border border-gray-100 shadow-sm flex items-center gap-3 ${t.is_hidden ? 'opacity-60' : ''}`}>
+                                        <div className={`p-2 rounded-xl flex-shrink-0 ${t.coming_soon ? 'bg-amber-50 text-amber-500' : (t.is_unavailable ? 'bg-red-50 text-red-500' : 'bg-indigo-50 text-indigo-600')}`}>
+                                          {t.coming_soon ? <Clock size={16} /> : (t.is_unavailable ? <Lock size={16} /> : <FileText size={16} />)}
                                         </div>
                                         <div className="flex-1 min-w-0">
                                           <div className="flex items-center gap-2">
-                                            <p className="font-bold text-sm text-gray-900 leading-snug">{t.subcategory}</p>
+                                            <p className={`font-bold text-sm text-gray-900 leading-snug ${t.is_hidden ? 'line-through text-gray-500' : ''}`}>{t.subcategory}</p>
                                             {t.coming_soon && (
                                               <span className="text-[9px] font-bold bg-amber-100 text-amber-600 px-1.5 py-0.5 rounded-full uppercase tracking-wide flex-shrink-0">Soon</span>
+                                            )}
+                                            {t.is_unavailable && (
+                                              <span className="text-[9px] font-bold bg-red-100 text-red-600 px-1.5 py-0.5 rounded-full uppercase tracking-wide flex-shrink-0">Unavailable</span>
+                                            )}
+                                            {t.is_hidden && (
+                                              <span className="text-[9px] font-bold bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded-full uppercase tracking-wide flex-shrink-0">Hidden</span>
                                             )}
                                           </div>
                                           <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mt-0.5">{t.totalQuestions} Qs • {t.duration} min</p>
                                         </div>
                                         <div className="flex items-center gap-1">
-
+                                          <button
+                                            onClick={() => handleUpdateTile(t._idx, { is_unavailable: !t.is_unavailable })}
+                                            disabled={actionLoading}
+                                            title={t.is_unavailable ? "Mark as Available" : "Mark as Unavailable"}
+                                            className={`p-1.5 rounded-lg transition-colors ${t.is_unavailable ? 'text-red-600 bg-red-50 hover:bg-red-100' : 'text-gray-400 hover:text-red-500 hover:bg-gray-50'}`}
+                                          >
+                                            {t.is_unavailable ? <Lock size={14} /> : <Unlock size={14} />}
+                                          </button>
+                                          <button
+                                            onClick={() => handleUpdateTile(t._idx, { is_hidden: !t.is_hidden })}
+                                            disabled={actionLoading}
+                                            title={t.is_hidden ? "Show Tile" : "Hide Tile"}
+                                            className={`p-1.5 rounded-lg transition-colors ${t.is_hidden ? 'text-gray-600 bg-gray-200 hover:bg-gray-300' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-50'}`}
+                                          >
+                                            {t.is_hidden ? <EyeOff size={14} /> : <Eye size={14} />}
+                                          </button>
                                           <button
                                             onClick={() => handleDeleteTile(t._idx)}
                                             disabled={actionLoading}
+                                            title="Remove Tile"
                                             className="p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                                           >
                                             <X size={14} />
