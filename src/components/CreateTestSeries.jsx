@@ -322,6 +322,20 @@ export default function CreateTestSeries() {
         if (error) throw error;
         alert('Question updated successfully!');
       } else {
+        const { data: existingQs, error: fetchErr } = await supabase
+          .from('prepbuddy_questions')
+          .select('subcategory')
+          .eq('category', category)
+          .ilike('question', question.trim());
+          
+        if (fetchErr) throw fetchErr;
+        
+        if (existingQs && existingQs.length > 0) {
+          alert(`Duplicate omitted: This question already exists in category "${category}" (Subcategory: ${existingQs[0].subcategory}).`);
+          setIsUploading(false);
+          return;
+        }
+
         const { error } = await supabase
           .from('prepbuddy_questions')
           .insert([questionData]);
@@ -511,12 +525,30 @@ export default function CreateTestSeries() {
           };
         });
         
+        setIsUploading(true);
+        
+        const { data: existingQs } = await supabase
+          .from('prepbuddy_questions')
+          .select('question, subcategory')
+          .eq('category', finalCategory);
+          
+        const existingSet = new Map();
+        if (existingQs) {
+          existingQs.forEach(q => existingSet.set(q.question.trim().toLowerCase(), q.subcategory));
+        }
+
         // Deduplicate questions to omit exact duplicates
         const uniqueFormatted = [];
         const seenQuestions = new Set();
-        formatted.forEach(q => {
+        const omittedReport = [];
+        
+        formatted.forEach((q, idx) => {
           const normQ = q.question.trim().toLowerCase();
-          if (!seenQuestions.has(normQ)) {
+          if (existingSet.has(normQ)) {
+            omittedReport.push(`- Q${idx + 1}: Exists in "${existingSet.get(normQ)}"`);
+          } else if (seenQuestions.has(normQ)) {
+            omittedReport.push(`- Q${idx + 1}: Duplicate within imported file`);
+          } else {
             seenQuestions.add(normQ);
             uniqueFormatted.push(q);
           }
@@ -530,7 +562,14 @@ export default function CreateTestSeries() {
         }
         
         setJsonImportText('');
-        alert(`Successfully parsed ${uniqueFormatted.length} unique questions! (Omitted ${formatted.length - uniqueFormatted.length} duplicates). Review them below and click 'Save All to Database'.`);
+        let msg = `Successfully parsed ${uniqueFormatted.length} unique questions.`;
+        if (omittedReport.length > 0) {
+          msg += `\n\nOmitted ${omittedReport.length} duplicates:\n` + omittedReport.slice(0, 10).join('\n');
+          if (omittedReport.length > 10) {
+            msg += `\n...and ${omittedReport.length - 10} more.`;
+          }
+        }
+        alert(msg);
       } else {
         // Single object populates the form (no immediate db insertion)
         setQuestion(data.question || data.q || '');
