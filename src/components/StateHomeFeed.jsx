@@ -310,9 +310,11 @@ export default function StateHomeFeed({ onlyEnrolled = false }) {
                 >
                   <div className="p-4 flex-1">
                     <div className="flex justify-between items-start mb-2">
-                      <span className="text-[9px] font-bold px-1.5 py-0.5 rounded uppercase tracking-widest bg-blue-50 text-blue-600 border border-blue-100">
-                        {test.prep_mode === 'central_gov' ? 'Central Govt.' : test.prep_mode === 'state_gov' ? 'State Govt.' : (UserManager.getPreparation() === 'central_gov' ? 'Central Govt.' : 'State Govt.')}
-                      </span>
+                      {test.prep_mode && (
+                        <span className="text-[9px] font-bold px-1.5 py-0.5 rounded uppercase tracking-widest bg-blue-50 text-blue-600 border border-blue-100">
+                          {test.prep_mode === 'central_gov' ? 'Central Govt.' : 'State Govt.'}
+                        </span>
+                      )}
                     </div>
                     <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider mb-1">{test.category}</p>
                     <h3 className="font-bold text-gray-900 leading-tight mb-2 line-clamp-2">{test.subcategory}</h3>

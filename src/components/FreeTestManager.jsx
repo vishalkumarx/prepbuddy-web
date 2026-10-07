@@ -10,6 +10,7 @@ export default function FreeTestManager() {
   const [freeTests, setFreeTests] = useState([]);
   const [selectedCat, setSelectedCat] = useState('');
   const [selectedSubCat, setSelectedSubCat] = useState('');
+  const [selectedPrepMode, setSelectedPrepMode] = useState('');
   const [loading, setLoading] = useState(true);
 
   // The UUID for our internal free test series record, or we just look it up by a unique title.
@@ -90,7 +91,7 @@ export default function FreeTestManager() {
       return;
     }
     
-    const newTests = [...freeTests, { category: selectedCat, subcategory: selectedSubCat }];
+    const newTests = [...freeTests, { category: selectedCat, subcategory: selectedSubCat, prep_mode: selectedPrepMode || null }];
     updateFreeTests(newTests);
   };
 
@@ -165,6 +166,19 @@ export default function FreeTestManager() {
                 ))}
               </select>
             </div>
+            
+            <div className="md:col-span-2">
+              <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Exam Tag (Optional)</label>
+              <select 
+                value={selectedPrepMode}
+                onChange={(e) => setSelectedPrepMode(e.target.value)}
+                className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:border-primary"
+              >
+                <option value="">No specific tag</option>
+                <option value="state_gov">State Govt.</option>
+                <option value="central_gov">Central Govt.</option>
+              </select>
+            </div>
           </div>
           
           <button 
@@ -186,17 +200,32 @@ export default function FreeTestManager() {
           ) : (
             <div className="space-y-3">
               {freeTests.map((t, idx) => (
-                <div key={idx} className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex items-center justify-between">
-                  <div>
+                <div key={idx} className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="flex-1">
                     <h3 className="font-bold text-gray-900">{t.subcategory}</h3>
                     <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">{t.category}</p>
                   </div>
-                  <button 
-                    onClick={() => handleRemoveFreeTest(idx)}
-                    className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                  >
-                    <Trash2 size={20} />
-                  </button>
+                  <div className="flex items-center gap-3">
+                    <select
+                      value={t.prep_mode || ''}
+                      onChange={(e) => {
+                        const newTests = [...freeTests];
+                        newTests[idx].prep_mode = e.target.value || null;
+                        updateFreeTests(newTests);
+                      }}
+                      className="bg-gray-50 border border-gray-200 rounded-lg p-2 text-xs focus:outline-none focus:border-primary"
+                    >
+                      <option value="">No tag</option>
+                      <option value="state_gov">State Govt.</option>
+                      <option value="central_gov">Central Govt.</option>
+                    </select>
+                    <button 
+                      onClick={() => handleRemoveFreeTest(idx)}
+                      className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                    >
+                      <Trash2 size={20} />
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>

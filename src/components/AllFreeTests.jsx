@@ -107,7 +107,14 @@ export default function AllFreeTests() {
               className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden"
             >
               <div className="p-4">
-                <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider mb-0.5">{test.category}</p>
+                <div className="flex justify-between items-start mb-0.5">
+                  <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider">{test.category}</p>
+                  {test.prep_mode && (
+                    <span className="text-[9px] font-bold px-1.5 py-0.5 rounded uppercase tracking-widest bg-blue-50 text-blue-600 border border-blue-100">
+                      {test.prep_mode === 'central_gov' ? 'Central Govt.' : 'State Govt.'}
+                    </span>
+                  )}
+                </div>
                 <h3 className="font-bold text-gray-900 leading-tight mb-3">{test.subcategory}</h3>
 
                 {/* Stats */}
