@@ -391,7 +391,7 @@ export default function StateHomeFeed({ onlyEnrolled = false }) {
                     </div>
                   ) : (
                     <div className="flex items-center gap-2 flex-wrap">
-                      {ts.price > 0 ? (
+                      {ts.price > 0 && (
                         <>
                           <span className="font-black text-lg text-[#0B2457] flex items-center">
                             <IndianRupee size={15} className="mr-0" />{ts.price}
@@ -407,8 +407,6 @@ export default function StateHomeFeed({ onlyEnrolled = false }) {
                             </>
                           )}
                         </>
-                      ) : (
-                        <span className="font-black text-lg text-emerald-600">FREE</span>
                       )}
                     </div>
                   )}
