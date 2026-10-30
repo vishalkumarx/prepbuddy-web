@@ -132,25 +132,47 @@ export default function StateHomeFeed({ onlyEnrolled = false }) {
   const handleShare = async (e, ts) => {
     e.stopPropagation();
     const shareUrl = `${window.location.origin}/course/${ts.id}`;
-    const shareData = {
-      title: ts.title,
-      text: `Check out ${ts.title} on GoalPrep!`,
-      url: shareUrl
-    };
+    const bannerUrl = ts.banner_url;
 
     if (navigator.share) {
       try {
-        await navigator.share(shareData);
+        let filesArray = [];
+        if (bannerUrl && navigator.canShare) {
+          try {
+            const res = await fetch(bannerUrl);
+            const blob = await res.blob();
+            const file = new File([blob], 'test_series_thumbnail.png', { type: blob.type || 'image/png' });
+            if (navigator.canShare({ files: [file] })) {
+              filesArray = [file];
+            }
+          } catch (fileErr) {
+            console.log('Thumbnail fetch for share skipped:', fileErr);
+          }
+        }
+
+        const sharePayload = {
+          title: ts.title,
+          text: `Check out ${ts.title} on GoalPrep!\n${ts.description ? ts.description.slice(0, 100) + '...' : ''}\n\n👉 Join here: ${shareUrl}`,
+          url: shareUrl
+        };
+
+        if (filesArray.length > 0) {
+          sharePayload.files = filesArray;
+        }
+
+        await navigator.share(sharePayload);
+        return;
       } catch (err) {
         if (err.name !== 'AbortError') {
           navigator.clipboard.writeText(shareUrl);
           alert('Link copied to clipboard!');
         }
+        return;
       }
-    } else {
-      navigator.clipboard.writeText(shareUrl);
-      alert('Course link copied to clipboard!');
     }
+
+    navigator.clipboard.writeText(shareUrl);
+    alert('Course link copied to clipboard!');
   };
 
   useEffect(() => {

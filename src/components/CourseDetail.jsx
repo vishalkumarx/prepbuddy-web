@@ -237,27 +237,59 @@ export default function CourseDetail() {
     }
   };
 
+  const handleBack = () => {
+    // If user opened this via direct shared link (history length <= 2 or referrer empty/external), navigate to homepage
+    if (window.history.length <= 2 || !document.referrer || !document.referrer.includes(window.location.host)) {
+      navigate('/', { replace: true });
+    } else {
+      navigate(-1);
+    }
+  };
+
   const handleShare = async () => {
     const shareUrl = window.location.href;
-    const shareData = {
-      title: course?.title || 'Test Series',
-      text: `Check out ${course?.title} on GoalPrep!`,
-      url: shareUrl
-    };
+    const bannerUrl = course?.banner_url;
 
+    // Try sharing with thumbnail image file if supported
     if (navigator.share) {
       try {
-        await navigator.share(shareData);
+        let filesArray = [];
+        if (bannerUrl && navigator.canShare) {
+          try {
+            const res = await fetch(bannerUrl);
+            const blob = await res.blob();
+            const file = new File([blob], 'test_series_thumbnail.png', { type: blob.type || 'image/png' });
+            if (navigator.canShare({ files: [file] })) {
+              filesArray = [file];
+            }
+          } catch (fileErr) {
+            console.log('Thumbnail fetch for share skipped:', fileErr);
+          }
+        }
+
+        const sharePayload = {
+          title: course?.title || 'Test Series',
+          text: `Check out ${course?.title} on GoalPrep!\n${course?.description ? course.description.slice(0, 100) + '...' : ''}\n\n👉 Join here: ${shareUrl}`,
+          url: shareUrl
+        };
+
+        if (filesArray.length > 0) {
+          sharePayload.files = filesArray;
+        }
+
+        await navigator.share(sharePayload);
+        return;
       } catch (err) {
         if (err.name !== 'AbortError') {
           navigator.clipboard.writeText(shareUrl);
           alert('Link copied to clipboard!');
         }
+        return;
       }
-    } else {
-      navigator.clipboard.writeText(shareUrl);
-      alert('Course link copied to clipboard!');
     }
+
+    navigator.clipboard.writeText(shareUrl);
+    alert('Course link copied to clipboard!');
   };
 
   if (loading) {
@@ -272,7 +304,7 @@ export default function CourseDetail() {
     return (
       <div className="h-full flex flex-col items-center justify-center p-6 text-center">
         <p className="text-gray-500 mb-4">Test Series not found.</p>
-        <button onClick={() => navigate(-1)} className="px-6 py-2 bg-primary text-white rounded-xl font-bold">
+        <button onClick={handleBack} className="px-6 py-2 bg-primary text-white rounded-xl font-bold">
           Go Back
         </button>
       </div>
@@ -303,7 +335,7 @@ export default function CourseDetail() {
       {/* Header */}
       <header className="bg-white px-4 py-3.5 flex items-center justify-between sticky top-0 z-50 shadow-sm border-b border-gray-100 flex-shrink-0">
         <div className="flex items-center min-w-0 flex-1">
-          <button onClick={() => navigate(-1)} className="p-2 -ml-2 text-gray-500 hover:text-gray-900 rounded-full hover:bg-gray-100 transition-colors">
+          <button onClick={handleBack} className="p-2 -ml-2 text-gray-500 hover:text-gray-900 rounded-full hover:bg-gray-100 transition-colors">
             <ArrowLeft size={24} />
           </button>
           <h1 className="text-lg font-bold ml-2 text-[#0B2457] line-clamp-1 flex-1">Test Series Details</h1>

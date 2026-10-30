@@ -38,7 +38,9 @@ export default function StateGovLayout({ onLogout }) {
       {!isTestRoute && (
         <nav className="hidden md:flex flex-col w-64 bg-white border-r border-gray-200 h-full py-6 flex-shrink-0 z-20">
         <div className="px-6 mb-8">
-          <img src="/goalprep-logo.png" alt="GoalPrep" className="h-12 w-auto object-contain" />
+          <Link to="/" className="inline-block transition-transform active:scale-95" title="Go to GoalPrep Homepage">
+            <img src="/goalprep-logo.png" alt="GoalPrep" className="h-12 w-auto object-contain" />
+          </Link>
           {isAdmin && (
             <span className="mt-1.5 inline-block bg-secondary/20 text-secondary text-[10px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wide border border-secondary/30">
               Admin
@@ -84,7 +86,7 @@ export default function StateGovLayout({ onLogout }) {
               </div>
             ) : (
               <div className="flex items-center justify-between w-full">
-                <div className="flex flex-col justify-center">
+                <Link to="/" className="flex flex-col justify-center transition-transform active:scale-95" title="Go to GoalPrep Homepage">
                   <div className="flex items-center gap-2">
                     <img src="/logo.png" alt="GoalPrep" className="h-9 w-auto object-contain max-w-[220px]" />
                     {isAdmin && (
@@ -96,7 +98,7 @@ export default function StateGovLayout({ onLogout }) {
                   <span className="text-white/80 text-[10px] font-bold tracking-widest uppercase mt-0.5">
                     Practice | Analyse | Achieve
                   </span>
-                </div>
+                </Link>
                 <button 
                   onClick={() => setIsSearchOpen(true)}
                   className="text-white/90 hover:text-white p-2 rounded-full hover:bg-white/10 transition-colors"
