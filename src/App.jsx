@@ -265,7 +265,7 @@ function App() {
     await supabase.auth.signOut();
     UserManager.logout();
     setIsAuth(false);
-    setPreparationMode(null);
+    setPreparationMode('state_gov');
   };
 
   return (

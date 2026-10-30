@@ -1,16 +1,24 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { UserManager } from '../utils/UserManager';
 import { useAuthModal } from '../context/AuthModalContext';
 import { LogOut, LogIn, User, Mail, Award, CheckCircle, Users, Settings, FileCode, Shield, Image } from 'lucide-react';
 
 export default function Profile({ onLogout }) {
+  const navigate = useNavigate();
   const { openLoginModal } = useAuthModal();
   const isLoggedIn = UserManager.isLoggedIn();
   const username = UserManager.getUsername() || 'Guest User';
   const email = UserManager.getEmail() || 'Not signed in';
   const avatar = UserManager.getAvatar();
   const isAdmin = UserManager.isAdmin();
+
+  const handleLogoutClick = async () => {
+    if (onLogout) {
+      await onLogout();
+    }
+    navigate('/', { replace: true });
+  };
 
   return (
     <div className="flex flex-col h-full bg-gray-50 pb-20">
@@ -107,7 +115,7 @@ export default function Profile({ onLogout }) {
           {/* Login / Logout Button */}
           {isLoggedIn ? (
             <button 
-              onClick={onLogout}
+              onClick={handleLogoutClick}
               className="w-full py-3.5 bg-red-50 hover:bg-red-100 text-red-600 font-bold rounded-xl flex items-center justify-center gap-2 transition-colors border border-red-100 shadow-sm"
             >
               <LogOut size={18} />

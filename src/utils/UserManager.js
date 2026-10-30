@@ -66,6 +66,5 @@ export const UserManager = {
     localStorage.removeItem('user_id');
     localStorage.removeItem('email');
     localStorage.removeItem('avatar');
-    localStorage.removeItem('preparation_mode');
   }
 };
