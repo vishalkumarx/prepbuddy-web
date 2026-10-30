@@ -62,7 +62,7 @@ export default function CouponManager({ resourceId, resourceTitle, resourcePrice
         scope,
         user_email: scope === 'single_user' ? userEmail.trim().toLowerCase() : null,
         is_active: true,
-        max_uses: scope === 'single_user' && maxUses === 'once' ? 1 : null,
+        max_uses: maxUses === 'once' ? 1 : null,
         uses_count: 0,
       }]);
 
@@ -287,36 +287,37 @@ export default function CouponManager({ resourceId, resourceTitle, resourcePrice
             </div>
           )}
 
-          {/* Uses — only for single user coupons */}
-          {scope === 'single_user' && (
-            <div>
-              <label className="text-xs font-bold text-gray-600 mb-1 block">Usage Limit</label>
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  onClick={() => setMaxUses('unlimited')}
-                  className={`flex-1 py-2 rounded-xl text-xs font-bold border transition-colors ${
-                    maxUses === 'unlimited'
-                      ? 'bg-primary text-white border-primary'
-                      : 'bg-white text-gray-600 border-gray-200'
-                  }`}
-                >
-                  ♾️ Unlimited
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setMaxUses('once')}
-                  className={`flex-1 py-2 rounded-xl text-xs font-bold border transition-colors ${
-                    maxUses === 'once'
-                      ? 'bg-primary text-white border-primary'
-                      : 'bg-white text-gray-600 border-gray-200'
-                  }`}
-                >
-                  1️⃣ One-time
-                </button>
-              </div>
+          {/* Uses — available for both All Users and Single User */}
+          <div>
+            <label className="text-xs font-bold text-gray-600 mb-1 block">Usage Limit</label>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setMaxUses('unlimited')}
+                className={`flex-1 py-2.5 rounded-xl text-xs font-bold border transition-all active:scale-95 flex items-center justify-center gap-1.5 ${
+                  maxUses === 'unlimited'
+                    ? 'bg-primary text-white border-primary shadow-sm'
+                    : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
+                }`}
+              >
+                <span>♾️</span> Unlimited / Infinite
+              </button>
+              <button
+                type="button"
+                onClick={() => setMaxUses('once')}
+                className={`flex-1 py-2.5 rounded-xl text-xs font-bold border transition-all active:scale-95 flex items-center justify-center gap-1.5 ${
+                  maxUses === 'once'
+                    ? 'bg-primary text-white border-primary shadow-sm'
+                    : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
+                }`}
+              >
+                <span>1️⃣</span> One-time Use
+              </button>
             </div>
-          )}
+            <p className="text-[10px] text-gray-400 mt-1">
+              {maxUses === 'once' ? 'Coupon can only be redeemed once in total' : 'Coupon can be redeemed multiple times without limits'}
+            </p>
+          </div>
 
           <button
             type="submit"
