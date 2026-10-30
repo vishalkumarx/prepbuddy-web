@@ -291,7 +291,7 @@ export default function DummyPaymentGateway() {
               ) : (
                 <>
                   <CheckCircle size={18} />
-                  I have Completed Payment (₹{price})
+                  Click here after payment completion [₹{price}]
                 </>
               )}
             </button>
