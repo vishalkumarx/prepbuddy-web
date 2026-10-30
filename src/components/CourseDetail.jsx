@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../supabase';
-import { ArrowLeft, IndianRupee, Layers, FileText, CheckCircle2, Lock, Unlock, ChevronDown, ChevronUp, Tag, CheckCircle, XCircle, Languages, Newspaper, Award, Clock, Star, ShoppingCart } from 'lucide-react';
+import { ArrowLeft, IndianRupee, Layers, FileText, CheckCircle2, Lock, Unlock, ChevronDown, ChevronUp, Tag, CheckCircle, XCircle, Languages, Newspaper, Award, Clock, Star, ShoppingCart, Share2 } from 'lucide-react';
 import { UserManager } from '../utils/UserManager';
 import CouponManager from './CouponManager';
 
@@ -237,6 +237,29 @@ export default function CourseDetail() {
     }
   };
 
+  const handleShare = async () => {
+    const shareUrl = window.location.href;
+    const shareData = {
+      title: course?.title || 'Test Series',
+      text: `Check out ${course?.title} on GoalPrep!`,
+      url: shareUrl
+    };
+
+    if (navigator.share) {
+      try {
+        await navigator.share(shareData);
+      } catch (err) {
+        if (err.name !== 'AbortError') {
+          navigator.clipboard.writeText(shareUrl);
+          alert('Link copied to clipboard!');
+        }
+      }
+    } else {
+      navigator.clipboard.writeText(shareUrl);
+      alert('Course link copied to clipboard!');
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center items-center h-full py-20">
@@ -278,11 +301,21 @@ export default function CourseDetail() {
   return (
     <div className="min-h-full bg-app-bg pb-28 relative">
       {/* Header */}
-      <header className="bg-white px-4 py-4 flex items-center sticky top-0 z-50 shadow-sm border-b border-gray-100 flex-shrink-0">
-        <button onClick={() => navigate(-1)} className="p-2 -ml-2 text-gray-500 hover:text-gray-900 rounded-full hover:bg-gray-100 transition-colors">
-          <ArrowLeft size={24} />
+      <header className="bg-white px-4 py-3.5 flex items-center justify-between sticky top-0 z-50 shadow-sm border-b border-gray-100 flex-shrink-0">
+        <div className="flex items-center min-w-0 flex-1">
+          <button onClick={() => navigate(-1)} className="p-2 -ml-2 text-gray-500 hover:text-gray-900 rounded-full hover:bg-gray-100 transition-colors">
+            <ArrowLeft size={24} />
+          </button>
+          <h1 className="text-lg font-bold ml-2 text-[#0B2457] line-clamp-1 flex-1">Test Series Details</h1>
+        </div>
+        <button
+          onClick={handleShare}
+          title="Share Test Series"
+          className="p-2 rounded-xl text-gray-600 hover:text-indigo-600 hover:bg-indigo-50 border border-gray-200/80 active:scale-95 transition-all flex items-center gap-1.5 text-xs font-bold"
+        >
+          <Share2 size={17} />
+          <span className="hidden sm:inline">Share</span>
         </button>
-        <h1 className="text-xl font-bold ml-2 text-[#0B2457] line-clamp-1 flex-1">Test Series Details</h1>
       </header>
 
       {/* Top Banner & Nav */}
@@ -610,11 +643,18 @@ export default function CourseDetail() {
       {/* Fixed Bottom Buy/Enroll Dock (Offset by md:left-64 to exclude desktop sidebar) */}
       {!isEnrolled && (
         <div className="fixed bottom-0 left-0 md:left-64 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-gray-200/80 p-3 md:p-4 shadow-[0_-8px_20px_rgba(0,0,0,0.08)]">
-          <div className="max-w-[1000px] mx-auto w-full px-2">
+          <div className="max-w-[1000px] mx-auto w-full px-2 flex items-center gap-2">
+            <button
+              onClick={handleShare}
+              title="Share Test Series"
+              className="p-3.5 md:p-4 rounded-xl text-gray-700 hover:text-indigo-600 bg-gray-100 hover:bg-indigo-50 border border-gray-200 active:scale-95 transition-all flex items-center justify-center flex-shrink-0"
+            >
+              <Share2 size={20} />
+            </button>
             <button 
               onClick={handleBuyClick}
               disabled={enrollLoading}
-              className="w-full font-black py-3.5 md:py-4 rounded-xl text-base shadow-md transition-all flex items-center justify-center gap-2 bg-[#0B2457] text-white hover:bg-blue-900 active:scale-[0.99] disabled:opacity-70"
+              className="flex-1 font-black py-3.5 md:py-4 rounded-xl text-base shadow-md transition-all flex items-center justify-center gap-2 bg-[#0B2457] text-white hover:bg-blue-900 active:scale-[0.99] disabled:opacity-70"
             >
               {enrollLoading ? 'Processing...' : ((discountedPrice !== null ? discountedPrice : course.price) === 0 ? <><Unlock size={18} /> Enroll Now for Free</> : <><ShoppingCart size={18} /> Buy Now — ₹{discountedPrice !== null ? discountedPrice : course.price}</>)}
             </button>

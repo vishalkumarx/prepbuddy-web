@@ -2,7 +2,7 @@ import React, { useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { SearchContext } from '../App';
 import { supabase } from '../supabase';
-import { IndianRupee, Layers, Languages, Award, Newspaper, CheckCircle2, Tag, CheckCircle, XCircle, ArrowRight, Clock, Star, ShoppingCart, Unlock } from 'lucide-react';
+import { IndianRupee, Layers, Languages, Award, Newspaper, CheckCircle2, Tag, CheckCircle, XCircle, ArrowRight, Clock, Star, ShoppingCart, Unlock, Share2 } from 'lucide-react';
 import TestimonialCarousel from './TestimonialCarousel';
 import { UserManager } from '../utils/UserManager';
 import { processHtml } from '../utils/htmlUtils';
@@ -126,6 +126,30 @@ export default function StateHomeFeed({ onlyEnrolled = false }) {
       setShowPromoDialog(false);
       setSelectedCourseForBuy(null);
       removeCoupon();
+    }
+  };
+
+  const handleShare = async (e, ts) => {
+    e.stopPropagation();
+    const shareUrl = `${window.location.origin}/course/${ts.id}`;
+    const shareData = {
+      title: ts.title,
+      text: `Check out ${ts.title} on GoalPrep!`,
+      url: shareUrl
+    };
+
+    if (navigator.share) {
+      try {
+        await navigator.share(shareData);
+      } catch (err) {
+        if (err.name !== 'AbortError') {
+          navigator.clipboard.writeText(shareUrl);
+          alert('Link copied to clipboard!');
+        }
+      }
+    } else {
+      navigator.clipboard.writeText(shareUrl);
+      alert('Course link copied to clipboard!');
     }
   };
 
@@ -406,9 +430,19 @@ export default function StateHomeFeed({ onlyEnrolled = false }) {
                       )}
                     </div>
                   )}
-                  <button className="bg-[#0B2457] text-white font-bold py-2 px-4 rounded-xl text-xs active:scale-95 transition-transform flex-shrink-0">
-                    View Details
-                  </button>
+                  <div className="flex items-center gap-1.5 flex-shrink-0">
+                    <button
+                      type="button"
+                      onClick={(e) => handleShare(e, ts)}
+                      title="Share Test Series"
+                      className="p-2 rounded-xl text-gray-500 hover:text-indigo-600 bg-gray-100 hover:bg-indigo-50 border border-gray-200/80 active:scale-95 transition-all flex items-center justify-center"
+                    >
+                      <Share2 size={16} />
+                    </button>
+                    <button className="bg-[#0B2457] text-white font-bold py-2 px-4 rounded-xl text-xs active:scale-95 transition-transform flex-shrink-0">
+                      View Details
+                    </button>
+                  </div>
                 </div>
               </div>
 
