@@ -128,8 +128,18 @@ export default function DummyPaymentGateway() {
 
       const whatsappUrl = `https://wa.me/${adminPhone}?text=${encodeURIComponent(waMessage)}`;
 
-      // Open WhatsApp in new tab / app
-      window.open(whatsappUrl, '_blank');
+      // Reliable cross-platform WhatsApp trigger (handles mobile popup blockers & Android WebViews)
+      try {
+        const link = document.createElement('a');
+        link.href = whatsappUrl;
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      } catch (e) {
+        window.location.href = whatsappUrl;
+      }
 
       setSuccess(true);
       setTimeout(() => {
@@ -138,7 +148,7 @@ export default function DummyPaymentGateway() {
         } else {
           navigate(-1);
         }
-      }, 2000);
+      }, 3500);
     } catch (err) {
       alert('Enrollment failed: ' + err.message);
       setLoading(false);
@@ -146,17 +156,42 @@ export default function DummyPaymentGateway() {
   };
 
   if (success) {
+    const userEmail = UserManager.getEmail() || 'Not provided';
+    const userName = UserManager.getUsername() || 'User';
+    const adminPhone = '917888683399';
+    const utrText = utrNumber?.trim() ? `\n*UTR / Ref No:* ${utrNumber.trim()}` : '';
+    const waMessage = `*Payment Confirmation — GoalPrep*\n\n` +
+      `👤 *User Name:* ${userName}\n` +
+      `📧 *User Email:* ${userEmail}\n` +
+      `📚 *Test Series / Course:* ${itemTitle}\n` +
+      `💰 *Amount Paid:* ₹${price}${utrText}\n` +
+      `📅 *Time:* ${new Date().toLocaleString('en-IN')}\n\n` +
+      `Please verify payment and confirm access for my email: ${userEmail}. Thank you!`;
+    const fallbackWhatsappUrl = `https://wa.me/${adminPhone}?text=${encodeURIComponent(waMessage)}`;
+
     return (
       <div className="flex flex-col items-center justify-center min-h-[100dvh] bg-emerald-50 p-6 text-center">
         <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mb-4 shadow-sm animate-bounce">
           <CheckCircle size={40} />
         </div>
         <h1 className="text-2xl font-black text-gray-900 mb-2">Payment Confirmed!</h1>
-        <p className="text-gray-600 text-sm max-w-xs mb-3">
-          Opening WhatsApp to notify admin (+91 78886 83399) and enrolling you in <span className="font-bold text-gray-900">{itemTitle}</span>.
+        <p className="text-gray-600 text-sm max-w-xs mb-4">
+          Enrolled in <span className="font-bold text-gray-900">{itemTitle}</span>. If WhatsApp didn't open automatically, tap below:
         </p>
+
+        {/* Manual tap button for Android WebView & popup blockers */}
+        <a
+          href={fallbackWhatsappUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mb-5 inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm px-5 py-3 rounded-xl shadow-md active:scale-95 transition-all"
+        >
+          <MessageCircle size={18} />
+          <span>Open WhatsApp Chat (+91 78886 83399)</span>
+        </a>
+
         <p className="text-xs font-semibold text-emerald-700 bg-emerald-100/60 px-4 py-2 rounded-full">
-          Redirecting to your course...
+          Redirecting to course shortly...
         </p>
       </div>
     );
