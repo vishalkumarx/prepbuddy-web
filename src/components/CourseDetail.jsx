@@ -513,6 +513,7 @@ export default function CourseDetail() {
               resourceId={id} 
               resourceTitle={course?.title} 
               resourcePrice={course?.price} 
+              resourceBanner={course?.banner_url}
             />
           </div>
         )}

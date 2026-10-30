@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabase';
 import { Tag, Plus, Trash2, ToggleLeft, ToggleRight, Copy, Check, X, Share2, Sparkles } from 'lucide-react';
 
-export default function CouponManager({ resourceId, resourceTitle, resourcePrice }) {
+export default function CouponManager({ resourceId, resourceTitle, resourcePrice, resourceBanner }) {
   const [coupons, setCoupons] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -129,11 +129,31 @@ export default function CouponManager({ resourceId, resourceTitle, resourcePrice
 
     if (navigator.share) {
       try {
-        await navigator.share({
+        let filesArray = [];
+        if (resourceBanner && navigator.canShare) {
+          try {
+            const res = await fetch(resourceBanner);
+            const blob = await res.blob();
+            const file = new File([blob], 'test_series_thumbnail.png', { type: blob.type || 'image/png' });
+            if (navigator.canShare({ files: [file] })) {
+              filesArray = [file];
+            }
+          } catch (fileErr) {
+            console.log('Thumbnail fetch for coupon share skipped:', fileErr);
+          }
+        }
+
+        const sharePayload = {
           title: shareTitle,
           text: shareMsg,
           url: shareUrl,
-        });
+        };
+
+        if (filesArray.length > 0) {
+          sharePayload.files = filesArray;
+        }
+
+        await navigator.share(sharePayload);
         return;
       } catch (err) {
         if (err.name !== 'AbortError') {

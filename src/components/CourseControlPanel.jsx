@@ -930,6 +930,7 @@ export default function CourseControlPanel() {
                       resourceId={selectedCourse.id} 
                       resourceTitle={selectedCourse.title} 
                       resourcePrice={selectedCourse.price} 
+                      resourceBanner={selectedCourse.banner_url}
                     />
                   </div>
                 )}
