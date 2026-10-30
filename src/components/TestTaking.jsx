@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../supabase';
-import { ArrowLeft, CheckCircle2, ChevronRight, ChevronLeft, LayoutGrid, X } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, ChevronRight, ChevronLeft, LayoutGrid, X, Flag } from 'lucide-react';
 import { UserManager } from '../utils/UserManager';
 import { processHtml } from '../utils/htmlUtils';
+import FlagQuestionModal from './FlagQuestionModal';
 
 export default function TestTaking() {
   const { courseId, category, subcategory } = useParams();
@@ -14,6 +15,7 @@ export default function TestTaking() {
   const [answers, setAnswers] = useState({}); // { [questionId]: selectedOptionText }
   const [visited, setVisited] = useState(new Set([0])); // Track visited question indices
   const [isPaletteOpen, setIsPaletteOpen] = useState(false);
+  const [showFlagModal, setShowFlagModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showExitPrompt, setShowExitPrompt] = useState(false);
   const [showSubmitPrompt, setShowSubmitPrompt] = useState(false);
@@ -423,6 +425,20 @@ export default function TestTaking() {
                   );
                 })}
               </div>
+
+              {/* Flag / Report Question Button under Question */}
+              <div className="mt-6 pt-4 border-t border-gray-100 flex items-center justify-between">
+                <button
+                  type="button"
+                  onClick={() => setShowFlagModal(true)}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-gray-500 hover:text-rose-600 hover:bg-rose-50 border border-gray-200 hover:border-rose-200 transition-colors"
+                  title="Report an error with this question to admin"
+                >
+                  <Flag size={14} className="text-gray-400 group-hover:text-rose-500" />
+                  <span>Flag Question</span>
+                </button>
+                <span className="text-[11px] text-gray-400">Found an error? Flag for admin review</span>
+              </div>
             </div>
           </div>
         </div>
@@ -682,6 +698,16 @@ export default function TestTaking() {
           </div>
         </div>
       )}
+
+      {/* Flag Question Modal */}
+      <FlagQuestionModal
+        isOpen={showFlagModal}
+        onClose={() => setShowFlagModal(false)}
+        question={currentQ}
+        questionNumber={currentIdx + 1}
+        category={category}
+        subcategory={subcategory}
+      />
 
       {/* End testStarted gate */}
       </>}

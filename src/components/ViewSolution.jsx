@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../supabase';
-import { ArrowLeft, CheckCircle2, XCircle } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, XCircle, Flag } from 'lucide-react';
 import { UserManager } from '../utils/UserManager';
 import { processHtml } from '../utils/htmlUtils';
+import FlagQuestionModal from './FlagQuestionModal';
 
 export default function ViewSolution() {
   const { courseId, category, subcategory } = useParams();
@@ -11,6 +12,7 @@ export default function ViewSolution() {
   const [questions, setQuestions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [userAnswers, setUserAnswers] = useState({});
+  const [flaggingQuestion, setFlaggingQuestion] = useState(null); // { question, index }
   
   const userId = UserManager.getUserId();
   const analysisKey = `test_analysis_${userId}_${courseId}_${decodeURIComponent(category)}_${decodeURIComponent(subcategory)}`;
@@ -171,10 +173,34 @@ export default function ViewSolution() {
                   <div className="text-xs text-blue-900/80 leading-relaxed html-content" dangerouslySetInnerHTML={{ __html: processHtml(q.explanation) }} />
                 </div>
               )}
+
+              {/* Flag / Report Question Button under Question */}
+              <div className="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between">
+                <button
+                  type="button"
+                  onClick={() => setFlaggingQuestion({ question: q, index: idx })}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-gray-500 hover:text-rose-600 hover:bg-rose-50 border border-gray-200 hover:border-rose-200 transition-colors"
+                  title="Report an issue with this question to admin"
+                >
+                  <Flag size={13} className="text-gray-400 group-hover:text-rose-500" />
+                  <span>Flag Question</span>
+                </button>
+                <span className="text-[11px] text-gray-400">Found an error? Flag for admin review</span>
+              </div>
             </div>
           );
         })}
       </div>
+
+      {/* Flag Question Modal */}
+      <FlagQuestionModal
+        isOpen={Boolean(flaggingQuestion)}
+        onClose={() => setFlaggingQuestion(null)}
+        question={flaggingQuestion?.question}
+        questionNumber={flaggingQuestion ? flaggingQuestion.index + 1 : undefined}
+        category={category}
+        subcategory={subcategory}
+      />
     </div>
   );
 }

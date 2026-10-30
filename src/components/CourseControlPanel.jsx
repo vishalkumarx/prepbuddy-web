@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabase';
 import { UserManager } from '../utils/UserManager';
-import { Shield, Search, UserPlus, Trash2, ArrowLeft, RefreshCw, Layers, Tag, Settings, FileText, Languages, Award, Newspaper, Plus, Clock, X, Edit2, Star, Eye, EyeOff, Lock, Unlock } from 'lucide-react';
+import { Shield, Search, UserPlus, Trash2, ArrowLeft, RefreshCw, Layers, Tag, Settings, FileText, Languages, Award, Newspaper, Plus, Clock, X, Edit2, Star, Eye, EyeOff, Lock, Unlock, Flag, AlertCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import CouponManager from './CouponManager';
 
@@ -37,6 +37,85 @@ export default function CourseControlPanel() {
   const [newUser, setNewUser] = useState('');
   const [activeTab, setActiveTab] = useState('enrollments');
   const [expandedCategories, setExpandedCategories] = useState({});
+  const [flaggedReports, setFlaggedReports] = useState([]);
+  const [flagsLoading, setFlagsLoading] = useState(false);
+
+  const fetchFlaggedReports = async () => {
+    setFlagsLoading(true);
+    try {
+      let reports = [];
+
+      // 1. Try fetching from prepbuddy_question_flags if table exists
+      const { data: directData, error: directError } = await supabase
+        .from('prepbuddy_question_flags')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (!directError && directData) {
+        reports = directData;
+      } else {
+        // 2. Fetch from prepbuddy_comments system reports
+        const { data: commentsData } = await supabase
+          .from('prepbuddy_comments')
+          .select('*')
+          .eq('post_id', '7aced78e-9d9b-4015-b1b1-7f31bffd74ca')
+          .order('created_at', { ascending: false });
+
+        if (commentsData) {
+          commentsData.forEach(c => {
+            try {
+              const parsed = JSON.parse(c.content);
+              if (parsed && (parsed.type === 'flag_question' || parsed.reason)) {
+                reports.push({
+                  id: c.id,
+                  question_id: parsed.question_id,
+                  question_number: parsed.question_number,
+                  question_text: parsed.question_text,
+                  category: parsed.category,
+                  subcategory: parsed.subcategory,
+                  reason: parsed.reason,
+                  details: parsed.details,
+                  user_id: parsed.user_id,
+                  username: parsed.user_name || c.username,
+                  created_at: parsed.timestamp || c.created_at
+                });
+              }
+            } catch (e) {
+              // not json flag
+            }
+          });
+        }
+      }
+
+      // Also merge any local flags
+      try {
+        const local = JSON.parse(localStorage.getItem('prepbuddy_reported_flags') || '[]');
+        const existingIds = new Set(reports.map(r => r.id || `${r.question_id}_${r.created_at}`));
+        local.forEach(l => {
+          const key = `${l.question_id}_${l.timestamp}`;
+          if (!existingIds.has(key)) {
+            reports.push({
+              id: key,
+              ...l,
+              created_at: l.timestamp || new Date(l.reported_at).toISOString()
+            });
+          }
+        });
+      } catch (e) {}
+
+      setFlaggedReports(reports);
+    } catch (err) {
+      console.error("Error fetching flagged reports:", err);
+    } finally {
+      setFlagsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === 'flags') {
+      fetchFlaggedReports();
+    }
+  }, [activeTab]);
 
   const toggleCategory = (cat) => {
     setExpandedCategories(prev => prev[cat] ? {} : { [cat]: true });
@@ -416,6 +495,14 @@ export default function CourseControlPanel() {
                   </button>
                   <button onClick={() => setActiveTab('settings')} className={`pb-2 px-1 text-sm font-bold border-b-2 transition-colors whitespace-nowrap ${activeTab === 'settings' ? 'border-primary text-primary' : 'border-transparent text-gray-500 hover:text-gray-700'}`}>
                     <Settings size={16} className="inline mr-1" /> Settings
+                  </button>
+                  <button onClick={() => setActiveTab('flags')} className={`pb-2 px-1 text-sm font-bold border-b-2 transition-colors whitespace-nowrap ${activeTab === 'flags' ? 'border-rose-600 text-rose-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}>
+                    <Flag size={16} className="inline mr-1" /> Flagged Questions
+                    {flaggedReports.length > 0 && (
+                      <span className="ml-1.5 px-1.5 py-0.5 text-[10px] rounded-full bg-rose-100 text-rose-700 font-black">
+                        {flaggedReports.length}
+                      </span>
+                    )}
                   </button>
                 </div>
               </div>
@@ -959,6 +1046,98 @@ export default function CourseControlPanel() {
                         Delete Course
                       </button>
                     </div>
+                  </div>
+                )}
+
+                {/* FLAGGED QUESTIONS TAB */}
+                {activeTab === 'flags' && (
+                  <div className="p-4 sm:p-6 space-y-4">
+                    <div className="flex items-center justify-between bg-white p-4 rounded-2xl border border-gray-100 shadow-xs">
+                      <div>
+                        <h3 className="font-extrabold text-base text-gray-900 flex items-center gap-2">
+                          <Flag size={18} className="text-rose-600" />
+                          User Flagged Questions
+                        </h3>
+                        <p className="text-xs text-gray-500 mt-0.5">
+                          Questions flagged by students during test attempts or while viewing solutions
+                        </p>
+                      </div>
+                      <button
+                        onClick={fetchFlaggedReports}
+                        disabled={flagsLoading}
+                        className="px-3 py-1.5 rounded-xl border border-gray-200 text-xs font-bold text-gray-600 hover:bg-gray-50 flex items-center gap-1.5 transition-colors"
+                      >
+                        <RefreshCw size={13} className={flagsLoading ? 'animate-spin' : ''} />
+                        <span>Refresh</span>
+                      </button>
+                    </div>
+
+                    {flagsLoading ? (
+                      <div className="flex justify-center p-12">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-rose-600"></div>
+                      </div>
+                    ) : flaggedReports.length === 0 ? (
+                      <div className="bg-white rounded-2xl p-8 text-center border border-gray-100">
+                        <Flag size={40} className="mx-auto text-gray-300 mb-2" />
+                        <h4 className="font-bold text-sm text-gray-700">No Flagged Questions</h4>
+                        <p className="text-xs text-gray-500 mt-1 max-w-sm mx-auto">
+                          When users encounter an issue or report a question error, their reports with details will appear here for verification.
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        {flaggedReports.map((report, idx) => (
+                          <div key={report.id || idx} className="bg-white rounded-2xl p-5 border border-rose-100 shadow-xs space-y-3">
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span className="bg-rose-100 text-rose-800 text-[11px] font-black px-2.5 py-0.5 rounded-full">
+                                  {report.reason || 'Flagged'}
+                                </span>
+                                {report.question_number && (
+                                  <span className="bg-gray-100 text-gray-700 text-[11px] font-bold px-2 py-0.5 rounded-full">
+                                    Q#{report.question_number}
+                                  </span>
+                                )}
+                                {(report.category || report.subcategory) && (
+                                  <span className="text-[11px] font-medium text-gray-500">
+                                    {report.subcategory} • {report.category}
+                                  </span>
+                                )}
+                              </div>
+                              <span className="text-[11px] text-gray-400 shrink-0">
+                                {report.created_at ? new Date(report.created_at).toLocaleDateString() : ''}
+                              </span>
+                            </div>
+
+                            {/* Question snippet */}
+                            {report.question_text && (
+                              <div className="bg-gray-50 p-3 rounded-xl border border-gray-100 text-xs text-gray-800 font-medium">
+                                <span className="text-gray-400 font-bold mr-1">Q:</span>
+                                <span dangerouslySetInnerHTML={{ __html: report.question_text }} />
+                              </div>
+                            )}
+
+                            {/* Details from user */}
+                            {report.details ? (
+                              <div className="bg-rose-50/60 p-3 rounded-xl border border-rose-100/80">
+                                <div className="text-[11px] font-bold text-rose-900 mb-0.5">User Feedback / Correction:</div>
+                                <p className="text-xs text-rose-800 leading-relaxed font-medium">{report.details}</p>
+                              </div>
+                            ) : (
+                              <p className="text-xs italic text-gray-400">No additional details provided by user.</p>
+                            )}
+
+                            {/* Reporter Info */}
+                            <div className="flex items-center justify-between text-[11px] text-gray-400 pt-1 border-t border-gray-50">
+                              <span>Reported by: <strong className="text-gray-600">{report.username || 'Student'}</strong></span>
+                              {report.question_id && (
+                                <span className="font-mono text-[10px]">ID: {report.question_id.slice(0, 8)}...</span>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 )}
 
