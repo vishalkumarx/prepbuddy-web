@@ -10,8 +10,6 @@ import {
   CheckCircle, 
   Copy, 
   Check, 
-  ExternalLink,
-  Smartphone,
   Info,
   MessageCircle
 } from 'lucide-react';
@@ -252,17 +250,6 @@ export default function DummyPaymentGateway() {
             </p>
           </div>
 
-          {/* Mobile Tap-to-Pay Quick Links */}
-          <div className="mt-4 md:hidden flex flex-col gap-2">
-            <a
-              href={upiIntentUrl}
-              className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-4 rounded-xl shadow-md shadow-emerald-600/20 flex items-center justify-center gap-2 text-sm active:scale-[0.99] transition-all"
-            >
-              <Smartphone size={18} />
-              Open UPI App (Paytm, PhonePe, GPay)
-              <ExternalLink size={14} />
-            </a>
-          </div>
 
           {/* Verification section */}
           <div className="mt-4 pt-3 border-t border-gray-100">
