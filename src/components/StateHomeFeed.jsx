@@ -211,7 +211,7 @@ export default function StateHomeFeed({ onlyEnrolled = false }) {
           fetchQuestionCounts(validTests);
         }
 
-        const filteredData = (data || []).filter(c => c.title !== 'INTERNAL_FREE_TEST_SECTION');
+        const filteredData = (data || []).filter(c => !c.title?.startsWith('INTERNAL_'));
         
         const sortedData = filteredData.sort((a, b) => {
           if (a.is_popular && !b.is_popular) return -1;

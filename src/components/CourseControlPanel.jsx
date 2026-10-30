@@ -308,7 +308,7 @@ export default function CourseControlPanel() {
         .select('*')
         .order('created_at', { ascending: false });
         
-      setCourses(coursesData || []);
+      setCourses((coursesData || []).filter(c => !c.title?.startsWith('INTERNAL_')));
       
       // Fetch known users from sessions for autocomplete
       const { data: allUsers } = await supabase
