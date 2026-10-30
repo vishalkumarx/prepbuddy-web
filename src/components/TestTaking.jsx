@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../supabase';
-import { ArrowLeft, CheckCircle2, ChevronRight, ChevronLeft } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, ChevronRight, ChevronLeft, LayoutGrid, X } from 'lucide-react';
 import { UserManager } from '../utils/UserManager';
 import { processHtml } from '../utils/htmlUtils';
 
@@ -12,6 +12,8 @@ export default function TestTaking() {
   const [loading, setLoading] = useState(true);
   const [currentIdx, setCurrentIdx] = useState(0);
   const [answers, setAnswers] = useState({}); // { [questionId]: selectedOptionText }
+  const [visited, setVisited] = useState(new Set([0])); // Track visited question indices
+  const [isPaletteOpen, setIsPaletteOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showExitPrompt, setShowExitPrompt] = useState(false);
   const [showSubmitPrompt, setShowSubmitPrompt] = useState(false);
@@ -25,8 +27,14 @@ export default function TestTaking() {
 
   const progressKey = `test_progress_${UserManager.getUserId()}_${courseId}_${category}_${subcategory}`;
 
-  // Scroll to top when question changes
+  // Scroll to top when question changes & mark as visited
   useEffect(() => {
+    setVisited(prev => {
+      const next = new Set(prev);
+      next.add(currentIdx);
+      return next;
+    });
+
     if (scrollContainerRef.current) {
       scrollContainerRef.current.scrollTop = 0;
     }
@@ -165,6 +173,13 @@ export default function TestTaking() {
   const handlePrev = () => {
     if (currentIdx > 0) {
       setCurrentIdx(currentIdx - 1);
+    }
+  };
+
+  const handleSelectQuestion = (idx) => {
+    if (idx >= 0 && idx < questions.length) {
+      setCurrentIdx(idx);
+      setIsPaletteOpen(false);
     }
   };
 
@@ -353,51 +368,221 @@ export default function TestTaking() {
           <h1 className="text-white font-bold truncate text-sm">{decodeURIComponent(subcategory)}</h1>
           <p className="text-white/70 text-[10px] uppercase tracking-wider truncate">{decodeURIComponent(category)}</p>
         </div>
-        <div className="text-white font-bold bg-white/20 px-3 py-1 rounded-lg text-sm border border-white/30">
-          {currentIdx + 1} / {questions.length}
+        <div className="flex items-center gap-2">
+          {/* Mobile Question Palette Toggle */}
+          <button
+            onClick={() => setIsPaletteOpen(true)}
+            className="lg:hidden flex items-center gap-1.5 bg-white/15 hover:bg-white/25 active:scale-95 text-white px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all border border-white/20"
+            title="Open Question Palette"
+          >
+            <LayoutGrid size={15} />
+            <span className="hidden sm:inline">Palette</span>
+          </button>
+          <div className="text-white font-bold bg-white/20 px-3 py-1 rounded-lg text-sm border border-white/30 whitespace-nowrap">
+            {currentIdx + 1} / {questions.length}
+          </div>
         </div>
       </header>
 
-      {/* Main Content */}
-      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto p-4 md:p-8 relative">
-        <div className="max-w-4xl mx-auto w-full">
-          <div className="bg-white p-5 md:p-8 rounded-2xl shadow-sm border border-gray-100 overflow-x-hidden">
-            <div className="text-lg font-medium text-gray-900 leading-snug mb-6 html-content flex flex-col gap-2">
-            <span className="text-indigo-600 shrink-0">Q{currentIdx + 1}.</span>
-            <span dangerouslySetInnerHTML={{ __html: processHtml(currentQ.question) }} />
+      {/* Main Content Area: Left Question Area + Right Side Palette (Desktop) */}
+      <div className="flex-1 flex overflow-hidden relative">
+        {/* Left Question Column */}
+        <div ref={scrollContainerRef} className="flex-1 overflow-y-auto p-4 md:p-8 relative">
+          <div className="max-w-3xl mx-auto w-full">
+            <div className="bg-white p-5 md:p-8 rounded-2xl shadow-sm border border-gray-100 overflow-x-hidden">
+              <div className="text-lg font-medium text-gray-900 leading-snug mb-6 html-content flex flex-col gap-2">
+                <span className="text-indigo-600 shrink-0 font-bold">Q{currentIdx + 1}.</span>
+                <span dangerouslySetInnerHTML={{ __html: processHtml(currentQ.question) }} />
+              </div>
+
+              <div className="space-y-3">
+                {options.map((opt, oIdx) => {
+                  const optLetter = String.fromCharCode(65 + oIdx);
+                  const isSelected = answers[currentQ.id] === opt;
+                  
+                  return (
+                    <div 
+                      key={oIdx}
+                      onClick={() => handleSelectOption(currentQ.id, opt)}
+                      className={`flex items-start p-4 rounded-xl border-2 transition-all cursor-pointer ${
+                        isSelected 
+                          ? 'border-indigo-600 bg-indigo-50 shadow-sm' 
+                          : 'border-gray-100 bg-white hover:border-indigo-200 hover:bg-gray-50'
+                      }`}
+                    >
+                      <div className={`w-6 h-6 rounded-full flex items-center justify-center font-bold text-xs mr-3 mt-0.5 shrink-0 ${
+                        isSelected ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-500'
+                      }`}>
+                        {optLetter}
+                      </div>
+                      <span 
+                        className={`text-sm html-content ${isSelected ? 'font-bold text-indigo-900' : 'font-medium text-gray-700'}`}
+                        dangerouslySetInnerHTML={{ __html: processHtml(opt) }}
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Right Side Question Palette (Desktop Permanent Sidebar) */}
+        <aside className="hidden lg:flex flex-col w-80 bg-white border-l border-gray-200 overflow-hidden shrink-0 shadow-sm">
+          <div className="p-4 border-b border-gray-100 flex items-center justify-between bg-slate-50/70">
+            <div>
+              <h3 className="font-extrabold text-sm text-gray-900 flex items-center gap-1.5">
+                <LayoutGrid size={16} className="text-indigo-600" />
+                Question Palette
+              </h3>
+              <p className="text-xs text-gray-500 mt-0.5">Click any number to jump</p>
+            </div>
           </div>
 
-          <div className="space-y-3">
-            {options.map((opt, oIdx) => {
-              const optLetter = String.fromCharCode(65 + oIdx);
-              const isSelected = answers[currentQ.id] === opt;
-              
-              return (
-                <div 
-                  key={oIdx}
-                  onClick={() => handleSelectOption(currentQ.id, opt)}
-                  className={`flex items-start p-4 rounded-xl border-2 transition-all cursor-pointer ${
-                    isSelected 
-                      ? 'border-indigo-600 bg-indigo-50 shadow-sm' 
-                      : 'border-gray-100 bg-white hover:border-indigo-200 hover:bg-gray-50'
-                  }`}
-                >
-                  <div className={`w-6 h-6 rounded-full flex items-center justify-center font-bold text-xs mr-3 mt-0.5 ${
-                    isSelected ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-500'
-                  }`}>
-                    {optLetter}
-                  </div>
-                  <span 
-                    className={`text-sm html-content ${isSelected ? 'font-bold text-indigo-900' : 'font-medium text-gray-700'}`}
-                    dangerouslySetInnerHTML={{ __html: processHtml(opt) }}
-                  />
+          {/* Palette Status Badges */}
+          <div className="grid grid-cols-3 gap-2 p-3 bg-gray-50/50 border-b border-gray-100 text-[11px] font-semibold text-center">
+            <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-lg py-1.5 px-1">
+              <div className="font-bold text-sm text-emerald-700">{attemptedCount}</div>
+              <span>Attempted</span>
+            </div>
+            <div className="bg-amber-50 border border-amber-200 text-amber-800 rounded-lg py-1.5 px-1">
+              <div className="font-bold text-sm text-amber-700">
+                {questions.filter((q, idx) => visited.has(idx) && !answers[q.id]).length}
+              </div>
+              <span>Skipped</span>
+            </div>
+            <div className="bg-gray-100 border border-gray-200 text-gray-700 rounded-lg py-1.5 px-1">
+              <div className="font-bold text-sm text-gray-700">
+                {questions.filter((q, idx) => !visited.has(idx) && !answers[q.id]).length}
+              </div>
+              <span>Unvisited</span>
+            </div>
+          </div>
+
+          {/* Squared Buttons Grid */}
+          <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
+            <div className="grid grid-cols-5 gap-2">
+              {questions.map((q, idx) => {
+                const isCurrent = idx === currentIdx;
+                const isAttempted = Boolean(answers[q.id]);
+                const isSkipped = visited.has(idx) && !isAttempted;
+
+                let btnStyle = "bg-gray-100 text-gray-600 border border-gray-200 hover:bg-gray-200";
+                if (isAttempted) {
+                  btnStyle = "bg-emerald-600 text-white border border-emerald-700 shadow-sm hover:bg-emerald-700";
+                } else if (isSkipped) {
+                  btnStyle = "bg-amber-100 text-amber-800 border border-amber-300 font-bold hover:bg-amber-200";
+                }
+
+                if (isCurrent) {
+                  btnStyle += " ring-2 ring-indigo-600 ring-offset-2 font-black scale-105 z-10";
+                }
+
+                return (
+                  <button
+                    key={q.id || idx}
+                    onClick={() => handleSelectQuestion(idx)}
+                    title={`Question ${idx + 1} (${isAttempted ? 'Attempted' : isSkipped ? 'Skipped' : 'Unvisited'})`}
+                    className={`h-10 w-full rounded-xl flex items-center justify-center text-xs font-bold transition-all duration-150 active:scale-90 ${btnStyle}`}
+                  >
+                    {idx + 1}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </aside>
+      </div>
+
+      {/* Mobile Slide-over Question Palette Drawer */}
+      {isPaletteOpen && (
+        <div className="fixed inset-0 z-[60] lg:hidden flex">
+          {/* Backdrop */}
+          <div 
+            onClick={() => setIsPaletteOpen(false)}
+            className="fixed inset-0 bg-black/60 backdrop-blur-xs transition-opacity animate-in fade-in" 
+          />
+
+          {/* Slide-in panel */}
+          <div className="relative ml-auto w-full max-w-xs sm:max-w-sm bg-white h-full shadow-2xl flex flex-col z-10 animate-in slide-in-from-right duration-200">
+            {/* Header */}
+            <div className="p-4 bg-primary text-white flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <LayoutGrid size={18} />
+                <h3 className="font-black text-sm">Question Palette</h3>
+              </div>
+              <button 
+                onClick={() => setIsPaletteOpen(false)}
+                className="text-white/80 hover:text-white p-1 rounded-full hover:bg-white/10"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* Badges */}
+            <div className="grid grid-cols-3 gap-2 p-3 bg-gray-50 border-b border-gray-100 text-[11px] font-semibold text-center">
+              <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-lg py-1.5 px-1">
+                <div className="font-bold text-sm text-emerald-700">{attemptedCount}</div>
+                <span>Attempted</span>
+              </div>
+              <div className="bg-amber-50 border border-amber-200 text-amber-800 rounded-lg py-1.5 px-1">
+                <div className="font-bold text-sm text-amber-700">
+                  {questions.filter((q, idx) => visited.has(idx) && !answers[q.id]).length}
                 </div>
-              );
-            })}
+                <span>Skipped</span>
+              </div>
+              <div className="bg-gray-100 border border-gray-200 text-gray-700 rounded-lg py-1.5 px-1">
+                <div className="font-bold text-sm text-gray-700">
+                  {questions.filter((q, idx) => !visited.has(idx) && !answers[q.id]).length}
+                </div>
+                <span>Unvisited</span>
+              </div>
+            </div>
+
+            {/* Mobile Palette Grid */}
+            <div className="flex-1 overflow-y-auto p-4 pb-24">
+              <div className="grid grid-cols-5 gap-2.5">
+                {questions.map((q, idx) => {
+                  const isCurrent = idx === currentIdx;
+                  const isAttempted = Boolean(answers[q.id]);
+                  const isSkipped = visited.has(idx) && !isAttempted;
+
+                  let btnStyle = "bg-gray-100 text-gray-600 border border-gray-200";
+                  if (isAttempted) {
+                    btnStyle = "bg-emerald-600 text-white border border-emerald-700 shadow-sm";
+                  } else if (isSkipped) {
+                    btnStyle = "bg-amber-100 text-amber-800 border border-amber-300 font-bold";
+                  }
+
+                  if (isCurrent) {
+                    btnStyle += " ring-2 ring-indigo-600 ring-offset-2 font-black scale-105 z-10";
+                  }
+
+                  return (
+                    <button
+                      key={q.id || idx}
+                      onClick={() => handleSelectQuestion(idx)}
+                      className={`h-11 w-full rounded-xl flex items-center justify-center text-xs font-bold transition-all active:scale-90 ${btnStyle}`}
+                    >
+                      {idx + 1}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Mobile close bottom button */}
+            <div className="p-3 border-t border-gray-100 bg-gray-50">
+              <button
+                onClick={() => setIsPaletteOpen(false)}
+                className="w-full py-2.5 bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold text-xs rounded-xl transition-colors"
+              >
+                Close Palette
+              </button>
+            </div>
           </div>
         </div>
-        </div>
-      </div>
+      )}
 
       {/* Footer Navigation */}
       <div className="fixed bottom-0 left-0 right-0 w-full bg-white border-t border-gray-100 p-4 shadow-[0_-10px_20px_-10px_rgba(0,0,0,0.05)] z-50">
