@@ -104,18 +104,6 @@ export default function Profile({ onLogout }) {
             </>
           )}
 
-          {/* Reset Mode Button */}
-          <button 
-            onClick={() => {
-              UserManager.clearPreparation();
-              window.location.reload();
-            }}
-            className="w-full py-3.5 mb-3 bg-gray-50 hover:bg-gray-100 text-gray-700 font-bold rounded-xl flex items-center justify-center gap-2 transition-colors border border-gray-200 shadow-sm"
-          >
-            <Settings size={18} />
-            Change Exam Goal
-          </button>
-
           {/* Login / Logout Button */}
           {isLoggedIn ? (
             <button 
