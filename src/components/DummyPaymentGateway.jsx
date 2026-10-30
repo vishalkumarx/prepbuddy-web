@@ -12,7 +12,8 @@ import {
   Check, 
   ExternalLink,
   Smartphone,
-  Info
+  Info,
+  MessageCircle
 } from 'lucide-react';
 
 const UPI_ID = '7888683399@pthdfc';
@@ -87,6 +88,23 @@ export default function DummyPaymentGateway() {
         }
       }
 
+      // Prepare WhatsApp message for admin
+      const userName = UserManager.getName() || 'User';
+      const userEmail = UserManager.getEmail() || 'Not provided';
+      const adminPhone = '917888683399';
+      const utrText = utrNumber?.trim() ? `\n*UTR / Ref No:* ${utrNumber.trim()}` : '';
+      const waMessage = `*Payment Confirmation — GoalPrep*\n\n` +
+        `👤 *User:* ${userName} (${userEmail})\n` +
+        `📚 *Item:* ${itemTitle}\n` +
+        `💰 *Amount Paid:* ₹${price}${utrText}\n` +
+        `📅 *Time:* ${new Date().toLocaleString('en-IN')}\n\n` +
+        `Please verify and confirm my test series access. Thank you!`;
+
+      const whatsappUrl = `https://wa.me/${adminPhone}?text=${encodeURIComponent(waMessage)}`;
+
+      // Open WhatsApp in new tab / app
+      window.open(whatsappUrl, '_blank');
+
       setSuccess(true);
       setTimeout(() => {
         if (type === 'course') {
@@ -94,7 +112,7 @@ export default function DummyPaymentGateway() {
         } else {
           navigate(-1);
         }
-      }, 1500);
+      }, 2000);
     } catch (err) {
       alert('Enrollment failed: ' + err.message);
       setLoading(false);
@@ -108,8 +126,8 @@ export default function DummyPaymentGateway() {
           <CheckCircle size={40} />
         </div>
         <h1 className="text-2xl font-black text-gray-900 mb-2">Payment Confirmed!</h1>
-        <p className="text-gray-600 text-sm max-w-xs mb-6">
-          You have been successfully enrolled in <span className="font-bold text-gray-900">{itemTitle}</span>.
+        <p className="text-gray-600 text-sm max-w-xs mb-3">
+          Opening WhatsApp to notify admin (+91 78886 83399) and enrolling you in <span className="font-bold text-gray-900">{itemTitle}</span>.
         </p>
         <p className="text-xs font-semibold text-emerald-700 bg-emerald-100/60 px-4 py-2 rounded-full">
           Redirecting to your course...
@@ -297,9 +315,12 @@ export default function DummyPaymentGateway() {
                 </>
               )}
             </button>
+            <p className="text-[11px] text-center text-emerald-700 font-semibold mt-2 flex items-center justify-center gap-1.5 bg-emerald-50 py-1.5 px-3 rounded-lg border border-emerald-100">
+              <MessageCircle size={14} className="text-emerald-600" /> Opens WhatsApp to send payment proof to admin (+91 78886 83399)
+            </p>
           </div>
 
-          <p className="text-[11px] text-center text-gray-400 mt-3 flex items-center justify-center gap-1">
+          <p className="text-[11px] text-center text-gray-400 mt-2 flex items-center justify-center gap-1">
             <ShieldCheck size={13} className="text-emerald-500" /> Instant activation upon confirmation
           </p>
 
