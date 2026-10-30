@@ -3,6 +3,7 @@ import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { QRCodeSVG } from 'qrcode.react';
 import { supabase } from '../supabase';
 import { UserManager } from '../utils/UserManager';
+import { useAuthModal } from '../context/AuthModalContext';
 import { 
   ShieldCheck, 
   ArrowLeft, 
@@ -31,6 +32,18 @@ export default function DummyPaymentGateway() {
   const [copied, setCopied] = useState(false);
   const [utrNumber, setUtrNumber] = useState('');
   const [showUtrField, setShowUtrField] = useState(false);
+
+  const { requireAuth } = useAuthModal();
+
+  // Ensure user is signed in upon opening the payment checkout page
+  useEffect(() => {
+    if (!UserManager.isLoggedIn() || !UserManager.getEmail()) {
+      requireAuth(() => {}, {
+        title: 'Sign in to Continue to Payment',
+        description: 'Please sign in with your Google account so your purchase can be linked to your email.'
+      });
+    }
+  }, []);
 
   useEffect(() => {
     const fetchTitle = async () => {
@@ -67,16 +80,32 @@ export default function DummyPaymentGateway() {
   };
 
   const handleConfirmEnrollment = async () => {
+    const isAuthed = requireAuth(async () => {
+      await processEnrollment();
+    }, {
+      title: 'Sign in to Confirm Payment',
+      description: 'Please sign in with your Google account to link your payment and access the test series.'
+    });
+
+    if (isAuthed) {
+      await processEnrollment();
+    }
+  };
+
+  const processEnrollment = async () => {
     setLoading(true);
     try {
+      const userEmail = UserManager.getEmail();
+      const userName = UserManager.getUsername() || 'User';
+
+      if (!userEmail) {
+        alert('Please sign in with your Google account before confirming payment.');
+        setLoading(false);
+        return;
+      }
+
       if (type === 'course') {
         const userId = UserManager.getUserId();
-        if (!userId) {
-          alert('Please login to complete your enrollment.');
-          setLoading(false);
-          return;
-        }
-
         const { error } = await supabase
           .from('prepbuddy_enrollments')
           .insert([{ user_id: userId, course_id: id }]);
@@ -86,17 +115,16 @@ export default function DummyPaymentGateway() {
         }
       }
 
-      // Prepare WhatsApp message for admin
-      const userName = UserManager.getName() || 'User';
-      const userEmail = UserManager.getEmail() || 'Not provided';
+      // Prepare WhatsApp message for admin with verified user email
       const adminPhone = '917888683399';
       const utrText = utrNumber?.trim() ? `\n*UTR / Ref No:* ${utrNumber.trim()}` : '';
       const waMessage = `*Payment Confirmation — GoalPrep*\n\n` +
-        `👤 *User:* ${userName} (${userEmail})\n` +
-        `📚 *Item:* ${itemTitle}\n` +
+        `👤 *User Name:* ${userName}\n` +
+        `📧 *User Email:* ${userEmail}\n` +
+        `📚 *Test Series / Course:* ${itemTitle}\n` +
         `💰 *Amount Paid:* ₹${price}${utrText}\n` +
         `📅 *Time:* ${new Date().toLocaleString('en-IN')}\n\n` +
-        `Please verify and confirm my test series access. Thank you!`;
+        `Please verify payment and confirm access for my email: ${userEmail}. Thank you!`;
 
       const whatsappUrl = `https://wa.me/${adminPhone}?text=${encodeURIComponent(waMessage)}`;
 
