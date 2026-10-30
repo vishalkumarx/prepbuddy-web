@@ -274,7 +274,7 @@ export default function CourseDetail() {
   const progressPercent = totalTests > 0 ? Math.round((completedCount / totalTests) * 100) : 0;
 
   return (
-    <div className="flex flex-col h-[100dvh] bg-app-bg pb-[80px] overflow-y-auto">
+    <div className="min-h-full bg-app-bg pb-28 relative">
       {/* Header */}
       <header className="bg-white px-4 py-4 flex items-center sticky top-0 z-50 shadow-sm border-b border-gray-100 flex-shrink-0">
         <button onClick={() => navigate(-1)} className="p-2 -ml-2 text-gray-500 hover:text-gray-900 rounded-full hover:bg-gray-100 transition-colors">
@@ -590,16 +590,18 @@ export default function CourseDetail() {
         </div>
       </div>
 
-      {/* Sticky Buy/Start Button */}
+      {/* Fixed Bottom Buy/Enroll Dock */}
       {!isEnrolled && (
-        <div className="sticky bottom-0 w-full bg-white border-t border-gray-100 p-4 shadow-[0_-10px_20px_-10px_rgba(0,0,0,0.05)] z-40">
-          <button 
-            onClick={handleBuyClick}
-            disabled={enrollLoading}
-            className="w-full font-bold py-4 rounded-xl text-base shadow-lg transition-all flex items-center justify-center gap-2 bg-[#0B2457] text-white hover:bg-blue-900 active:scale-[0.98]"
-          >
-            {enrollLoading ? 'Processing...' : ((discountedPrice !== null ? discountedPrice : course.price) === 0 ? <><Unlock size={18} /> Enroll Now for Free</> : <><ShoppingCart size={18} /> Buy Now — ₹{discountedPrice !== null ? discountedPrice : course.price}</>)}
-          </button>
+        <div className="fixed bottom-0 inset-x-0 z-40 bg-white/95 backdrop-blur-md border-t border-gray-200/80 p-3 md:p-4 shadow-[0_-8px_20px_rgba(0,0,0,0.08)]">
+          <div className="max-w-[1000px] mx-auto w-full">
+            <button 
+              onClick={handleBuyClick}
+              disabled={enrollLoading}
+              className="w-full font-black py-3.5 md:py-4 rounded-xl text-base shadow-md transition-all flex items-center justify-center gap-2 bg-[#0B2457] text-white hover:bg-blue-900 active:scale-[0.99] disabled:opacity-70"
+            >
+              {enrollLoading ? 'Processing...' : ((discountedPrice !== null ? discountedPrice : course.price) === 0 ? <><Unlock size={18} /> Enroll Now for Free</> : <><ShoppingCart size={18} /> Buy Now — ₹{discountedPrice !== null ? discountedPrice : course.price}</>)}
+            </button>
+          </div>
         </div>
       )}
 
