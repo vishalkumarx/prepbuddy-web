@@ -656,43 +656,51 @@ export default function CourseDetail() {
                                     </span>
                                   )}
                                 </div>
-                                <div className="flex items-center gap-1.5 mt-1.5 mb-0.5">
-                                  <div className="w-5 h-5 rounded-md bg-indigo-50 flex items-center justify-center flex-shrink-0">
-                                    <svg className="w-3 h-3 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
-                                  </div>
-                                  <span className="text-[10px] font-bold text-gray-500">
-                                    {questionCounts[`${test.category}-${test.subcategory}`] || test.totalQuestions || (isComingSoon ? 'TBD' : '0')} Qs
-                                  </span>
-                                  <div className="w-5 h-5 rounded-md bg-amber-50 flex items-center justify-center flex-shrink-0 ml-1.5">
-                                    <svg className="w-3 h-3 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                                  </div>
-                                  <span className="text-[10px] font-bold text-gray-500">
-                                    {test.time_limit || test.duration ? `${test.time_limit || test.duration} min` : (isComingSoon ? 'TBD' : 'No Limit')}
-                                  </span>
-                                </div>
+                                {(() => {
+                                  const qCount = questionCounts[`${test.category}-${test.subcategory}`] || test.totalQuestions;
+                                  const dur = test.time_limit || test.duration;
+                                  if (isComingSoon && !qCount && !dur) return null;
+                                  return (
+                                    <div className="flex items-center gap-1.5 mt-1.5 mb-0.5">
+                                      {qCount ? (
+                                        <>
+                                          <div className="w-5 h-5 rounded-md bg-indigo-50 flex items-center justify-center flex-shrink-0">
+                                            <svg className="w-3 h-3 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                                          </div>
+                                          <span className="text-[10px] font-bold text-gray-500 mr-1.5">
+                                            {qCount} Qs
+                                          </span>
+                                        </>
+                                      ) : null}
+                                      {dur ? (
+                                        <>
+                                          <div className="w-5 h-5 rounded-md bg-amber-50 flex items-center justify-center flex-shrink-0">
+                                            <svg className="w-3 h-3 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                                          </div>
+                                          <span className="text-[10px] font-bold text-gray-500">
+                                            {dur} min
+                                          </span>
+                                        </>
+                                      ) : null}
+                                    </div>
+                                  );
+                                })()}
                                 
-                                {!attempt && !isPaused && (
+                                {!attempt && !isPaused && !isComingSoon && (
                                   <div className="mt-2 flex items-center">
-                                    {isComingSoon ? (
-                                      <div className="flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-md shrink-0 text-amber-700 bg-amber-100/70 border border-amber-200">
-                                        <Clock size={10} strokeWidth={2.5} />
-                                        COMING SOON
-                                      </div>
-                                    ) : (
-                                      <div className={`flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-md shrink-0 ${canTake ? 'text-emerald-700 bg-emerald-100/70' : 'text-gray-500 bg-gray-200/60'}`}>
-                                        {canTake ? (
-                                          <>
-                                            <Unlock size={10} strokeWidth={3} />
-                                            TAKE TEST {test.is_free && !isEnrolled ? '(FREE)' : ''}
-                                          </>
-                                        ) : (
-                                          <>
-                                            <Lock size={10} strokeWidth={3} />
-                                            LOCKED
-                                          </>
-                                        )}
-                                      </div>
-                                    )}
+                                    <div className={`flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-md shrink-0 ${canTake ? 'text-emerald-700 bg-emerald-100/70' : 'text-gray-500 bg-gray-200/60'}`}>
+                                      {canTake ? (
+                                        <>
+                                          <Unlock size={10} strokeWidth={3} />
+                                          TAKE TEST {test.is_free && !isEnrolled ? '(FREE)' : ''}
+                                        </>
+                                      ) : (
+                                        <>
+                                          <Lock size={10} strokeWidth={3} />
+                                          LOCKED
+                                        </>
+                                      )}
+                                    </div>
                                   </div>
                                 )}
                                 
