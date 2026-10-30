@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabase';
-import { Tag, Plus, Trash2, ToggleLeft, ToggleRight, Copy, Check, X } from 'lucide-react';
+import { Tag, Plus, Trash2, ToggleLeft, ToggleRight, Copy, Check, X, Share2, Sparkles } from 'lucide-react';
 
-export default function CouponManager({ resourceId }) {
+export default function CouponManager({ resourceId, resourceTitle, resourcePrice }) {
   const [coupons, setCoupons] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -105,6 +105,47 @@ export default function CouponManager({ resourceId }) {
     navigator.clipboard.writeText(code);
     setCopiedId(id);
     setTimeout(() => setCopiedId(null), 2000);
+  };
+
+  const handleShareCoupon = async (coupon) => {
+    const shareUrl = `${window.location.origin}/course/${resourceId}?coupon=${encodeURIComponent(coupon.code)}`;
+    const discountText = coupon.discount_type === 'percentage' 
+      ? `${coupon.discount_value}% OFF` 
+      : `Flat ₹${coupon.discount_value} OFF`;
+    
+    let priceText = '';
+    if (resourcePrice && resourcePrice > 0) {
+      let finalPrice = resourcePrice;
+      if (coupon.discount_type === 'percentage') {
+        finalPrice = Math.round(resourcePrice - (resourcePrice * coupon.discount_value / 100));
+      } else {
+        finalPrice = Math.max(0, Math.round(resourcePrice - coupon.discount_value));
+      }
+      priceText = `\n💰 Special Price: ₹${finalPrice} (Original: ₹${resourcePrice})`;
+    }
+
+    const shareTitle = `🎉 Exclusive Discount on ${resourceTitle || 'Test Series'}!`;
+    const shareMsg = `🔥 Special Offer for you!\nGet ${discountText} on "${resourceTitle || 'Test Series'}" using promo code:\n\n👉 CODE: ${coupon.code}${priceText}\n\nApply code directly at checkout:\n${shareUrl}`;
+
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: shareTitle,
+          text: shareMsg,
+          url: shareUrl,
+        });
+        return;
+      } catch (err) {
+        if (err.name !== 'AbortError') {
+          navigator.clipboard.writeText(shareMsg);
+          alert(`Coupon details copied to clipboard!\n\nCode: ${coupon.code} (${discountText})`);
+        }
+        return;
+      }
+    }
+
+    navigator.clipboard.writeText(shareMsg);
+    alert(`Coupon details copied to clipboard!\n\nCode: ${coupon.code} (${discountText})`);
   };
 
   return (
@@ -300,6 +341,15 @@ export default function CouponManager({ resourceId }) {
                   ) : (
                     <><Copy size={12} /> Copy</>
                   )}
+                </button>
+                {/* Share Coupon Button */}
+                <button
+                  onClick={() => handleShareCoupon(coupon)}
+                  title="Share Coupon Code with details"
+                  className="flex items-center gap-1 text-xs font-bold px-2.5 py-1.5 rounded-lg border border-indigo-200 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 hover:border-indigo-300 transition-all active:scale-95 shadow-xs"
+                >
+                  <Share2 size={12} />
+                  <span>Share</span>
                 </button>
                 {/* Toggle */}
                 <button onClick={() => toggleActive(coupon)} className="text-gray-400 hover:text-primary transition-colors">

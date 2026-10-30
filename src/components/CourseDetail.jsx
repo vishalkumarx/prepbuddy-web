@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '../supabase';
-import { ArrowLeft, IndianRupee, Layers, FileText, CheckCircle2, Lock, Unlock, ChevronDown, ChevronUp, Tag, CheckCircle, XCircle, Languages, Newspaper, Award, Clock, Star, ShoppingCart, Share2 } from 'lucide-react';
+import { ArrowLeft, IndianRupee, Layers, FileText, CheckCircle2, Lock, Unlock, ChevronDown, ChevronUp, Tag, CheckCircle, XCircle, Languages, Newspaper, Award, Clock, Star, ShoppingCart, Share2, Sparkles } from 'lucide-react';
 import { UserManager } from '../utils/UserManager';
 import { useAuthModal } from '../context/AuthModalContext';
 import CouponManager from './CouponManager';
@@ -144,8 +144,11 @@ export default function CourseDetail() {
     fetchCourseDetails();
   }, [id, userId]);
 
-  const applyCoupon = async () => {
-    if (!couponCode.trim()) return;
+  const [searchParams] = useSearchParams();
+
+  const applyCoupon = async (codeToApply) => {
+    const code = (typeof codeToApply === 'string' ? codeToApply : couponCode).trim().toUpperCase();
+    if (!code) return;
     setCouponStatus('checking');
     setCouponData(null);
     setDiscountedPrice(null);
@@ -155,7 +158,7 @@ export default function CourseDetail() {
         .from('prepbuddy_coupons')
         .select('*')
         .eq('resource_id', id)
-        .eq('code', couponCode.trim().toUpperCase())
+        .eq('code', code)
         .eq('is_active', true)
         .single();
 
@@ -177,18 +180,15 @@ export default function CourseDetail() {
         return;
       }
 
-      let finalPrice = course.price;
+      const basePrice = course?.price || 0;
+      let finalPrice = basePrice;
       if (data.discount_type === 'percentage') {
-        finalPrice = course.price - (course.price * data.discount_value / 100);
+        finalPrice = basePrice - (basePrice * data.discount_value / 100);
       } else {
-        finalPrice = Math.max(0, course.price - data.discount_value);
+        finalPrice = Math.max(0, basePrice - data.discount_value);
       }
 
-      await supabase
-        .from('prepbuddy_coupons')
-        .update({ uses_count: (data.uses_count || 0) + 1 })
-        .eq('id', data.id);
-
+      setCouponCode(code);
       setCouponData(data);
       setDiscountedPrice(Math.round(finalPrice));
       setCouponStatus('valid');
@@ -197,6 +197,14 @@ export default function CourseDetail() {
       setCouponStatus('invalid');
     }
   };
+
+  // Auto-apply coupon from query param e.g. ?coupon=DISCOUNT20
+  useEffect(() => {
+    const queryCoupon = searchParams.get('coupon');
+    if (queryCoupon && course && !isEnrolled) {
+      applyCoupon(queryCoupon);
+    }
+  }, [searchParams, course, isEnrolled]);
 
   const removeCoupon = () => {
     setCouponCode('');
@@ -236,6 +244,15 @@ export default function CourseDetail() {
         .insert([{ user_id: userId, course_id: id }]);
         
       if (error) throw error;
+
+      // If a valid coupon was applied, increment uses_count
+      if (couponData?.id) {
+        await supabase
+          .from('prepbuddy_coupons')
+          .update({ uses_count: (couponData.uses_count || 0) + 1 })
+          .eq('id', couponData.id);
+      }
+
       setIsEnrolled(true);
     } catch (err) {
       alert('Error enrolling: ' + err.message);
@@ -410,25 +427,54 @@ export default function CourseDetail() {
             </h1>
           {!isEnrolled && (
             <div className="flex flex-col items-end gap-1 flex-shrink-0 mt-1">
-              <div className="bg-[#0B2457] text-white font-bold px-3 py-1.5 rounded-xl shadow-sm whitespace-nowrap flex items-center">
-                {course.price > 0 ? (
-                  <>
-                    <IndianRupee size={16} className="mr-0.5" />
-                    {course.price}
-                  </>
-                ) : (
-                  'Free'
-                )}
-              </div>
-              {course.mrp && course.mrp > course.price && (
-                <div className="flex items-center gap-1.5 mr-1">
-                  <span className="text-xs text-gray-400 line-through flex items-center font-semibold">
-                    <IndianRupee size={10} className="mr-0" />{course.mrp}
-                  </span>
-                  <span className="bg-green-100 text-green-700 font-black text-[9px] px-1.5 py-0.5 rounded uppercase tracking-wider">
-                    {Math.round((course.mrp - course.price) / course.mrp * 100)}% OFF
-                  </span>
+              {couponStatus === 'valid' && couponData ? (
+                <div className="flex flex-col items-end gap-0.5">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-xs text-gray-400 line-through flex items-center font-semibold">
+                      <IndianRupee size={12} className="mr-0" />{course.price}
+                    </span>
+                    <div className="bg-emerald-600 text-white font-black px-3 py-1.5 rounded-xl shadow-sm whitespace-nowrap flex items-center text-sm">
+                      <IndianRupee size={15} className="mr-0.5" />
+                      {discountedPrice}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1.5 mt-0.5">
+                    <span className="bg-emerald-100 text-emerald-800 font-bold text-[10px] px-2 py-0.5 rounded-full flex items-center gap-1">
+                      <Sparkles size={11} className="text-emerald-600" />
+                      {couponData.code} ({couponData.discount_type === 'percentage' ? `${couponData.discount_value}% OFF` : `₹${couponData.discount_value} OFF`})
+                    </span>
+                    <button 
+                      onClick={removeCoupon} 
+                      title="Remove coupon"
+                      className="text-gray-400 hover:text-red-500 transition-colors p-0.5"
+                    >
+                      <XCircle size={14} />
+                    </button>
+                  </div>
                 </div>
+              ) : (
+                <>
+                  <div className="bg-[#0B2457] text-white font-bold px-3 py-1.5 rounded-xl shadow-sm whitespace-nowrap flex items-center">
+                    {course.price > 0 ? (
+                      <>
+                        <IndianRupee size={16} className="mr-0.5" />
+                        {course.price}
+                      </>
+                    ) : (
+                      'Free'
+                    )}
+                  </div>
+                  {course.mrp && course.mrp > course.price && (
+                    <div className="flex items-center gap-1.5 mr-1">
+                      <span className="text-xs text-gray-400 line-through flex items-center font-semibold">
+                        <IndianRupee size={10} className="mr-0" />{course.mrp}
+                      </span>
+                      <span className="bg-green-100 text-green-700 font-black text-[9px] px-1.5 py-0.5 rounded uppercase tracking-wider">
+                        {Math.round((course.mrp - course.price) / course.mrp * 100)}% OFF
+                      </span>
+                    </div>
+                  )}
+                </>
               )}
             </div>
           )}
@@ -463,7 +509,11 @@ export default function CourseDetail() {
         {/* Admin — Coupon Manager */}
         {UserManager.isAdmin() && (
           <div className="mb-6">
-            <CouponManager resourceId={id} />
+            <CouponManager 
+              resourceId={id} 
+              resourceTitle={course?.title} 
+              resourcePrice={course?.price} 
+            />
           </div>
         )}
 

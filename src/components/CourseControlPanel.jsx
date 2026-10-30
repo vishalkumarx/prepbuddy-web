@@ -926,7 +926,11 @@ export default function CourseControlPanel() {
                 {/* PROMO CODES TAB */}
                 {activeTab === 'coupons' && (
                   <div className="p-4">
-                    <CouponManager resourceId={selectedCourse.id} />
+                    <CouponManager 
+                      resourceId={selectedCourse.id} 
+                      resourceTitle={selectedCourse.title} 
+                      resourcePrice={selectedCourse.price} 
+                    />
                   </div>
                 )}
 
