@@ -213,20 +213,13 @@ export default function DummyPaymentGateway() {
 
                 {/* Paytm */}
                 <div className="flex items-center gap-1.5 bg-gray-50 border border-gray-200/90 rounded-xl px-2.5 py-1.5 shadow-2xs hover:bg-gray-100/70 transition-colors">
-                  <svg className="w-5 h-4 flex-shrink-0" viewBox="0 0 32 16" fill="none">
-                    <rect width="32" height="16" rx="3" fill="#002970"/>
-                    <text x="3" y="11" fill="#FFFFFF" fontSize="8" fontWeight="900" fontFamily="sans-serif">Pay</text>
-                    <text x="18" y="11" fill="#00BAF2" fontSize="8" fontWeight="900" fontFamily="sans-serif">tm</text>
-                  </svg>
+                  <img src="/assets/paytm-logo.png" alt="Paytm" className="h-3.5 w-auto object-contain" />
                   <span className="text-xs font-bold text-gray-700">Paytm</span>
                 </div>
 
                 {/* BHIM UPI */}
                 <div className="flex items-center gap-1.5 bg-gray-50 border border-gray-200/90 rounded-xl px-2.5 py-1.5 shadow-2xs hover:bg-gray-100/70 transition-colors">
-                  <svg className="w-4 h-4 flex-shrink-0" viewBox="0 0 24 24" fill="none">
-                    <path d="M4 3L15 12L4 21V3Z" fill="#005B9F"/>
-                    <path d="M11 3L20 12L11 21V3Z" fill="#F47920"/>
-                  </svg>
+                  <img src="/assets/bhim-logo.jpg" alt="BHIM" className="h-3.5 w-auto object-contain mix-blend-multiply" />
                   <span className="text-xs font-bold text-gray-700">BHIM</span>
                 </div>
 
