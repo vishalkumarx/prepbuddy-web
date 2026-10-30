@@ -81,50 +81,79 @@ export default function DummyPaymentGateway() {
 
   const handleConfirmEnrollment = async () => {
     const isAuthed = requireAuth(async () => {
-      await processEnrollment();
+      await processJoinRequest();
     }, {
-      title: 'Sign in to Confirm Payment',
-      description: 'Please sign in with your Google account to link your payment and access the test series.'
+      title: 'Sign in to Submit Join Request',
+      description: 'Please sign in with your Google account so admin can verify and grant access to your test series.'
     });
 
     if (isAuthed) {
-      await processEnrollment();
+      await processJoinRequest();
     }
   };
 
-  const processEnrollment = async () => {
+  const processJoinRequest = async () => {
     setLoading(true);
     try {
       const userEmail = UserManager.getEmail();
       const userName = UserManager.getUsername() || 'User';
+      const userId = UserManager.getUserId() || userEmail;
 
       if (!userEmail) {
-        alert('Please sign in with your Google account before confirming payment.');
+        alert('Please sign in with your Google account before submitting your payment confirmation.');
         setLoading(false);
         return;
       }
 
-      if (type === 'course') {
-        const userId = UserManager.getUserId();
-        const { error } = await supabase
-          .from('prepbuddy_enrollments')
-          .insert([{ user_id: userId, course_id: id }]);
+      // Create Join Request payload
+      const requestPayload = {
+        __type: 'JOIN_REQUEST',
+        course_id: id,
+        course_title: itemTitle,
+        user_id: userId,
+        user_name: userName,
+        user_email: userEmail,
+        amount: price,
+        utr_number: utrNumber?.trim() || null,
+        created_at: new Date().toISOString(),
+        status: 'pending'
+      };
 
-        if (error && !error.message?.includes('duplicate')) {
-          throw error;
-        }
+      // 1. Save to Supabase prepbuddy_comments system queue
+      try {
+        await supabase
+          .from('prepbuddy_comments')
+          .insert([{
+            post_id: '7aced78e-9d9b-4015-b1b1-7f31bffd74ca',
+            device_id: 'join_request_system',
+            username: userName,
+            avatar_url: UserManager.getUser()?.avatar || null,
+            content: JSON.stringify(requestPayload)
+          }]);
+      } catch (err) {
+        console.warn('Could not post join request to comments queue:', err);
       }
+
+      // 2. Also save to localStorage backup for immediate reliability
+      try {
+        const localRequests = JSON.parse(localStorage.getItem('prepbuddy_join_requests') || '[]');
+        localRequests.unshift({
+          id: `local_${Date.now()}`,
+          ...requestPayload
+        });
+        localStorage.setItem('prepbuddy_join_requests', JSON.stringify(localRequests));
+      } catch (e) {}
 
       // Prepare WhatsApp message for admin with verified user email
       const adminPhone = '917888683399';
       const utrText = utrNumber?.trim() ? `\n*UTR / Ref No:* ${utrNumber.trim()}` : '';
-      const waMessage = `*Payment Confirmation — GoalPrep*\n\n` +
+      const waMessage = `*Payment & Join Request — GoalPrep*\n\n` +
         `👤 *User Name:* ${userName}\n` +
         `📧 *User Email:* ${userEmail}\n` +
         `📚 *Test Series / Course:* ${itemTitle}\n` +
         `💰 *Amount Paid:* ₹${price}${utrText}\n` +
         `📅 *Time:* ${new Date().toLocaleString('en-IN')}\n\n` +
-        `Please verify payment and confirm access for my email: ${userEmail}. Thank you!`;
+        `I have completed the payment. Please verify and approve my course access for ${userEmail}. Thank you!`;
 
       const whatsappUrl = `https://wa.me/${adminPhone}?text=${encodeURIComponent(waMessage)}`;
 
@@ -148,9 +177,9 @@ export default function DummyPaymentGateway() {
         } else {
           navigate(-1);
         }
-      }, 3500);
+      }, 4500);
     } catch (err) {
-      alert('Enrollment failed: ' + err.message);
+      alert('Request submission failed: ' + err.message);
       setLoading(false);
     }
   };
@@ -160,13 +189,13 @@ export default function DummyPaymentGateway() {
     const userName = UserManager.getUsername() || 'User';
     const adminPhone = '917888683399';
     const utrText = utrNumber?.trim() ? `\n*UTR / Ref No:* ${utrNumber.trim()}` : '';
-    const waMessage = `*Payment Confirmation — GoalPrep*\n\n` +
+    const waMessage = `*Payment & Join Request — GoalPrep*\n\n` +
       `👤 *User Name:* ${userName}\n` +
       `📧 *User Email:* ${userEmail}\n` +
       `📚 *Test Series / Course:* ${itemTitle}\n` +
       `💰 *Amount Paid:* ₹${price}${utrText}\n` +
       `📅 *Time:* ${new Date().toLocaleString('en-IN')}\n\n` +
-      `Please verify payment and confirm access for my email: ${userEmail}. Thank you!`;
+      `I have completed the payment. Please verify and approve my course access for ${userEmail}. Thank you!`;
     const fallbackWhatsappUrl = `https://wa.me/${adminPhone}?text=${encodeURIComponent(waMessage)}`;
 
     return (
@@ -174,9 +203,9 @@ export default function DummyPaymentGateway() {
         <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mb-4 shadow-sm animate-bounce">
           <CheckCircle size={40} />
         </div>
-        <h1 className="text-2xl font-black text-gray-900 mb-2">Payment Confirmed!</h1>
-        <p className="text-gray-600 text-sm max-w-xs mb-4">
-          Enrolled in <span className="font-bold text-gray-900">{itemTitle}</span>. If WhatsApp didn't open automatically, tap below:
+        <h1 className="text-2xl font-black text-gray-900 mb-2">Request Submitted!</h1>
+        <p className="text-gray-600 text-sm max-w-sm mb-4 leading-relaxed">
+          Your payment confirmation for <span className="font-bold text-gray-900">{itemTitle}</span> has been sent to the admin. Your access will be activated upon admin verification.
         </p>
 
         {/* Manual tap button for Android WebView & popup blockers */}
@@ -187,11 +216,11 @@ export default function DummyPaymentGateway() {
           className="mb-5 inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm px-5 py-3 rounded-xl shadow-md active:scale-95 transition-all"
         >
           <MessageCircle size={18} />
-          <span>Open WhatsApp Chat (+91 78886 83399)</span>
+          <span>Send Details on WhatsApp (+91 78886 83399)</span>
         </a>
 
-        <p className="text-xs font-semibold text-emerald-700 bg-emerald-100/60 px-4 py-2 rounded-full">
-          Redirecting to course shortly...
+        <p className="text-xs font-semibold text-emerald-800 bg-emerald-100/70 px-4 py-2 rounded-full border border-emerald-200">
+          ⏳ Pending Admin Approval • Redirecting back shortly...
         </p>
       </div>
     );

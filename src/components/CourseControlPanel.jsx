@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabase';
 import { UserManager } from '../utils/UserManager';
-import { Shield, Search, UserPlus, Trash2, ArrowLeft, RefreshCw, Layers, Tag, Settings, FileText, Languages, Award, Newspaper, Plus, Clock, X, Edit2, Star, Eye, EyeOff, Lock, Unlock, Flag, AlertCircle } from 'lucide-react';
+import { Shield, Search, UserPlus, Trash2, ArrowLeft, RefreshCw, Layers, Tag, Settings, FileText, Languages, Award, Newspaper, Plus, Clock, X, Edit2, Star, Eye, EyeOff, Lock, Unlock, Flag, AlertCircle, CheckCircle, Clock3, Inbox } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import CouponManager from './CouponManager';
 
@@ -39,6 +39,132 @@ export default function CourseControlPanel() {
   const [expandedCategories, setExpandedCategories] = useState({});
   const [flaggedReports, setFlaggedReports] = useState([]);
   const [flagsLoading, setFlagsLoading] = useState(false);
+  const [joinRequests, setJoinRequests] = useState([]);
+  const [requestsLoading, setRequestsLoading] = useState(false);
+
+  const fetchJoinRequests = async () => {
+    setRequestsLoading(true);
+    try {
+      let requests = [];
+
+      // 1. Fetch from prepbuddy_comments system queue
+      const { data: commentsData } = await supabase
+        .from('prepbuddy_comments')
+        .select('*')
+        .eq('post_id', '7aced78e-9d9b-4015-b1b1-7f31bffd74ca')
+        .order('created_at', { ascending: false });
+
+      if (commentsData) {
+        commentsData.forEach(c => {
+          try {
+            const parsed = JSON.parse(c.content);
+            if (parsed && parsed.__type === 'JOIN_REQUEST') {
+              requests.push({
+                comment_id: c.id,
+                ...parsed,
+                created_at: parsed.created_at || c.created_at
+              });
+            }
+          } catch (e) {}
+        });
+      }
+
+      // 2. Merge local storage backup
+      try {
+        const local = JSON.parse(localStorage.getItem('prepbuddy_join_requests') || '[]');
+        const existingKeys = new Set(requests.map(r => `${r.user_email}_${r.course_id}_${r.created_at}`));
+        local.forEach(l => {
+          const key = `${l.user_email}_${l.course_id}_${l.created_at}`;
+          if (!existingKeys.has(key)) {
+            requests.push(l);
+          }
+        });
+      } catch (e) {}
+
+      setJoinRequests(requests);
+    } catch (err) {
+      console.error("Error fetching join requests:", err);
+    } finally {
+      setRequestsLoading(false);
+    }
+  };
+
+  const handleApproveJoinRequest = async (req) => {
+    if (!window.confirm(`Approve payment and enroll ${req.user_name || req.user_email} into ${req.course_title || 'this course'}?`)) return;
+    setActionLoading(true);
+    try {
+      // 1. Insert into prepbuddy_enrollments
+      const { error: enrollError } = await supabase
+        .from('prepbuddy_enrollments')
+        .insert([{
+          user_id: req.user_id,
+          course_id: req.course_id
+        }]);
+
+      if (enrollError && !enrollError.message?.includes('duplicate')) {
+        throw enrollError;
+      }
+
+      // 2. Remove from prepbuddy_comments queue if comment_id exists
+      if (req.comment_id) {
+        try {
+          await supabase.from('prepbuddy_comments').delete().eq('id', req.comment_id);
+        } catch (delErr) {
+          console.warn("Could not delete join request comment:", delErr);
+        }
+      }
+
+      // 3. Remove from localStorage
+      try {
+        const local = JSON.parse(localStorage.getItem('prepbuddy_join_requests') || '[]');
+        const updated = local.filter(l => !(l.user_email === req.user_email && l.course_id === req.course_id));
+        localStorage.setItem('prepbuddy_join_requests', JSON.stringify(updated));
+      } catch (e) {}
+
+      // 4. Update state
+      setJoinRequests(prev => prev.filter(r => r !== req && r.comment_id !== req.comment_id));
+
+      // Refresh enrollments if current course is selected
+      if (selectedCourse && selectedCourse.id === req.course_id) {
+        loadEnrollments(selectedCourse.id);
+      }
+
+      alert(`✅ User ${req.user_name || req.user_email} successfully enrolled!`);
+    } catch (err) {
+      alert("Error approving request: " + err.message);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleRejectJoinRequest = async (req) => {
+    if (!window.confirm(`Reject this join request from ${req.user_name || req.user_email}?`)) return;
+    setActionLoading(true);
+    try {
+      // 1. Remove from prepbuddy_comments queue
+      if (req.comment_id) {
+        try {
+          await supabase.from('prepbuddy_comments').delete().eq('id', req.comment_id);
+        } catch (delErr) {
+          console.warn("Could not delete join request comment:", delErr);
+        }
+      }
+
+      // 2. Remove from localStorage
+      try {
+        const local = JSON.parse(localStorage.getItem('prepbuddy_join_requests') || '[]');
+        const updated = local.filter(l => !(l.user_email === req.user_email && l.course_id === req.course_id));
+        localStorage.setItem('prepbuddy_join_requests', JSON.stringify(updated));
+      } catch (e) {}
+
+      // 3. Update state
+      setJoinRequests(prev => prev.filter(r => r !== req && r.comment_id !== req.comment_id));
+    } catch (err) {
+      alert("Error rejecting request: " + err.message);
+    } finally {
+      setActionLoading(false);
+    }
+  };
 
   const fetchFlaggedReports = async () => {
     setFlagsLoading(true);
@@ -112,8 +238,14 @@ export default function CourseControlPanel() {
   };
 
   useEffect(() => {
+    fetchJoinRequests();
+  }, []);
+
+  useEffect(() => {
     if (activeTab === 'flags') {
       fetchFlaggedReports();
+    } else if (activeTab === 'requests') {
+      fetchJoinRequests();
     }
   }, [activeTab]);
 
@@ -487,6 +619,14 @@ export default function CourseControlPanel() {
                 </div>
                 
                 <div className="flex space-x-4 border-b border-gray-100 overflow-x-auto custom-scrollbar pb-1">
+                  <button onClick={() => setActiveTab('requests')} className={`pb-2 px-1 text-sm font-bold border-b-2 transition-colors whitespace-nowrap ${activeTab === 'requests' ? 'border-emerald-600 text-emerald-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}>
+                    <Inbox size={16} className="inline mr-1" /> Join Requests
+                    {joinRequests.length > 0 && (
+                      <span className="ml-1.5 px-1.5 py-0.5 text-[10px] rounded-full bg-emerald-100 text-emerald-800 font-black animate-pulse">
+                        {joinRequests.length}
+                      </span>
+                    )}
+                  </button>
                   <button onClick={() => setActiveTab('enrollments')} className={`pb-2 px-1 text-sm font-bold border-b-2 transition-colors whitespace-nowrap ${activeTab === 'enrollments' ? 'border-primary text-primary' : 'border-transparent text-gray-500 hover:text-gray-700'}`}>
                     <UserPlus size={16} className="inline mr-1" /> Enrollments
                   </button>
@@ -513,6 +653,111 @@ export default function CourseControlPanel() {
               {/* Tab Content */}
               <div className="flex-1 overflow-y-auto bg-gray-50">
                 
+                {/* JOIN REQUESTS TAB */}
+                {activeTab === 'requests' && (
+                  <div className="p-4 max-w-4xl mx-auto">
+                    <div className="flex items-center justify-between mb-4">
+                      <div>
+                        <h3 className="font-bold text-gray-900 text-base flex items-center gap-2">
+                          <Inbox size={18} className="text-emerald-600" />
+                          <span>Student Enrollment & Payment Requests</span>
+                        </h3>
+                        <p className="text-xs text-gray-500 mt-0.5">
+                          Review payments submitted by students and manually approve access to test series.
+                        </p>
+                      </div>
+                      <button
+                        onClick={fetchJoinRequests}
+                        disabled={requestsLoading}
+                        className="px-3 py-1.5 rounded-xl border border-gray-200 text-xs font-bold text-gray-600 hover:bg-gray-50 flex items-center gap-1.5 transition-colors"
+                      >
+                        <RefreshCw size={13} className={requestsLoading ? 'animate-spin' : ''} />
+                        <span>Refresh</span>
+                      </button>
+                    </div>
+
+                    {requestsLoading ? (
+                      <div className="flex justify-center p-12">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600"></div>
+                      </div>
+                    ) : joinRequests.length === 0 ? (
+                      <div className="bg-white rounded-2xl p-10 text-center border border-gray-100 shadow-xs">
+                        <div className="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-3">
+                          <CheckCircle size={26} />
+                        </div>
+                        <h4 className="font-bold text-sm text-gray-800">No Pending Join Requests</h4>
+                        <p className="text-xs text-gray-500 mt-1 max-w-sm mx-auto">
+                          When users complete payment and submit their join request, their details and transaction reference will appear here for one-click approval.
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        {joinRequests.map((req, idx) => (
+                          <div 
+                            key={req.comment_id || req.id || idx}
+                            className="bg-white rounded-2xl p-4 md:p-5 border border-gray-200/80 shadow-xs hover:border-emerald-300 transition-all flex flex-col md:flex-row md:items-center justify-between gap-4"
+                          >
+                            <div className="flex items-start gap-3.5">
+                              <div className="w-10 h-10 rounded-2xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-700 font-black text-sm shrink-0">
+                                {req.user_name ? req.user_name.substring(0, 2).toUpperCase() : (req.user_email ? req.user_email.substring(0, 2).toUpperCase() : 'ST')}
+                              </div>
+                              <div className="space-y-1">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <span className="font-bold text-gray-900 text-sm">{req.user_name || 'Student'}</span>
+                                  <span className="text-xs text-gray-500 font-mono bg-gray-100 px-2 py-0.5 rounded-md">
+                                    {req.user_email}
+                                  </span>
+                                  {req.amount && (
+                                    <span className="bg-emerald-100 text-emerald-800 text-[11px] font-black px-2.5 py-0.5 rounded-full">
+                                      ₹{req.amount}
+                                    </span>
+                                  )}
+                                </div>
+                                <p className="text-xs font-semibold text-gray-700">
+                                  Course: <span className="font-bold text-gray-900">{req.course_title || 'Test Series'}</span>
+                                </p>
+                                <div className="flex items-center gap-3 text-[11px] text-gray-400 font-medium flex-wrap pt-0.5">
+                                  {req.utr_number ? (
+                                    <span className="text-gray-600 bg-amber-50 border border-amber-200/70 text-amber-800 font-bold px-2 py-0.5 rounded">
+                                      UTR: {req.utr_number}
+                                    </span>
+                                  ) : (
+                                    <span className="italic text-gray-400">No UTR specified</span>
+                                  )}
+                                  <span>•</span>
+                                  <span className="flex items-center gap-1">
+                                    <Clock3 size={12} />
+                                    {req.created_at ? new Date(req.created_at).toLocaleString('en-IN') : 'Just now'}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center gap-2 self-end md:self-center shrink-0">
+                              <button
+                                onClick={() => handleApproveJoinRequest(req)}
+                                disabled={actionLoading}
+                                className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-4 py-2 rounded-xl flex items-center gap-1.5 shadow-sm active:scale-95 transition-all disabled:opacity-50"
+                              >
+                                <CheckCircle size={15} />
+                                <span>Approve & Enroll</span>
+                              </button>
+                              <button
+                                onClick={() => handleRejectJoinRequest(req)}
+                                disabled={actionLoading}
+                                className="bg-rose-50 hover:bg-rose-100 text-rose-600 font-bold text-xs px-3 py-2 rounded-xl flex items-center gap-1.5 transition-colors disabled:opacity-50"
+                              >
+                                <Trash2 size={14} />
+                                <span>Reject</span>
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 {/* ENROLLMENTS TAB */}
                 {activeTab === 'enrollments' && (
                   <>
