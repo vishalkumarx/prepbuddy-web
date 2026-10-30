@@ -374,20 +374,36 @@ export default function CourseDetail() {
         
         {/* Title & Price */}
         <div className="mb-4">
-          {(() => {
-            const isComingSoon = course.is_coming_soon || course.title?.toLowerCase().includes('coming soon') || course.description?.toLowerCase().includes('coming soon');
-            return isComingSoon ? (
-              <div className="inline-flex bg-orange-100 text-orange-700 font-bold text-[10px] uppercase tracking-wider px-2 py-1 rounded-full items-center gap-1.5 shadow-sm border border-orange-200 mb-2">
-                <span className="w-1.5 h-1.5 rounded-full bg-orange-500"></span>
-                Coming Soon
-              </div>
-            ) : (
-              <div className="inline-flex bg-red-600 text-white font-bold text-[10px] uppercase tracking-wider px-2 py-1 rounded-full items-center gap-1.5 shadow-sm mb-2">
-                <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse"></span>
-                Live
-              </div>
-            );
-          })()}
+          <div className="flex items-center justify-between gap-2 mb-2">
+            <div className="flex items-center gap-1.5 flex-wrap">
+              {(() => {
+                const isComingSoon = course.is_coming_soon || course.title?.toLowerCase().includes('coming soon') || course.description?.toLowerCase().includes('coming soon');
+                return isComingSoon ? (
+                  <div className="inline-flex bg-orange-100 text-orange-700 font-bold text-[10px] uppercase tracking-wider px-2 py-1 rounded-full items-center gap-1.5 shadow-sm border border-orange-200">
+                    <span className="w-1.5 h-1.5 rounded-full bg-orange-500"></span>
+                    Coming Soon
+                  </div>
+                ) : (
+                  <div className="inline-flex bg-red-600 text-white font-bold text-[10px] uppercase tracking-wider px-2 py-1 rounded-full items-center gap-1.5 shadow-sm">
+                    <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse"></span>
+                    Live
+                  </div>
+                );
+              })()}
+              {Number(course.price) === 0 && (
+                <div className="inline-flex bg-emerald-600 text-white font-bold text-[10px] uppercase tracking-wider px-2 py-1 rounded-full items-center gap-1 shadow-sm">
+                  Free
+                </div>
+              )}
+            </div>
+            <button
+              onClick={handleShare}
+              title="Share Test Series"
+              className="p-1.5 rounded-lg text-gray-500 hover:text-indigo-600 bg-gray-100 hover:bg-indigo-50 border border-gray-200/80 active:scale-95 transition-all flex items-center justify-center flex-shrink-0"
+            >
+              <Share2 size={16} />
+            </button>
+          </div>
           <div className="flex items-start justify-between gap-4">
             <h1 className="text-lg font-black text-[#0B2457] leading-tight flex-1">
               {course.title}

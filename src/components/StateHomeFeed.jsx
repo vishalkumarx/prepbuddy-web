@@ -394,26 +394,36 @@ export default function StateHomeFeed({ onlyEnrolled = false }) {
               </div>
               
               <div className="p-4 flex flex-col gap-2">
-                <div className="flex items-center gap-1.5 flex-wrap">
-                  {(() => {
-                    const isComingSoon = isTsComingSoon(ts);
-                    return isComingSoon ? (
-                      <div className="self-start bg-orange-100 text-orange-700 font-bold text-[10px] uppercase tracking-wider px-2 py-1 rounded-full flex items-center gap-1.5 shadow-sm border border-orange-200">
-                        <span className="w-1.5 h-1.5 rounded-full bg-orange-500"></span>
-                        Coming Soon
+                <div className="flex items-center justify-between gap-1.5">
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    {(() => {
+                      const isComingSoon = isTsComingSoon(ts);
+                      return isComingSoon ? (
+                        <div className="self-start bg-orange-100 text-orange-700 font-bold text-[10px] uppercase tracking-wider px-2 py-1 rounded-full flex items-center gap-1.5 shadow-sm border border-orange-200">
+                          <span className="w-1.5 h-1.5 rounded-full bg-orange-500"></span>
+                          Coming Soon
+                        </div>
+                      ) : (
+                        <div className="self-start bg-red-600 text-white font-bold text-[10px] uppercase tracking-wider px-2 py-1 rounded-full flex items-center gap-1.5 shadow-sm">
+                          <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse"></span>
+                          Live
+                        </div>
+                      );
+                    })()}
+                    {Number(ts.price) === 0 && (
+                      <div className="self-start bg-emerald-600 text-white font-bold text-[10px] uppercase tracking-wider px-2 py-1 rounded-full flex items-center gap-1 shadow-sm">
+                        Free
                       </div>
-                    ) : (
-                      <div className="self-start bg-red-600 text-white font-bold text-[10px] uppercase tracking-wider px-2 py-1 rounded-full flex items-center gap-1.5 shadow-sm">
-                        <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse"></span>
-                        Live
-                      </div>
-                    );
-                  })()}
-                  {Number(ts.price) === 0 && (
-                    <div className="self-start bg-emerald-600 text-white font-bold text-[10px] uppercase tracking-wider px-2 py-1 rounded-full flex items-center gap-1 shadow-sm">
-                      Free
-                    </div>
-                  )}
+                    )}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={(e) => handleShare(e, ts)}
+                    title="Share Test Series"
+                    className="p-1.5 rounded-lg text-gray-500 hover:text-indigo-600 bg-gray-100 hover:bg-indigo-50 border border-gray-200/80 active:scale-95 transition-all flex items-center justify-center flex-shrink-0"
+                  >
+                    <Share2 size={15} />
+                  </button>
                 </div>
                 <h3 className="font-bold text-base text-gray-900 leading-tight">{ts.title}</h3>
                 {ts.description && (
@@ -459,19 +469,9 @@ export default function StateHomeFeed({ onlyEnrolled = false }) {
                       )}
                     </div>
                   )}
-                  <div className="flex items-center gap-1.5 flex-shrink-0">
-                    <button
-                      type="button"
-                      onClick={(e) => handleShare(e, ts)}
-                      title="Share Test Series"
-                      className="p-2 rounded-xl text-gray-500 hover:text-indigo-600 bg-gray-100 hover:bg-indigo-50 border border-gray-200/80 active:scale-95 transition-all flex items-center justify-center"
-                    >
-                      <Share2 size={16} />
-                    </button>
-                    <button className="bg-[#0B2457] text-white font-bold py-2 px-4 rounded-xl text-xs active:scale-95 transition-transform flex-shrink-0">
-                      View Details
-                    </button>
-                  </div>
+                  <button className="bg-[#0B2457] text-white font-bold py-2 px-4 rounded-xl text-xs active:scale-95 transition-transform flex-shrink-0">
+                    View Details
+                  </button>
                 </div>
               </div>
 
