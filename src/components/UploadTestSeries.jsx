@@ -7,6 +7,7 @@ export default function UploadTestSeries({ onClose, onUploaded }) {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [price, setPrice] = useState('0');
+  const [mrp, setMrp] = useState('');
   const [bannerFile, setBannerFile] = useState(null);
   const [bannerPreview, setBannerPreview] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -47,6 +48,7 @@ export default function UploadTestSeries({ onClose, onUploaded }) {
         title: title.trim(),
         description: description.trim(),
         price: parseFloat(price) || 0,
+        mrp: mrp !== '' ? parseFloat(mrp) : null,
         banner_url: bannerUrl,
         uploaded_by: UserManager.getUserId(),
       }]);
@@ -134,24 +136,46 @@ export default function UploadTestSeries({ onClose, onUploaded }) {
             />
           </div>
 
-          {/* Price */}
-          <div>
-            <label className="block text-sm font-bold text-gray-700 mb-1.5">
-              <IndianRupee size={14} className="inline mr-1" />
-              Price (0 for Free)
-            </label>
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <IndianRupee size={16} className="text-gray-400" />
+          {/* Price & MRP Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-bold text-gray-700 mb-1.5">
+                <IndianRupee size={14} className="inline mr-1" />
+                Selling Price (0 for Free)
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <IndianRupee size={16} className="text-gray-400" />
+                </div>
+                <input
+                  type="number"
+                  value={price}
+                  onChange={(e) => setPrice(e.target.value)}
+                  min="0"
+                  placeholder="0"
+                  className="w-full bg-gray-50 border border-gray-200 rounded-xl pl-9 pr-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:bg-white transition-colors font-bold"
+                />
               </div>
-              <input
-                type="number"
-                value={price}
-                onChange={(e) => setPrice(e.target.value)}
-                min="0"
-                placeholder="0"
-                className="w-full bg-gray-50 border border-gray-200 rounded-xl pl-9 pr-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:bg-white transition-colors font-bold"
-              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-bold text-gray-700 mb-1.5">
+                <IndianRupee size={14} className="inline mr-1" />
+                MRP / Original (Striked off)
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <IndianRupee size={16} className="text-gray-400" />
+                </div>
+                <input
+                  type="number"
+                  value={mrp}
+                  onChange={(e) => setMrp(e.target.value)}
+                  min="0"
+                  placeholder="e.g. 999"
+                  className="w-full bg-gray-50 border border-gray-200 rounded-xl pl-9 pr-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:bg-white transition-colors font-bold"
+                />
+              </div>
             </div>
           </div>
 
