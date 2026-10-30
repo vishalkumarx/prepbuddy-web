@@ -218,14 +218,21 @@ export default function TestTaking() {
         }
       }
 
+      // Ensure submitCourseId is a valid UUID or null (UUID regex)
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      const validCourseId = (submitCourseId && uuidRegex.test(submitCourseId)) ? submitCourseId : null;
+      const subcatDecoded = decodeURIComponent(subcategory);
+      const catDecoded = decodeURIComponent(category);
+
       const { error } = await supabase
         .from('prepbuddy_test_attempts')
         .insert([{
           user_id: userId,
           username: username,
-          course_id: submitCourseId,
-          category: decodeURIComponent(category),
-          subcategory: decodeURIComponent(subcategory),
+          course_id: validCourseId,
+          test_name: subcatDecoded,
+          category: catDecoded,
+          subcategory: subcatDecoded,
           score: score,
           total: questions.length
         }]);
