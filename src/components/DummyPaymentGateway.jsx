@@ -11,7 +11,6 @@ import {
   Copy, 
   Check, 
   ExternalLink,
-  QrCode,
   Smartphone,
   Info
 } from 'lucide-react';
@@ -34,7 +33,6 @@ export default function DummyPaymentGateway() {
   const [utrNumber, setUtrNumber] = useState('');
   const [showUtrField, setShowUtrField] = useState(false);
 
-  // Fetch course or resource title
   useEffect(() => {
     const fetchTitle = async () => {
       try {
@@ -60,10 +58,7 @@ export default function DummyPaymentGateway() {
     if (id) fetchTitle();
   }, [type, id]);
 
-  // Clean note (spaces replaced with %20 by URLSearchParams or safe string)
   const transactionNote = `${itemTitle.slice(0, 30)} Payment`.replace(/[^a-zA-Z0-9 ]/g, '');
-  
-  // NPCI standard UPI URI
   const upiIntentUrl = `upi://pay?pa=${encodeURIComponent(UPI_ID)}&pn=${encodeURIComponent(PAYEE_NAME)}&am=${price}&cu=INR&tn=${encodeURIComponent(transactionNote)}`;
 
   const handleCopyUPI = () => {
@@ -173,6 +168,54 @@ export default function DummyPaymentGateway() {
               />
             </div>
 
+            {/* UPI Supported Apps Logos / Badges */}
+            <div className="mt-4 w-full flex flex-col items-center">
+              <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2">
+                Supported Apps
+              </p>
+              <div className="flex items-center justify-center gap-2 flex-wrap">
+                {/* Google Pay */}
+                <div className="flex items-center gap-1.5 bg-gray-50 border border-gray-200/90 rounded-xl px-2.5 py-1.5 shadow-2xs">
+                  <svg className="w-4 h-4 flex-shrink-0" viewBox="0 0 24 24">
+                    <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.8-2.4 3.68v3.05h3.88c2.27-2.09 3.66-5.17 3.66-9.17z"/>
+                    <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.24v3.15C3.26 21.36 7.34 24 12 24z"/>
+                    <path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.24C.45 8.15 0 9.9 0 12s.45 3.85 1.24 5.42l4.04-3.15z"/>
+                    <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.34 0 3.26 2.64 1.24 6.58l4.04 3.15c.95-2.83 3.6-4.98 6.72-4.98z"/>
+                  </svg>
+                  <span className="text-xs font-bold text-gray-700">GPay</span>
+                </div>
+
+                {/* PhonePe */}
+                <div className="flex items-center gap-1.5 bg-gray-50 border border-gray-200/90 rounded-xl px-2.5 py-1.5 shadow-2xs">
+                  <div className="w-4 h-4 rounded-full bg-[#5f259f] flex items-center justify-center text-white font-black text-[10px] leading-none">
+                    पे
+                  </div>
+                  <span className="text-xs font-bold text-gray-700">PhonePe</span>
+                </div>
+
+                {/* Paytm */}
+                <div className="flex items-center gap-1.5 bg-gray-50 border border-gray-200/90 rounded-xl px-2.5 py-1.5 shadow-2xs">
+                  <div className="w-4 h-4 rounded bg-[#002e6e] flex items-center justify-center text-[#00baf2] font-black text-[9px] leading-none">
+                    P
+                  </div>
+                  <span className="text-xs font-bold text-gray-700">Paytm</span>
+                </div>
+
+                {/* BHIM */}
+                <div className="flex items-center gap-1.5 bg-gray-50 border border-gray-200/90 rounded-xl px-2.5 py-1.5 shadow-2xs">
+                  <div className="w-4 h-4 rounded bg-gradient-to-r from-[#005a9c] to-[#008744] flex items-center justify-center text-white font-black text-[8px] leading-none">
+                    B
+                  </div>
+                  <span className="text-xs font-bold text-gray-700">BHIM</span>
+                </div>
+
+                {/* Other UPI */}
+                <div className="flex items-center gap-1 bg-gray-50 border border-gray-200/90 rounded-xl px-2.5 py-1.5 shadow-2xs">
+                  <span className="text-xs font-bold text-gray-600">+ Any UPI</span>
+                </div>
+              </div>
+            </div>
+
             {/* UPI ID Row */}
             <div className="mt-4 w-full flex items-center justify-between bg-gray-50 border border-gray-200/80 rounded-xl px-3 py-2 text-xs">
               <div className="text-left min-w-0">
@@ -195,14 +238,14 @@ export default function DummyPaymentGateway() {
             </p>
           </div>
 
-          {/* Mobile Tap-to-Pay Button */}
-          <div className="mt-4 md:hidden">
+          {/* Mobile Tap-to-Pay Quick Links */}
+          <div className="mt-4 md:hidden flex flex-col gap-2">
             <a
               href={upiIntentUrl}
               className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-4 rounded-xl shadow-md shadow-emerald-600/20 flex items-center justify-center gap-2 text-sm active:scale-[0.99] transition-all"
             >
               <Smartphone size={18} />
-              Open in GPay / PhonePe / Paytm
+              Open UPI App (Paytm, PhonePe, GPay)
               <ExternalLink size={14} />
             </a>
           </div>
