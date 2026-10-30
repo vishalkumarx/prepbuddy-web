@@ -581,6 +581,9 @@ export default function CourseControlPanel() {
                                         <div className="flex-1 min-w-0">
                                           <div className="flex items-center gap-2">
                                             <p className={`font-bold text-sm text-gray-900 leading-snug ${t.is_hidden ? 'line-through text-gray-500' : ''}`}>{t.subcategory}</p>
+                                            {t.is_free && (
+                                              <span className="text-[9px] font-bold bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded-full uppercase tracking-wide flex-shrink-0">Free</span>
+                                            )}
                                             {t.coming_soon && (
                                               <span className="text-[9px] font-bold bg-amber-100 text-amber-600 px-1.5 py-0.5 rounded-full uppercase tracking-wide flex-shrink-0">Soon</span>
                                             )}
@@ -594,6 +597,14 @@ export default function CourseControlPanel() {
                                           <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mt-0.5">{t.totalQuestions} Qs • {t.duration} min</p>
                                         </div>
                                         <div className="flex items-center gap-1">
+                                          <button
+                                            onClick={() => handleUpdateTile(t._idx, { is_free: !t.is_free })}
+                                            disabled={actionLoading}
+                                            title={t.is_free ? "Mark as Paid" : "Mark as Free Test"}
+                                            className={`p-1.5 rounded-lg transition-colors font-bold text-[10px] px-2 ${t.is_free ? 'text-emerald-700 bg-emerald-100 hover:bg-emerald-200' : 'text-gray-400 hover:text-emerald-600 hover:bg-emerald-50'}`}
+                                          >
+                                            {t.is_free ? "FREE" : "Free?"}
+                                          </button>
                                           <button
                                             onClick={() => handleUpdateTile(t._idx, { is_unavailable: !t.is_unavailable })}
                                             disabled={actionLoading}
@@ -715,6 +726,29 @@ export default function CourseControlPanel() {
                           className="w-5 h-5 rounded text-indigo-600 focus:ring-indigo-500 bg-gray-100 border-gray-300"
                         />
                         <span className="font-bold text-sm text-gray-800">Mark as "Popular Test Series"</span>
+                      </label>
+                      <label className="flex items-center gap-3 cursor-pointer mt-4">
+                        <input 
+                          type="checkbox" 
+                          checked={Number(selectedCourse.price) === 0}
+                          onChange={async (e) => {
+                            const isFree = e.target.checked;
+                            const newPrice = isFree ? 0 : 499;
+                            try {
+                               const { error } = await supabase.from('prepbuddy_test_series').update({ price: newPrice }).eq('id', selectedCourse.id);
+                               if(error) throw error;
+                               setSelectedCourse({...selectedCourse, price: newPrice});
+                               setCourses(courses.map(c => c.id === selectedCourse.id ? {...c, price: newPrice} : c));
+                            } catch(err) {
+                               alert(err.message);
+                            }
+                          }}
+                          className="w-5 h-5 rounded text-emerald-600 focus:ring-emerald-500 bg-gray-100 border-gray-300"
+                        />
+                        <span className="font-bold text-sm text-gray-800 flex items-center gap-1.5">
+                          Mark as "Free Test Series"
+                          <span className="text-[10px] bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded font-bold uppercase tracking-wider">Free Tag</span>
+                        </span>
                       </label>
                     </div>
 

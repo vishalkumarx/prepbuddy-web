@@ -471,27 +471,33 @@ export default function CourseDetail() {
                         const progressKey = `test_progress_${UserManager.getUserId()}_${course.id}_${test.category}_${test.subcategory}`;
                         const isPaused = !!localStorage.getItem(progressKey);
                         
+                        const isTestFree = test.is_free || course.price === 0;
+                        const canTake = isEnrolled || isTestFree;
+                        
                         return (
                           <div 
                             key={idx} 
                             onClick={() => {
                               if (!attempt || isPaused) {
-                                if (isEnrolled) {
+                                if (canTake) {
                                   navigate(`/test/${course.id}/${encodeURIComponent(test.category)}/${encodeURIComponent(test.subcategory)}`);
                                 } else {
                                   alert("Please enroll in the course first to take this test!");
                                 }
                               }
                             }}
-                            className={`flex flex-col gap-3 p-3 rounded-xl border ${isEnrolled ? 'border-gray-100 hover:border-indigo-200 bg-white shadow-sm hover:shadow-md' : 'border-gray-50 bg-gray-50/50 opacity-90 cursor-not-allowed'} transition-all group ${!attempt && isEnrolled ? 'cursor-pointer' : ''}`}
+                            className={`flex flex-col gap-3 p-3 rounded-xl border ${canTake ? 'border-gray-100 hover:border-indigo-200 bg-white shadow-sm hover:shadow-md' : 'border-gray-50 bg-gray-50/50 opacity-90 cursor-not-allowed'} transition-all group ${!attempt && canTake ? 'cursor-pointer' : ''}`}
                           >
                             <div className="flex items-start gap-3 w-full">
-                              <div className={`p-2 rounded-xl transition-colors shrink-0 ${isEnrolled ? 'bg-indigo-50 text-indigo-600 group-hover:bg-indigo-600 group-hover:text-white' : 'bg-gray-200 text-gray-400'}`}>
+                              <div className={`p-2 rounded-xl transition-colors shrink-0 ${canTake ? 'bg-indigo-50 text-indigo-600 group-hover:bg-indigo-600 group-hover:text-white' : 'bg-gray-200 text-gray-400'}`}>
                                 <FileText size={18} />
                               </div>
                               <div className="flex-1 min-w-0 flex flex-col pt-0.5">
                                 <div className="flex items-center gap-2">
-                                  <h4 className={`font-bold text-sm leading-tight ${isEnrolled ? 'text-gray-900 group-hover:text-indigo-900' : 'text-gray-600'}`}>{test.subcategory}</h4>
+                                  <h4 className={`font-bold text-sm leading-tight ${canTake ? 'text-gray-900 group-hover:text-indigo-900' : 'text-gray-600'}`}>{test.subcategory}</h4>
+                                  {test.is_free && (
+                                    <span className="text-[9px] font-bold bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded-full uppercase tracking-wide flex-shrink-0">Free Test</span>
+                                  )}
                                   {test.coming_soon && (
                                     <span className="text-[9px] font-bold bg-amber-50 text-amber-500 border border-amber-200 px-1.5 py-0.5 rounded-full uppercase tracking-wide flex-shrink-0">Coming Soon</span>
                                   )}
@@ -509,11 +515,11 @@ export default function CourseDetail() {
                                 
                                 {!attempt && !isPaused && (
                                   <div className="mt-2 flex items-center">
-                                    <div className={`flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-md shrink-0 ${isEnrolled ? 'text-emerald-700 bg-emerald-100/70' : 'text-gray-500 bg-gray-200/60'}`}>
-                                      {isEnrolled ? (
+                                    <div className={`flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-md shrink-0 ${canTake ? 'text-emerald-700 bg-emerald-100/70' : 'text-gray-500 bg-gray-200/60'}`}>
+                                      {canTake ? (
                                         <>
                                           <Unlock size={10} strokeWidth={3} />
-                                          TAKE TEST
+                                          TAKE TEST {test.is_free && !isEnrolled ? '(FREE)' : ''}
                                         </>
                                       ) : (
                                         <>
