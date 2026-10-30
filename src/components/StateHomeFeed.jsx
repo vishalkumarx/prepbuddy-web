@@ -464,32 +464,7 @@ export default function StateHomeFeed({ onlyEnrolled = false }) {
                   <div className="text-xs text-gray-600 html-content line-clamp-3 overflow-hidden" dangerouslySetInnerHTML={{ __html: processHtml(ts.description) }} />
                 )}
 
-                {/* Price row */}
-                {!enrolledIds.has(ts.id) && (
-                  <div className="mt-2 flex items-center gap-2 flex-wrap">
-                    {ts.price > 0 ? (
-                      <>
-                        <span className="font-black text-lg text-[#0B2457] flex items-center">
-                          <IndianRupee size={15} className="mr-0" />{ts.price}
-                        </span>
-                        {ts.mrp && ts.mrp > ts.price && (
-                          <>
-                            <span className="text-sm text-gray-400 line-through flex items-center">
-                              <IndianRupee size={12} className="mr-0" />{ts.mrp}
-                            </span>
-                            <span className="bg-green-100 text-green-700 font-black text-[10px] px-2 py-0.5 rounded-full">
-                              {Math.round((ts.mrp - ts.price) / ts.mrp * 100)}% OFF
-                            </span>
-                          </>
-                        )}
-                      </>
-                    ) : (
-                      <span className="font-black text-lg text-emerald-600">FREE</span>
-                    )}
-                  </div>
-                )}
-
-                {/* Action Row: Progress (if enrolled) and View Details button */}
+                {/* Action Row: Price (with striked MRP & discount) or Progress + View Details */}
                 <div className="mt-3 flex items-center justify-between gap-2">
                   {enrolledIds.has(ts.id) ? (
                     <div className="flex items-center gap-2">
@@ -512,9 +487,29 @@ export default function StateHomeFeed({ onlyEnrolled = false }) {
                       </div>
                     </div>
                   ) : (
-                    <div />
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {ts.price > 0 ? (
+                        <>
+                          <span className="font-black text-lg text-[#0B2457] flex items-center">
+                            <IndianRupee size={15} className="mr-0" />{ts.price}
+                          </span>
+                          {ts.mrp && ts.mrp > ts.price && (
+                            <>
+                              <span className="text-sm text-gray-400 line-through flex items-center">
+                                <IndianRupee size={12} className="mr-0" />{ts.mrp}
+                              </span>
+                              <span className="bg-green-100 text-green-700 font-black text-[10px] px-2 py-0.5 rounded-full">
+                                {Math.round((ts.mrp - ts.price) / ts.mrp * 100)}% OFF
+                              </span>
+                            </>
+                          )}
+                        </>
+                      ) : (
+                        <span className="font-black text-lg text-emerald-600">FREE</span>
+                      )}
+                    </div>
                   )}
-                  <button className="bg-[#0B2457] text-white font-bold py-2 px-4 rounded-xl text-xs active:scale-95 transition-transform">
+                  <button className="bg-[#0B2457] text-white font-bold py-2 px-4 rounded-xl text-xs active:scale-95 transition-transform flex-shrink-0">
                     View Details
                   </button>
                 </div>
