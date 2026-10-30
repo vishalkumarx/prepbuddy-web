@@ -396,27 +396,29 @@ export default function DummyPaymentGateway() {
             <button
               onClick={handleConfirmEnrollment}
               disabled={loading}
-              className="w-full bg-[#0B2457] hover:bg-[#07193d] text-white font-black text-sm py-3.5 rounded-xl shadow-md active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-70"
+              className="w-full bg-[#0B2457] hover:bg-[#07193d] text-white font-black text-sm py-3.5 px-4 rounded-xl shadow-md active:scale-[0.98] transition-all flex items-center justify-center gap-2.5 text-center leading-snug disabled:opacity-70"
             >
               {loading ? (
                 <>
-                  <Loader2 className="animate-spin" size={18} />
-                  Verifying & Enrolling...
+                  <Loader2 className="animate-spin shrink-0" size={18} />
+                  <span>Submitting Join Request...</span>
                 </>
               ) : (
                 <>
-                  <CheckCircle size={18} />
-                  Click here after payment completion [₹{price}]
+                  <CheckCircle size={18} className="shrink-0 text-emerald-400" />
+                  <span>Click here after payment completion [₹{price}]</span>
                 </>
               )}
             </button>
-            <p className="text-[11px] text-center text-emerald-700 font-semibold mt-2 flex items-center justify-center gap-1.5 bg-emerald-50 py-1.5 px-3 rounded-lg border border-emerald-100">
-              <MessageCircle size={14} className="text-emerald-600" /> Opens WhatsApp to send payment proof to admin (+91 78886 83399)
-            </p>
+            <div className="text-[11px] text-emerald-800 font-semibold mt-2.5 flex items-center justify-center gap-1.5 bg-emerald-50 py-2 px-3 rounded-xl border border-emerald-200/80 text-center leading-tight">
+              <MessageCircle size={15} className="text-emerald-600 shrink-0" />
+              <span>Opens WhatsApp to send payment proof to admin (+91 78886 83399)</span>
+            </div>
           </div>
 
-          <p className="text-[11px] text-center text-gray-400 mt-2 flex items-center justify-center gap-1">
-            <ShieldCheck size={13} className="text-emerald-500" /> Instant activation upon confirmation
+          <p className="text-[11px] text-center text-gray-400 mt-2.5 flex items-center justify-center gap-1">
+            <ShieldCheck size={13} className="text-emerald-500 shrink-0" />
+            <span>Access activated upon admin verification</span>
           </p>
 
         </div>
