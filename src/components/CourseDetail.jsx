@@ -257,6 +257,8 @@ export default function CourseDetail() {
   }
 
   const linkedTests = (course.linked_tests || []).filter(t => {
+    // Always show coming_soon tests even if questions are not yet uploaded
+    if (t.coming_soon) return true;
     // Hide tests deleted from the questions table (count will be 0 or missing)
     const count = questionCounts[`${t.category}-${t.subcategory}`];
     return count === undefined || count > 0; // show if count not yet loaded or has questions
@@ -472,12 +474,17 @@ export default function CourseDetail() {
                         const isPaused = !!localStorage.getItem(progressKey);
                         
                         const isTestFree = test.is_free || course.price === 0;
-                        const canTake = isEnrolled || isTestFree;
+                        const isComingSoon = test.coming_soon;
+                        const canTake = (isEnrolled || isTestFree) && !isComingSoon;
                         
                         return (
                           <div 
                             key={idx} 
                             onClick={() => {
+                              if (isComingSoon) {
+                                alert("This test is coming soon and will be unlocked shortly!");
+                                return;
+                              }
                               if (!attempt || isPaused) {
                                 if (canTake) {
                                   navigate(`/test/${course.id}/${encodeURIComponent(test.category)}/${encodeURIComponent(test.subcategory)}`);
@@ -489,8 +496,8 @@ export default function CourseDetail() {
                             className={`flex flex-col gap-3 p-3 rounded-xl border ${canTake ? 'border-gray-100 hover:border-indigo-200 bg-white shadow-sm hover:shadow-md' : 'border-gray-50 bg-gray-50/50 opacity-90 cursor-not-allowed'} transition-all group ${!attempt && canTake ? 'cursor-pointer' : ''}`}
                           >
                             <div className="flex items-start gap-3 w-full">
-                              <div className={`p-2 rounded-xl transition-colors shrink-0 ${canTake ? 'bg-indigo-50 text-indigo-600 group-hover:bg-indigo-600 group-hover:text-white' : 'bg-gray-200 text-gray-400'}`}>
-                                <FileText size={18} />
+                              <div className={`p-2 rounded-xl transition-colors shrink-0 ${isComingSoon ? 'bg-amber-50 text-amber-500' : (canTake ? 'bg-indigo-50 text-indigo-600 group-hover:bg-indigo-600 group-hover:text-white' : 'bg-gray-200 text-gray-400')}`}>
+                                {isComingSoon ? <Clock size={18} /> : <FileText size={18} />}
                               </div>
                               <div className="flex-1 min-w-0 flex flex-col pt-0.5">
                                 <div className="flex items-center gap-2">
@@ -498,8 +505,11 @@ export default function CourseDetail() {
                                   {test.is_free && (
                                     <span className="text-[9px] font-bold bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded-full uppercase tracking-wide flex-shrink-0">Free Test</span>
                                   )}
-                                  {test.coming_soon && (
-                                    <span className="text-[9px] font-bold bg-amber-50 text-amber-500 border border-amber-200 px-1.5 py-0.5 rounded-full uppercase tracking-wide flex-shrink-0">Coming Soon</span>
+                                  {isComingSoon && (
+                                    <span className="text-[9px] font-bold bg-amber-50 text-amber-600 border border-amber-200 px-2 py-0.5 rounded-full uppercase tracking-wide flex-shrink-0 flex items-center gap-1">
+                                      <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
+                                      Coming Soon
+                                    </span>
                                   )}
                                 </div>
                                 <div className="flex items-center gap-1.5 mt-1.5 mb-0.5">
@@ -515,19 +525,26 @@ export default function CourseDetail() {
                                 
                                 {!attempt && !isPaused && (
                                   <div className="mt-2 flex items-center">
-                                    <div className={`flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-md shrink-0 ${canTake ? 'text-emerald-700 bg-emerald-100/70' : 'text-gray-500 bg-gray-200/60'}`}>
-                                      {canTake ? (
-                                        <>
-                                          <Unlock size={10} strokeWidth={3} />
-                                          TAKE TEST {test.is_free && !isEnrolled ? '(FREE)' : ''}
-                                        </>
-                                      ) : (
-                                        <>
-                                          <Lock size={10} strokeWidth={3} />
-                                          LOCKED
-                                        </>
-                                      )}
-                                    </div>
+                                    {isComingSoon ? (
+                                      <div className="flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-md shrink-0 text-amber-700 bg-amber-100/70 border border-amber-200">
+                                        <Clock size={10} strokeWidth={2.5} />
+                                        COMING SOON
+                                      </div>
+                                    ) : (
+                                      <div className={`flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-md shrink-0 ${canTake ? 'text-emerald-700 bg-emerald-100/70' : 'text-gray-500 bg-gray-200/60'}`}>
+                                        {canTake ? (
+                                          <>
+                                            <Unlock size={10} strokeWidth={3} />
+                                            TAKE TEST {test.is_free && !isEnrolled ? '(FREE)' : ''}
+                                          </>
+                                        ) : (
+                                          <>
+                                            <Lock size={10} strokeWidth={3} />
+                                            LOCKED
+                                          </>
+                                        )}
+                                      </div>
+                                    )}
                                   </div>
                                 )}
                                 

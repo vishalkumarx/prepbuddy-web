@@ -50,6 +50,54 @@ export default function CourseControlPanel() {
     }));
   };
 
+  // Add Coming Soon Test Modal State
+  const [showAddComingSoonModal, setShowAddComingSoonModal] = useState(false);
+  const [comingSoonCat, setComingSoonCat] = useState('');
+  const [comingSoonSubcat, setComingSoonSubcat] = useState('');
+  const [comingSoonQuestions, setComingSoonQuestions] = useState('100');
+  const [comingSoonDuration, setComingSoonDuration] = useState('120');
+
+  const handleAddComingSoonTile = async (e) => {
+    e.preventDefault();
+    if (!comingSoonCat.trim() || !comingSoonSubcat.trim()) {
+      alert('Please enter both category and test title');
+      return;
+    }
+
+    setActionLoading(true);
+    try {
+      const newTile = {
+        category: comingSoonCat.trim(),
+        subcategory: comingSoonSubcat.trim(),
+        totalQuestions: parseInt(comingSoonQuestions) || 100,
+        duration: parseInt(comingSoonDuration) || 120,
+        time_limit: parseInt(comingSoonDuration) || 120,
+        coming_soon: true,
+        is_free: false,
+        is_unavailable: false,
+        is_hidden: false
+      };
+
+      const updated = [...(selectedCourse.linked_tests || []), newTile];
+      const { data, error } = await supabase
+        .from('prepbuddy_test_series')
+        .update({ linked_tests: updated })
+        .eq('id', selectedCourse.id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      setSelectedCourse(data);
+      setCourses(prev => prev.map(c => c.id === data.id ? data : c));
+      setShowAddComingSoonModal(false);
+      setComingSoonSubcat('');
+    } catch (err) {
+      alert('Error adding coming soon test: ' + err.message);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   const handleDeleteTile = async (tileIdx) => {
     if (!window.confirm('Remove this test tile?')) return;
     setActionLoading(true);
@@ -462,17 +510,32 @@ export default function CourseControlPanel() {
                   ];
                   return (
                     <div className="p-4">
-                      <div className="flex justify-between items-center mb-4">
+                      <div className="flex justify-between items-center mb-4 gap-2 flex-wrap">
                         <h3 className="font-bold text-gray-800">Test Tiles</h3>
-                        {linkedTests.length > 0 && (
+                        <div className="flex items-center gap-2">
                           <button
-                            onClick={handleRemoveAllTiles}
-                            disabled={actionLoading}
-                            className="bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 hover:text-red-700 font-bold px-3 py-1.5 rounded-lg text-xs flex items-center gap-1.5 transition-colors"
+                            onClick={() => {
+                              // Pre-fill first category if available
+                              const existingCategories = Object.keys(grouped);
+                              if (existingCategories.length > 0 && !comingSoonCat) {
+                                setComingSoonCat(existingCategories[0]);
+                              }
+                              setShowAddComingSoonModal(true);
+                            }}
+                            className="bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100 font-bold px-3 py-1.5 rounded-lg text-xs flex items-center gap-1.5 transition-colors shadow-2xs"
                           >
-                            <Trash2 size={14} /> Remove All Contents
+                            <Clock size={14} className="text-amber-600" /> + Add Coming Soon Test
                           </button>
-                        )}
+                          {linkedTests.length > 0 && (
+                            <button
+                              onClick={handleRemoveAllTiles}
+                              disabled={actionLoading}
+                              className="bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 hover:text-red-700 font-bold px-3 py-1.5 rounded-lg text-xs flex items-center gap-1.5 transition-colors"
+                            >
+                              <Trash2 size={14} /> Remove All
+                            </button>
+                          )}
+                        </div>
                       </div>
 
                       {linkedTests.length === 0 ? (
@@ -598,6 +661,14 @@ export default function CourseControlPanel() {
                                         </div>
                                         <div className="flex items-center gap-1">
                                           <button
+                                            onClick={() => handleUpdateTile(t._idx, { coming_soon: !t.coming_soon })}
+                                            disabled={actionLoading}
+                                            title={t.coming_soon ? "Mark as Released" : "Mark as Coming Soon"}
+                                            className={`p-1.5 rounded-lg transition-colors font-bold text-[10px] px-2 ${t.coming_soon ? 'text-amber-700 bg-amber-100 hover:bg-amber-200' : 'text-gray-400 hover:text-amber-600 hover:bg-amber-50'}`}
+                                          >
+                                            {t.coming_soon ? "SOON" : "Soon?"}
+                                          </button>
+                                          <button
                                             onClick={() => handleUpdateTile(t._idx, { is_free: !t.is_free })}
                                             disabled={actionLoading}
                                             title={t.is_free ? "Mark as Paid" : "Mark as Free Test"}
@@ -643,6 +714,118 @@ export default function CourseControlPanel() {
                             })}
                           </div>
                         </>
+                      )}
+                      {/* Add Coming Soon Test Modal */}
+                      {showAddComingSoonModal && (
+                        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+                          <div className="bg-white rounded-3xl w-full max-w-md p-6 shadow-2xl relative animate-in fade-in zoom-in-95">
+                            <button
+                              onClick={() => setShowAddComingSoonModal(false)}
+                              className="p-2 text-gray-400 hover:text-gray-700 rounded-full hover:bg-gray-100 absolute top-4 right-4 transition-colors"
+                            >
+                              <X size={20} />
+                            </button>
+
+                            <div className="flex items-center gap-2.5 mb-4">
+                              <div className="p-2.5 bg-amber-100 text-amber-700 rounded-2xl">
+                                <Clock size={22} />
+                              </div>
+                              <div>
+                                <h3 className="font-bold text-lg text-gray-900 leading-tight">Add Coming Soon Test</h3>
+                                <p className="text-xs text-gray-500">Add an upcoming test tile to this course.</p>
+                              </div>
+                            </div>
+
+                            <form onSubmit={handleAddComingSoonTile} className="space-y-4">
+                              <div>
+                                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
+                                  Category / Subject
+                                </label>
+                                <input
+                                  type="text"
+                                  required
+                                  value={comingSoonCat}
+                                  onChange={e => setComingSoonCat(e.target.value)}
+                                  placeholder="e.g. Mock Tests, Punjab GK, English"
+                                  className="w-full px-3.5 py-2.5 text-sm border border-gray-200 rounded-xl focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500 focus:outline-none"
+                                />
+                                {Object.keys(grouped).length > 0 && (
+                                  <div className="flex items-center gap-1.5 mt-2 flex-wrap">
+                                    <span className="text-[11px] text-gray-400">Existing:</span>
+                                    {Object.keys(grouped).map(cat => (
+                                      <button
+                                        type="button"
+                                        key={cat}
+                                        onClick={() => setComingSoonCat(cat)}
+                                        className="text-[10px] font-bold bg-gray-100 hover:bg-gray-200 text-gray-700 px-2 py-0.5 rounded-md transition-colors"
+                                      >
+                                        {cat}
+                                      </button>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+
+                              <div>
+                                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
+                                  Test Name / Subcategory
+                                </label>
+                                <input
+                                  type="text"
+                                  required
+                                  value={comingSoonSubcat}
+                                  onChange={e => setComingSoonSubcat(e.target.value)}
+                                  placeholder="e.g. Full Length Mock Test 05"
+                                  className="w-full px-3.5 py-2.5 text-sm border border-gray-200 rounded-xl focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500 focus:outline-none"
+                                />
+                              </div>
+
+                              <div className="grid grid-cols-2 gap-3">
+                                <div>
+                                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
+                                    Est. Questions
+                                  </label>
+                                  <input
+                                    type="number"
+                                    min="1"
+                                    value={comingSoonQuestions}
+                                    onChange={e => setComingSoonQuestions(e.target.value)}
+                                    className="w-full px-3.5 py-2 text-sm border border-gray-200 rounded-xl focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500 focus:outline-none"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
+                                    Duration (Mins)
+                                  </label>
+                                  <input
+                                    type="number"
+                                    min="1"
+                                    value={comingSoonDuration}
+                                    onChange={e => setComingSoonDuration(e.target.value)}
+                                    className="w-full px-3.5 py-2 text-sm border border-gray-200 rounded-xl focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500 focus:outline-none"
+                                  />
+                                </div>
+                              </div>
+
+                              <div className="pt-2 flex items-center justify-end gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => setShowAddComingSoonModal(false)}
+                                  className="px-4 py-2.5 rounded-xl text-xs font-bold text-gray-600 hover:bg-gray-100 transition-colors"
+                                >
+                                  Cancel
+                                </button>
+                                <button
+                                  type="submit"
+                                  disabled={actionLoading}
+                                  className="px-5 py-2.5 bg-amber-500 hover:bg-amber-600 active:scale-95 text-white font-bold rounded-xl text-xs shadow-md transition-all flex items-center gap-1.5 disabled:opacity-50"
+                                >
+                                  <Clock size={15} /> Add Coming Soon Test
+                                </button>
+                              </div>
+                            </form>
+                          </div>
+                        </div>
                       )}
                     </div>
                   );
