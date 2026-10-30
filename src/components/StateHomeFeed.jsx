@@ -464,56 +464,9 @@ export default function StateHomeFeed({ onlyEnrolled = false }) {
                   <div className="text-xs text-gray-600 html-content line-clamp-3 overflow-hidden" dangerouslySetInnerHTML={{ __html: processHtml(ts.description) }} />
                 )}
 
-                {/* Compact test count summary */}
-                {ts.linked_tests && ts.linked_tests.length > 0 && (() => {
-                  const grouped = ts.linked_tests.reduce((acc, test) => {
-                    if (!acc[test.category]) acc[test.category] = 0;
-                    acc[test.category]++;
-                    return acc;
-                  }, {});
-                  return (
-                    <div className="pt-2 border-t border-gray-100 flex flex-col gap-1">
-                      {Object.entries(grouped).map(([cat, count]) => (
-                        <div key={cat} className="flex items-center justify-between">
-                          <span className="text-xs text-gray-600 font-medium flex items-center gap-1.5">
-                            <Layers size={11} className="text-gray-400" />
-                            {cat}
-                          </span>
-                          <span className="text-xs font-bold text-[#0B2457] bg-indigo-50 px-2 py-0.5 rounded-full">{count} {count === 1 ? 'Test' : 'Tests'}</span>
-                        </div>
-                      ))}
-                    </div>
-                  );
-                })()}
-                
-                {/* Price row */}
-                {!enrolledIds.has(ts.id) && (
-                  <div className="mt-2 flex items-center gap-2 flex-wrap">
-                    {ts.price > 0 ? (
-                      <>
-                        <span className="font-black text-lg text-[#0B2457] flex items-center">
-                          <IndianRupee size={15} className="mr-0" />{ts.price}
-                        </span>
-                        {ts.mrp && ts.mrp > ts.price && (
-                          <>
-                            <span className="text-sm text-gray-400 line-through flex items-center">
-                              <IndianRupee size={12} className="mr-0" />{ts.mrp}
-                            </span>
-                            <span className="bg-green-100 text-green-700 font-black text-[10px] px-2 py-0.5 rounded-full">
-                              {Math.round((ts.mrp - ts.price) / ts.mrp * 100)}% OFF
-                            </span>
-                          </>
-                        )}
-                      </>
-                    ) : (
-                      <span className="font-black text-lg text-emerald-600">FREE</span>
-                    )}
-                  </div>
-                )}
-
-                {/* Enrolled: progress + View Details */}
-                {enrolledIds.has(ts.id) && (
-                  <div className="mt-3 flex items-center justify-between gap-2">
+                {/* Action Row: Progress (if enrolled) and View Details button */}
+                <div className="mt-3 flex items-center justify-between gap-2">
+                  {enrolledIds.has(ts.id) ? (
                     <div className="flex items-center gap-2">
                       <div className="relative flex-shrink-0 w-10 h-10">
                         <svg viewBox="0 0 36 36" className="w-10 h-10 -rotate-90">
@@ -533,11 +486,13 @@ export default function StateHomeFeed({ onlyEnrolled = false }) {
                         <p className="text-[9px] text-gray-400">{progressPercent === 100 ? 'Completed! 🎉' : 'Keep going!'}</p>
                       </div>
                     </div>
-                    <button className="bg-[#0B2457] text-white font-bold py-2 px-4 rounded-xl text-xs active:scale-95 transition-transform">
-                      View Details
-                    </button>
-                  </div>
-                )}
+                  ) : (
+                    <div />
+                  )}
+                  <button className="bg-[#0B2457] text-white font-bold py-2 px-4 rounded-xl text-xs active:scale-95 transition-transform">
+                    View Details
+                  </button>
+                </div>
               </div>
 
               {/* Full-width Buy Now button at bottom — non-enrolled only */}
