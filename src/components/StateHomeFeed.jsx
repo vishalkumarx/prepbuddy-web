@@ -5,10 +5,12 @@ import { supabase } from '../supabase';
 import { IndianRupee, Layers, Languages, Award, Newspaper, CheckCircle2, Tag, CheckCircle, XCircle, ArrowRight, Clock, Star, ShoppingCart, Unlock, Share2 } from 'lucide-react';
 import TestimonialCarousel from './TestimonialCarousel';
 import { UserManager } from '../utils/UserManager';
+import { useAuthModal } from '../context/AuthModalContext';
 import { processHtml } from '../utils/htmlUtils';
 
 export default function StateHomeFeed({ onlyEnrolled = false }) {
   const navigate = useNavigate();
+  const { requireAuth } = useAuthModal();
   const [testSeries, setTestSeries] = useState([]);
   const [freeTests, setFreeTests] = useState([]);
   const [enrolledIds, setEnrolledIds] = useState(new Set());
@@ -93,13 +95,18 @@ export default function StateHomeFeed({ onlyEnrolled = false }) {
       navigate(`/course/${ts.id}`);
       return;
     }
-    
-    if (ts.price > 0 && couponStatus !== 'valid') {
-      setSelectedCourseForBuy(ts);
-      setShowPromoDialog(true);
-    } else {
-      proceedToEnrollmentOrPayment(ts);
-    }
+
+    requireAuth(() => {
+      if (ts.price > 0 && couponStatus !== 'valid') {
+        setSelectedCourseForBuy(ts);
+        setShowPromoDialog(true);
+      } else {
+        proceedToEnrollmentOrPayment(ts);
+      }
+    }, {
+      title: 'Sign in to Enroll',
+      description: 'Sign in with your Google account to enroll in test series and track your scores.'
+    });
   };
 
   const proceedToEnrollmentOrPayment = async (ts) => {

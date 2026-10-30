@@ -12,9 +12,11 @@ import Leaderboard from './Leaderboard';
 import ViewSolution from './ViewSolution';
 import BannerManager from './BannerManager';
 import { UserManager } from '../utils/UserManager';
+import { useAuthModal } from '../context/AuthModalContext';
 
 export default function StateGovLayout({ onLogout }) {
   const location = useLocation();
+  const { requireAuth } = useAuthModal();
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -26,9 +28,21 @@ export default function StateGovLayout({ onLogout }) {
 
   const navItems = [
     { path: '/', icon: Home, label: 'Home' },
-    { path: '/my-tests', icon: BookOpen, label: 'My Tests' },
+    { path: '/my-tests', icon: BookOpen, label: 'My Tests', requiresAuth: true },
     { path: '/profile', icon: User, label: 'Profile' },
   ];
+
+  const handleNavClick = (e, item) => {
+    if (item.requiresAuth) {
+      const allowed = requireAuth(() => {}, {
+        title: 'Sign in to View My Tests',
+        description: 'Sign in with your Google account to access your enrolled courses and test history.'
+      });
+      if (!allowed) {
+        e.preventDefault();
+      }
+    }
+  };
 
   return (
     <SearchContext.Provider value={{ searchQuery, setSearchQuery }}>
@@ -52,7 +66,12 @@ export default function StateGovLayout({ onLogout }) {
             const Icon = item.icon;
             const isActive = location.pathname === item.path || (item.path === '/' && location.pathname === '/state-home');
             return (
-              <Link key={item.path} to={item.path} className={`flex items-center gap-4 px-4 py-3 rounded-xl transition-colors ${isActive ? 'bg-indigo-50 text-primary font-bold' : 'text-gray-600 hover:bg-gray-50'}`}>
+              <Link 
+                key={item.path} 
+                to={item.path} 
+                onClick={(e) => handleNavClick(e, item)}
+                className={`flex items-center gap-4 px-4 py-3 rounded-xl transition-colors ${isActive ? 'bg-indigo-50 text-primary font-bold' : 'text-gray-600 hover:bg-gray-50'}`}
+              >
                 <Icon size={24} className={isActive ? 'stroke-[2.5px]' : 'stroke-2'} />
                 <span className="text-[15px]">{item.label}</span>
               </Link>
@@ -147,6 +166,7 @@ export default function StateGovLayout({ onLogout }) {
                 <Link
                   key={item.path}
                   to={item.path}
+                  onClick={(e) => handleNavClick(e, item)}
                   className={`flex flex-col items-center justify-center w-full h-full gap-1 transition-colors
                     ${isActive ? 'text-primary' : 'text-gray-500 hover:text-gray-900'}`}
                 >

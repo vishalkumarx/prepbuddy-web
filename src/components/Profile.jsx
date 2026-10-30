@@ -1,11 +1,14 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { UserManager } from '../utils/UserManager';
-import { LogOut, User, Mail, Award, CheckCircle, Users, Settings, FileCode, Shield, Image } from 'lucide-react';
+import { useAuthModal } from '../context/AuthModalContext';
+import { LogOut, LogIn, User, Mail, Award, CheckCircle, Users, Settings, FileCode, Shield, Image } from 'lucide-react';
 
 export default function Profile({ onLogout }) {
-  const username = UserManager.getUsername() || 'Anonymous';
-  const email = UserManager.getEmail() || 'No email provided';
+  const { openLoginModal } = useAuthModal();
+  const isLoggedIn = UserManager.isLoggedIn();
+  const username = UserManager.getUsername() || 'Guest User';
+  const email = UserManager.getEmail() || 'Not signed in';
   const avatar = UserManager.getAvatar();
   const isAdmin = UserManager.isAdmin();
 
@@ -113,14 +116,24 @@ export default function Profile({ onLogout }) {
             Change Exam Goal
           </button>
 
-          {/* Logout Button */}
-          <button 
-            onClick={onLogout}
-            className="w-full py-3.5 bg-red-50 hover:bg-red-100 text-red-600 font-bold rounded-xl flex items-center justify-center gap-2 transition-colors border border-red-100 shadow-sm"
-          >
-            <LogOut size={18} />
-            Log Out
-          </button>
+          {/* Login / Logout Button */}
+          {isLoggedIn ? (
+            <button 
+              onClick={onLogout}
+              className="w-full py-3.5 bg-red-50 hover:bg-red-100 text-red-600 font-bold rounded-xl flex items-center justify-center gap-2 transition-colors border border-red-100 shadow-sm"
+            >
+              <LogOut size={18} />
+              Log Out
+            </button>
+          ) : (
+            <button 
+              onClick={() => openLoginModal({ title: 'Sign in to GoalPrep', description: 'Sign in with your Google account to access all tests and track your preparation.' })}
+              className="w-full py-3.5 bg-[#0B2457] hover:bg-blue-900 text-white font-bold rounded-xl flex items-center justify-center gap-2 transition-colors shadow-md active:scale-95"
+            >
+              <LogIn size={18} />
+              Sign in with Google
+            </button>
+          )}
         </div>
       </div>
       

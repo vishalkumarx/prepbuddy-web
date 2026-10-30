@@ -21,6 +21,7 @@ import StateGovLayout from './components/StateGovLayout';
 import { Home, User, BookOpen, Search, Plus, X, ShoppingBag } from 'lucide-react';
 import { supabase } from './supabase';
 import { UserManager } from './utils/UserManager';
+import { AuthModalProvider } from './context/AuthModalContext';
 
 export const SearchContext = React.createContext();
 
@@ -177,14 +178,6 @@ function Layout({ children }) {
 }
 
 function MainAppRoutes({ isAuth, setIsAuth, preparationMode, setPreparationMode, handleLogout }) {
-  if (!isAuth) {
-    return (
-      <div className="h-[100dvh] w-full bg-white relative overflow-hidden">
-        <Login onLogin={() => setIsAuth(true)} />
-      </div>
-    );
-  }
-
   if (!preparationMode) {
     // Auto-select state_gov, skip the selector screen
     setPreparationMode('state_gov');
@@ -277,30 +270,32 @@ function App() {
 
   return (
     <BrowserRouter>
-      <Routes>
-        {/* Public Unauthenticated Admin Routes */}
-        <Route path="/admin/upload-json" element={<UploadJSONQuestions />} />
-        <Route path="/upload-json" element={<UploadJSONQuestions />} />
-        <Route path="/admin/create-test" element={<CreateTestSeries />} />
-        <Route path="/admin/courses" element={<CourseControlPanel />} />
-        <Route path="/admin/free-tests" element={<FreeTestManager />} />
-        <Route path="/free-tests" element={<AllFreeTests />} />
-        <Route path="/payment/:type/:id" element={<DummyPaymentGateway />} />
+      <AuthModalProvider>
+        <Routes>
+          {/* Public Unauthenticated Admin Routes */}
+          <Route path="/admin/upload-json" element={<UploadJSONQuestions />} />
+          <Route path="/upload-json" element={<UploadJSONQuestions />} />
+          <Route path="/admin/create-test" element={<CreateTestSeries />} />
+          <Route path="/admin/courses" element={<CourseControlPanel />} />
+          <Route path="/admin/free-tests" element={<FreeTestManager />} />
+          <Route path="/free-tests" element={<AllFreeTests />} />
+          <Route path="/payment/:type/:id" element={<DummyPaymentGateway />} />
 
-        {/* Main Application Routes */}
-        <Route 
-          path="/*" 
-          element={
-            <MainAppRoutes 
-              isAuth={isAuth} 
-              setIsAuth={setIsAuth} 
-              preparationMode={preparationMode} 
-              setPreparationMode={setPreparationMode} 
-              handleLogout={handleLogout} 
-            />
-          } 
-        />
-      </Routes>
+          {/* Main Application Routes */}
+          <Route 
+            path="/*" 
+            element={
+              <MainAppRoutes 
+                isAuth={isAuth} 
+                setIsAuth={setIsAuth} 
+                preparationMode={preparationMode} 
+                setPreparationMode={setPreparationMode} 
+                handleLogout={handleLogout} 
+              />
+            } 
+          />
+        </Routes>
+      </AuthModalProvider>
     </BrowserRouter>
   );
 }

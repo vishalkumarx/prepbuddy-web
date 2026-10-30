@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../supabase';
 import { ArrowLeft, IndianRupee, Layers, FileText, CheckCircle2, Lock, Unlock, ChevronDown, ChevronUp, Tag, CheckCircle, XCircle, Languages, Newspaper, Award, Clock, Star, ShoppingCart, Share2 } from 'lucide-react';
 import { UserManager } from '../utils/UserManager';
+import { useAuthModal } from '../context/AuthModalContext';
 import CouponManager from './CouponManager';
 
 const getMonthWeight = (name) => {
@@ -204,13 +205,20 @@ export default function CourseDetail() {
     setDiscountedPrice(null);
   };
 
+  const { requireAuth } = useAuthModal();
+
   const handleBuyClick = () => {
     if (isEnrolled) return;
-    if (course.price > 0 && couponStatus !== 'valid') {
-      setShowPromoDialog(true);
-    } else {
-      proceedToEnrollmentOrPayment();
-    }
+    requireAuth(() => {
+      if (course.price > 0 && couponStatus !== 'valid') {
+        setShowPromoDialog(true);
+      } else {
+        proceedToEnrollmentOrPayment();
+      }
+    }, {
+      title: 'Sign in to Enroll',
+      description: 'Sign in to purchase or enroll in this test series and start taking tests.'
+    });
   };
 
   const proceedToEnrollmentOrPayment = async () => {
@@ -552,9 +560,14 @@ export default function CourseDetail() {
                               }
                               if (!attempt || isPaused) {
                                 if (canTake) {
-                                  navigate(`/test/${course.id}/${encodeURIComponent(test.category)}/${encodeURIComponent(test.subcategory)}`);
+                                  requireAuth(() => {
+                                    navigate(`/test/${course.id}/${encodeURIComponent(test.category)}/${encodeURIComponent(test.subcategory)}`);
+                                  }, {
+                                    title: 'Sign in to Start Test',
+                                    description: 'Sign in with your Google account to record your attempt, save progress, and see your rank.'
+                                  });
                                 } else {
-                                  alert("Please enroll in the course first to take this test!");
+                                  handleBuyClick();
                                 }
                               }
                             }}
