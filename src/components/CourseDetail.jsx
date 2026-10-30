@@ -607,10 +607,10 @@ export default function CourseDetail() {
         </div>
       </div>
 
-      {/* Fixed Bottom Buy/Enroll Dock */}
+      {/* Fixed Bottom Buy/Enroll Dock (Offset by md:left-64 to exclude desktop sidebar) */}
       {!isEnrolled && (
-        <div className="fixed bottom-0 inset-x-0 z-40 bg-white/95 backdrop-blur-md border-t border-gray-200/80 p-3 md:p-4 shadow-[0_-8px_20px_rgba(0,0,0,0.08)]">
-          <div className="max-w-[1000px] mx-auto w-full">
+        <div className="fixed bottom-0 left-0 md:left-64 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-gray-200/80 p-3 md:p-4 shadow-[0_-8px_20px_rgba(0,0,0,0.08)]">
+          <div className="max-w-[1000px] mx-auto w-full px-2">
             <button 
               onClick={handleBuyClick}
               disabled={enrollLoading}
