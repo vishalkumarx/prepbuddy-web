@@ -2,7 +2,7 @@ import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { UserManager } from '../utils/UserManager';
 import { useAuthModal } from '../context/AuthModalContext';
-import { LogOut, LogIn, User, Mail, Award, CheckCircle, Users, Settings, FileCode, Shield, Image } from 'lucide-react';
+import { LogOut, LogIn, User, Mail, Award, CheckCircle, Users, Settings, FileCode, Shield, Image, MessageCircle, Headphones } from 'lucide-react';
 
 export default function Profile({ onLogout }) {
   const navigate = useNavigate();
@@ -111,6 +111,17 @@ export default function Profile({ onLogout }) {
               </Link>
             </>
           )}
+
+          {/* Help Center WhatsApp Button */}
+          <a
+            href="https://wa.me/917888683399?text=Hello%20GoalPrep%20Help%20Center%2C%20I%20need%20assistance%20with..."
+            target="_blank"
+            rel="noopener noreferrer"
+            className="w-full py-3.5 mb-3 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold rounded-xl flex items-center justify-center gap-2 transition-colors border border-emerald-200/80 shadow-xs active:scale-[0.99]"
+          >
+            <MessageCircle size={18} className="text-emerald-600" />
+            <span>Help Center & Support</span>
+          </a>
 
           {/* Login / Logout Button */}
           {isLoggedIn ? (
