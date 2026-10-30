@@ -549,11 +549,15 @@ export default function CourseDetail() {
                                   <div className="w-5 h-5 rounded-md bg-indigo-50 flex items-center justify-center flex-shrink-0">
                                     <svg className="w-3 h-3 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
                                   </div>
-                                  <span className="text-[10px] font-bold text-gray-500">{questionCounts[`${test.category}-${test.subcategory}`] || 0} Qs</span>
+                                  <span className="text-[10px] font-bold text-gray-500">
+                                    {questionCounts[`${test.category}-${test.subcategory}`] || test.totalQuestions || (isComingSoon ? 'TBD' : '0')} Qs
+                                  </span>
                                   <div className="w-5 h-5 rounded-md bg-amber-50 flex items-center justify-center flex-shrink-0 ml-1.5">
                                     <svg className="w-3 h-3 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
                                   </div>
-                                  <span className="text-[10px] font-bold text-gray-500">{test.time_limit ? `${test.time_limit} min` : 'No Limit'}</span>
+                                  <span className="text-[10px] font-bold text-gray-500">
+                                    {test.time_limit || test.duration ? `${test.time_limit || test.duration} min` : (isComingSoon ? 'TBD' : 'No Limit')}
+                                  </span>
                                 </div>
                                 
                                 {!attempt && !isPaused && (

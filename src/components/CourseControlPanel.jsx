@@ -133,8 +133,8 @@ export default function CourseControlPanel() {
   const [showAddComingSoonModal, setShowAddComingSoonModal] = useState(false);
   const [comingSoonCat, setComingSoonCat] = useState('');
   const [comingSoonSubcat, setComingSoonSubcat] = useState('');
-  const [comingSoonQuestions, setComingSoonQuestions] = useState('100');
-  const [comingSoonDuration, setComingSoonDuration] = useState('120');
+  const [comingSoonQuestions, setComingSoonQuestions] = useState('');
+  const [comingSoonDuration, setComingSoonDuration] = useState('');
 
   const handleAddComingSoonTile = async (e) => {
     e.preventDefault();
@@ -145,12 +145,15 @@ export default function CourseControlPanel() {
 
     setActionLoading(true);
     try {
+      const parsedQuestions = comingSoonQuestions.trim() ? parseInt(comingSoonQuestions.trim(), 10) : null;
+      const parsedDuration = comingSoonDuration.trim() ? parseInt(comingSoonDuration.trim(), 10) : null;
+
       const newTile = {
         category: comingSoonCat.trim(),
         subcategory: comingSoonSubcat.trim(),
-        totalQuestions: parseInt(comingSoonQuestions) || 100,
-        duration: parseInt(comingSoonDuration) || 120,
-        time_limit: parseInt(comingSoonDuration) || 120,
+        totalQuestions: parsedQuestions,
+        duration: parsedDuration,
+        time_limit: parsedDuration,
         coming_soon: true,
         is_free: false,
         is_unavailable: false,
@@ -870,25 +873,27 @@ export default function CourseControlPanel() {
                               <div className="grid grid-cols-2 gap-3">
                                 <div>
                                   <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
-                                    Est. Questions
+                                    Est. Questions <span className="text-gray-400 font-normal lowercase">(optional)</span>
                                   </label>
                                   <input
                                     type="number"
                                     min="1"
                                     value={comingSoonQuestions}
                                     onChange={e => setComingSoonQuestions(e.target.value)}
+                                    placeholder="e.g. 100"
                                     className="w-full px-3.5 py-2 text-sm border border-gray-200 rounded-xl focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500 focus:outline-none"
                                   />
                                 </div>
                                 <div>
                                   <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
-                                    Duration (Mins)
+                                    Duration (Mins) <span className="text-gray-400 font-normal lowercase">(optional)</span>
                                   </label>
                                   <input
                                     type="number"
                                     min="1"
                                     value={comingSoonDuration}
                                     onChange={e => setComingSoonDuration(e.target.value)}
+                                    placeholder="e.g. 120"
                                     className="w-full px-3.5 py-2 text-sm border border-gray-200 rounded-xl focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500 focus:outline-none"
                                   />
                                 </div>
