@@ -233,7 +233,8 @@ export default function CourseDetail() {
     const finalPrice = discountedPrice !== null ? discountedPrice : course.price;
     
     if (finalPrice > 0) {
-      navigate(`/payment/course/${id}?price=${finalPrice}`);
+      const couponQuery = couponData?.id ? `&coupon=${encodeURIComponent(couponData.code)}&couponId=${encodeURIComponent(couponData.id)}` : '';
+      navigate(`/payment/course/${id}?price=${finalPrice}${couponQuery}`);
       return;
     }
 

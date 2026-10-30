@@ -68,11 +68,7 @@ export default function StateHomeFeed({ onlyEnrolled = false }) {
         finalPrice = Math.max(0, selectedCourseForBuy.price - data.discount_value);
       }
 
-      await supabase
-        .from('prepbuddy_coupons')
-        .update({ uses_count: (data.uses_count || 0) + 1 })
-        .eq('id', data.id);
-
+      // Note: Do not pre-increment uses_count here before actual payment/enrollment!
       setCouponData(data);
       setDiscountedPrice(Math.round(finalPrice));
       setCouponStatus('valid');
@@ -113,7 +109,8 @@ export default function StateHomeFeed({ onlyEnrolled = false }) {
     const finalPrice = discountedPrice !== null ? discountedPrice : ts.price;
     
     if (finalPrice > 0) {
-      navigate(`/payment/course/${ts.id}?price=${finalPrice}`);
+      const couponQuery = couponData?.id ? `&coupon=${encodeURIComponent(couponData.code)}&couponId=${encodeURIComponent(couponData.id)}` : '';
+      navigate(`/payment/course/${ts.id}?price=${finalPrice}${couponQuery}`);
       return;
     }
 

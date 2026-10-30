@@ -25,6 +25,8 @@ export default function DummyPaymentGateway() {
   const searchParams = new URLSearchParams(location.search);
   const rawPrice = searchParams.get('price') || '0';
   const price = Math.max(0, Number(rawPrice));
+  const appliedCoupon = searchParams.get('coupon') || null;
+  const appliedCouponId = searchParams.get('couponId') || null;
 
   const [itemTitle, setItemTitle] = useState('Course');
   const [loading, setLoading] = useState(false);
@@ -115,11 +117,32 @@ export default function DummyPaymentGateway() {
         user_email: userEmail,
         amount: price,
         utr_number: utrNumber?.trim() || null,
+        coupon_code: appliedCoupon,
+        coupon_id: appliedCouponId,
         created_at: new Date().toISOString(),
         status: 'pending'
       };
 
-      // 1. Save to Supabase prepbuddy_comments system queue
+      // 1. If a one-time/usage-limited coupon was used, increment uses_count in prepbuddy_coupons
+      if (appliedCouponId) {
+        try {
+          const { data: cData } = await supabase
+            .from('prepbuddy_coupons')
+            .select('uses_count, max_uses')
+            .eq('id', appliedCouponId)
+            .single();
+          if (cData) {
+            await supabase
+              .from('prepbuddy_coupons')
+              .update({ uses_count: (cData.uses_count || 0) + 1 })
+              .eq('id', appliedCouponId);
+          }
+        } catch (cErr) {
+          console.warn('Could not update coupon uses_count:', cErr);
+        }
+      }
+
+      // 2. Save to Supabase prepbuddy_comments system queue
       try {
         await supabase
           .from('prepbuddy_comments')
@@ -134,7 +157,7 @@ export default function DummyPaymentGateway() {
         console.warn('Could not post join request to comments queue:', err);
       }
 
-      // 2. Also save to localStorage backup for immediate reliability
+      // 3. Also save to localStorage backup for immediate reliability
       try {
         const localRequests = JSON.parse(localStorage.getItem('prepbuddy_join_requests') || '[]');
         localRequests.unshift({

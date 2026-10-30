@@ -105,7 +105,26 @@ export default function CourseControlPanel() {
         throw enrollError;
       }
 
-      // 2. Remove from prepbuddy_comments queue if comment_id exists
+      // 2. If coupon was applied, ensure its uses_count is incremented
+      if (req.coupon_id) {
+        try {
+          const { data: cData } = await supabase
+            .from('prepbuddy_coupons')
+            .select('uses_count, max_uses')
+            .eq('id', req.coupon_id)
+            .single();
+          if (cData) {
+            await supabase
+              .from('prepbuddy_coupons')
+              .update({ uses_count: Math.max(1, (cData.uses_count || 0)) })
+              .eq('id', req.coupon_id);
+          }
+        } catch (cErr) {
+          console.warn("Could not sync coupon usage on approval:", cErr);
+        }
+      }
+
+      // 3. Remove from prepbuddy_comments queue if comment_id exists
       if (req.comment_id) {
         try {
           await supabase.from('prepbuddy_comments').delete().eq('id', req.comment_id);
@@ -114,14 +133,14 @@ export default function CourseControlPanel() {
         }
       }
 
-      // 3. Remove from localStorage
+      // 4. Remove from localStorage
       try {
         const local = JSON.parse(localStorage.getItem('prepbuddy_join_requests') || '[]');
         const updated = local.filter(l => !(l.user_email === req.user_email && l.course_id === req.course_id));
         localStorage.setItem('prepbuddy_join_requests', JSON.stringify(updated));
       } catch (e) {}
 
-      // 4. Update state
+      // 5. Update state
       setJoinRequests(prev => prev.filter(r => r !== req && r.comment_id !== req.comment_id));
 
       // Refresh enrollments if current course is selected
@@ -710,6 +729,11 @@ export default function CourseControlPanel() {
                                   {req.amount && (
                                     <span className="bg-emerald-100 text-emerald-800 text-[11px] font-black px-2.5 py-0.5 rounded-full">
                                       ₹{req.amount}
+                                    </span>
+                                  )}
+                                  {req.coupon_code && (
+                                    <span className="bg-purple-100 text-purple-800 text-[11px] font-black px-2 py-0.5 rounded-full flex items-center gap-1">
+                                      <Tag size={11} /> {req.coupon_code}
                                     </span>
                                   )}
                                 </div>
