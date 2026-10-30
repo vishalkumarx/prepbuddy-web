@@ -175,7 +175,7 @@ export default function ViewSolution() {
               )}
 
               {/* Flag / Report Question Button under Question */}
-              <div className="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between">
+              <div className="mt-4 pt-3 border-t border-gray-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 sm:gap-4">
                 <button
                   type="button"
                   onClick={() => setFlaggingQuestion({ question: q, index: idx })}
@@ -185,7 +185,7 @@ export default function ViewSolution() {
                   <Flag size={13} className="text-gray-400 group-hover:text-rose-500" />
                   <span>Flag Question</span>
                 </button>
-                <span className="text-[11px] text-gray-400">Found an error? Flag for admin review</span>
+                <span className="text-[11px] text-gray-400 leading-snug">Found an error? Flag for admin review</span>
               </div>
             </div>
           );
