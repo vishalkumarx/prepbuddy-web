@@ -266,20 +266,43 @@ export default function TestTaking() {
       const subcatDecoded = decodeURIComponent(subcategory);
       const catDecoded = decodeURIComponent(category);
 
-      const { error } = await supabase
+      // Check if user has already attempted this test previously
+      // Re-attempts should NOT overwrite or update the initial score and leaderboard standing
+      let existingAttemptQuery = supabase
         .from('prepbuddy_test_attempts')
-        .insert([{
-          user_id: userId,
-          username: username,
-          course_id: validCourseId,
-          test_name: subcatDecoded,
-          category: catDecoded,
-          subcategory: subcatDecoded,
-          score: score,
-          total: questions.length
-        }]);
-        
-      if (error) throw error;
+        .select('id, score, total')
+        .eq('user_id', userId)
+        .eq('category', catDecoded)
+        .eq('subcategory', subcatDecoded);
+
+      if (validCourseId) {
+        existingAttemptQuery = existingAttemptQuery.eq('course_id', validCourseId);
+      } else {
+        existingAttemptQuery = existingAttemptQuery.is('course_id', null);
+      }
+
+      const { data: existingAttempts } = await existingAttemptQuery.limit(1);
+      const hasPriorAttempt = existingAttempts && existingAttempts.length > 0;
+
+      if (!hasPriorAttempt) {
+        // First attempt: record official score and leaderboard entry
+        const { error } = await supabase
+          .from('prepbuddy_test_attempts')
+          .insert([{
+            user_id: userId,
+            username: username,
+            course_id: validCourseId,
+            test_name: subcatDecoded,
+            category: catDecoded,
+            subcategory: subcatDecoded,
+            score: score,
+            total: questions.length
+          }]);
+          
+        if (error) throw error;
+      } else {
+        console.log("Test was previously attempted. Preserving official initial score and leaderboard ranking.");
+      }
       
       // Clear saved progress on successful submission
       localStorage.removeItem(progressKey);

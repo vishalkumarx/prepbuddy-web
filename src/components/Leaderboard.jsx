@@ -20,11 +20,25 @@ export default function Leaderboard() {
           .eq('category', decodeURIComponent(category))
           .eq('subcategory', decodeURIComponent(subcategory))
           .eq('course_id', courseId)
-          .order('score', { ascending: false })
-          .order('created_at', { ascending: true }); // Tie-breaker: earlier attempt wins
+          .order('created_at', { ascending: true }); // Earliest first
 
         if (error) throw error;
-        setAttempts(data || []);
+
+        // Keep strictly the first attempt per user
+        const firstAttemptsByUser = {};
+        (data || []).forEach(att => {
+          if (!firstAttemptsByUser[att.user_id]) {
+            firstAttemptsByUser[att.user_id] = att;
+          }
+        });
+
+        // Sort leaderboard rankings by score (descending), then earlier attempt (created_at ascending)
+        const sortedLeaderboard = Object.values(firstAttemptsByUser).sort((a, b) => {
+          if (b.score !== a.score) return b.score - a.score;
+          return new Date(a.created_at) - new Date(b.created_at);
+        });
+
+        setAttempts(sortedLeaderboard);
       } catch (err) {
         console.error("Error fetching leaderboard:", err);
       } finally {
