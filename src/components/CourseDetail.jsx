@@ -4,6 +4,7 @@ import { supabase } from '../supabase';
 import { ArrowLeft, IndianRupee, Layers, FileText, CheckCircle2, Lock, Unlock, ChevronDown, ChevronUp, Tag, CheckCircle, XCircle, Languages, Newspaper, Award, Clock, Star, ShoppingCart, Share2, Sparkles, PartyPopper, ArrowRight } from 'lucide-react';
 import { UserManager } from '../utils/UserManager';
 import { useAuthModal } from '../context/AuthModalContext';
+import { processHtml } from '../utils/htmlUtils';
 import CouponManager from './CouponManager';
 
 const getMonthWeight = (name) => {
@@ -503,10 +504,17 @@ export default function CourseDetail() {
         )}
 
         {/* Description */}
-        {!isEnrolled && course.description && (
-          <p className="text-gray-600 text-xs leading-relaxed mb-6 whitespace-pre-wrap">
-            {course.description}
-          </p>
+        {course.description && (
+          <div className="mb-6 p-4 rounded-2xl bg-slate-50 border border-slate-100/90 shadow-2xs">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-gray-500 mb-1.5 flex items-center gap-1.5">
+              <FileText size={14} className="text-indigo-600" />
+              <span>About this Test Series</span>
+            </h3>
+            <div 
+              className="text-gray-700 text-xs md:text-sm leading-relaxed html-content whitespace-pre-wrap"
+              dangerouslySetInnerHTML={{ __html: processHtml(course.description) }}
+            />
+          </div>
         )}
 
         {/* Admin — Coupon Manager */}
