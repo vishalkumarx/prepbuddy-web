@@ -149,13 +149,13 @@ export default function Store() {
       </div>
 
       {/* Resource List */}
-      <div className="px-4 grid grid-cols-2 gap-4 mb-20">
+      <div className="px-3 md:px-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4 mb-20 max-w-6xl mx-auto w-full">
         {loading ? (
-          <div className="col-span-2 flex justify-center items-center py-20">
+          <div className="col-span-full flex justify-center items-center py-20">
             <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary"></div>
           </div>
         ) : resources.length === 0 ? (
-          <div className="col-span-2 flex flex-col items-center justify-center py-20 text-center">
+          <div className="col-span-full flex flex-col items-center justify-center py-20 text-center">
             <div className="bg-indigo-50 p-4 rounded-full mb-4">
               <ShoppingBag size={32} className="text-indigo-300" />
             </div>
@@ -167,71 +167,79 @@ export default function Store() {
             <div 
               key={resource.id} 
               onClick={() => navigate(`/store/${resource.id}`)}
-              className="bg-white rounded-2xl p-3 shadow-sm border border-gray-100 flex flex-col gap-2 transition-transform hover:scale-[1.02] cursor-pointer"
+              className="bg-white rounded-xl p-2.5 md:p-3 shadow-xs hover:shadow-md border border-gray-100 flex flex-col justify-between transition-all duration-200 hover:-translate-y-0.5 cursor-pointer group"
             >
-              <div className="w-full bg-indigo-50/50 rounded-xl overflow-hidden mb-2 py-4 flex items-center justify-center relative aspect-[4/5]">
+              {/* Cover Preview Area - prominent book size */}
+              <div className="w-full bg-slate-50/80 rounded-lg overflow-hidden mb-2 py-3 md:py-4 flex items-center justify-center relative aspect-[3/4] border border-gray-100/60">
                 {/* Discount Banner */}
                 {resource.original_price && resource.original_price > resource.price && (
-                  <div className="absolute top-2 right-2 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded shadow-sm z-10 animate-[fadeIn_0.3s_ease-out]">
+                  <div className="absolute top-1.5 right-1.5 bg-red-500 text-white text-[9px] md:text-[10px] font-bold px-1.5 py-0.5 rounded shadow-xs z-10">
                     {Math.round(((resource.original_price - resource.price) / resource.original_price) * 100)}% OFF
                   </div>
                 )}
                 {/* 3D Book Container */}
                 <div 
-                  className="relative w-[90px] h-[125px] shadow-xl rounded-sm transition-transform duration-300 hover:rotate-y-0"
+                  className="relative w-[75%] h-[85%] max-w-[130px] shadow-lg rounded-sm transition-transform duration-300 group-hover:scale-105"
                   style={{
                     perspective: '1000px',
                     transformStyle: 'preserve-3d',
-                    transform: 'rotateY(-15deg) rotateX(5deg)'
+                    transform: 'rotateY(-12deg) rotateX(4deg)'
                   }}
                 >
                   <img 
                     src={resource.thumbnail_url || "/book-mockup.jpg"} 
                     alt="Resource Cover" 
-                    className="w-full h-full object-cover rounded-r-md border border-gray-200 absolute inset-0 bg-white"
+                    className="w-full h-full object-cover rounded-r border border-gray-200/90 absolute inset-0 bg-white shadow-xs"
+                    loading="lazy"
                   />
                   {/* Book Spine Overlay */}
-                  <div className="absolute inset-y-0 left-0 w-2 bg-gradient-to-r from-black/30 via-transparent to-transparent rounded-l-sm"></div>
-                  <div className="absolute inset-y-0 left-0 w-[1px] bg-white/40"></div>
+                  <div className="absolute inset-y-0 left-0 w-2.5 bg-gradient-to-r from-black/35 via-black/10 to-transparent rounded-l-sm"></div>
+                  <div className="absolute inset-y-0 left-0 w-[1px] bg-white/50"></div>
                   
                   {/* Title Fallback Overlay (in case thumbnail fails) */}
                   {!resource.thumbnail_url && (
                      <div className="absolute inset-0 bg-black/40 flex items-end p-1.5">
-                        <h3 className="text-white text-[10px] font-bold leading-tight line-clamp-3">{resource.title}</h3>
+                        <h3 className="text-white text-[9px] font-bold leading-tight line-clamp-3">{resource.title}</h3>
                      </div>
                   )}
                   {/* Soft Copy Banner */}
-                  <div className="absolute bottom-1.5 right-0 bg-blue-600 text-white text-[8px] font-bold px-1.5 py-0.5 rounded-l-md shadow-md tracking-wide uppercase">
-                    📄 Soft Copy
+                  <div className="absolute bottom-1 right-0 bg-blue-600 text-white text-[7px] md:text-[8px] font-bold px-1.5 py-0.5 rounded-l shadow-xs tracking-wider uppercase">
+                    📄 PDF
                   </div>
                 </div>
               </div>
-              <div className="flex justify-between items-start gap-2 px-1">
+
+              {/* Title & Description */}
+              <div className="flex justify-between items-start gap-1 px-0.5 mb-1.5">
                 <div className="flex-1 min-w-0">
-                  <h3 className="text-sm font-bold text-gray-900 leading-tight mb-1 line-clamp-2 break-words break-all">{resource.title}</h3>
+                  <h3 className="text-xs md:text-sm font-bold text-gray-900 leading-snug line-clamp-2 group-hover:text-primary transition-colors">
+                    {resource.title}
+                  </h3>
                   {resource.description && (
-                     <p className="text-[11px] text-gray-500 line-clamp-1">{resource.description}</p>
+                     <p className="text-[10px] md:text-[11px] text-gray-400 line-clamp-1 mt-0.5">{resource.description}</p>
                   )}
                 </div>
                 {UserManager.isAdmin() && (
                   <Link 
                     to={`/edit-resource/${resource.id}`}
                     onClick={(e) => e.stopPropagation()}
-                    className="p-1.5 text-gray-400 hover:text-primary hover:bg-indigo-50 rounded-full transition-colors flex-shrink-0 -mt-1 -mr-1"
+                    className="p-1 text-gray-400 hover:text-primary hover:bg-indigo-50 rounded-md transition-colors flex-shrink-0"
+                    title="Edit Note"
                   >
-                    <Edit2 size={14} />
+                    <Edit2 size={13} />
                   </Link>
                 )}
               </div>
 
-              <div className="mt-auto flex flex-col gap-2 border-t border-gray-50 pt-2 px-1">
+              {/* Price & Action Button */}
+              <div className="mt-auto flex flex-col gap-1.5 border-t border-gray-100 pt-2 px-0.5">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-1.5">
-                    <span className={`text-sm font-bold ${resource.price === 0 ? 'text-green-600' : 'text-primary'}`}>
+                  <div className="flex items-baseline gap-1.5">
+                    <span className={`text-xs md:text-sm font-bold ${resource.price === 0 ? 'text-green-600' : 'text-primary'}`}>
                       {resource.price === 0 ? 'FREE' : `₹${resource.price}`}
                     </span>
                     {resource.original_price && resource.original_price > resource.price && (
-                      <span className="text-[10px] text-gray-400 line-through">₹{resource.original_price}</span>
+                      <span className="text-[9px] md:text-[10px] text-gray-400 line-through">₹{resource.original_price}</span>
                     )}
                   </div>
                 </div>
@@ -240,20 +248,20 @@ export default function Store() {
                     e.stopPropagation();
                     handleAction(resource);
                   }}
-                  className={`flex items-center justify-center gap-1.5 w-full py-2 rounded-lg font-bold text-xs transition-colors ${
+                  className={`flex items-center justify-center gap-1 w-full py-1.5 rounded-lg font-bold text-[11px] md:text-xs transition-colors shadow-2xs ${
                     resource.price === 0 
                       ? 'bg-green-100 text-green-700 hover:bg-green-200' 
-                      : 'bg-primary text-white hover:bg-primary-light'
+                      : 'bg-primary text-white hover:bg-primary-light active:scale-95'
                   }`}
                 >
                   {resource.price === 0 ? (
                     <>
-                      <Download size={14} />
+                      <Download size={13} />
                       Get
                     </>
                   ) : (
                     <>
-                      <ExternalLink size={14} />
+                      <ExternalLink size={13} />
                       Buy
                     </>
                   )}
