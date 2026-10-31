@@ -614,9 +614,8 @@ export default function CourseDetail() {
                         const progressKey = `test_progress_${UserManager.getUserId()}_${course.id}_${test.category}_${test.subcategory}`;
                         const isPaused = !!localStorage.getItem(progressKey);
                         
-                        const isTestFree = test.is_free || course.price === 0;
                         const isComingSoon = test.coming_soon;
-                        const canTake = (isEnrolled || isTestFree) && !isComingSoon;
+                        const canTake = isEnrolled && !isComingSoon;
                         
                         return (
                           <div 
@@ -639,10 +638,10 @@ export default function CourseDetail() {
                                 }
                               }
                             }}
-                            className={`flex flex-col gap-3 p-3 rounded-xl border ${canTake ? 'border-gray-100 hover:border-indigo-200 bg-white shadow-sm hover:shadow-md' : 'border-gray-50 bg-gray-50/50 opacity-90 cursor-not-allowed'} transition-all group ${!attempt && canTake ? 'cursor-pointer' : ''}`}
+                            className={`flex flex-col gap-3 p-3 rounded-xl border ${canTake ? 'border-gray-100 hover:border-indigo-200 bg-white shadow-sm hover:shadow-md cursor-pointer' : 'border-gray-100 bg-gray-50/70 opacity-95 cursor-pointer'} transition-all group`}
                           >
                             <div className="flex items-start gap-3 w-full">
-                              <div className={`p-2 rounded-xl transition-colors shrink-0 ${isComingSoon ? 'bg-amber-50 text-amber-500' : (canTake ? 'bg-indigo-50 text-indigo-600 group-hover:bg-indigo-600 group-hover:text-white' : 'bg-gray-200 text-gray-400')}`}>
+                              <div className={`p-2 rounded-xl transition-colors shrink-0 ${isComingSoon ? 'bg-amber-50 text-amber-500' : (canTake ? 'bg-indigo-50 text-indigo-600 group-hover:bg-indigo-600 group-hover:text-white' : 'bg-gray-200 text-gray-500 group-hover:bg-indigo-50 group-hover:text-indigo-600')}`}>
                                 {isComingSoon ? <Clock size={18} /> : <FileText size={18} />}
                               </div>
                               <div className="flex-1 min-w-0 flex flex-col pt-0.5">
@@ -690,16 +689,16 @@ export default function CourseDetail() {
                                 
                                 {!attempt && !isPaused && !isComingSoon && (
                                   <div className="mt-2 flex items-center">
-                                    <div className={`flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-md shrink-0 ${canTake ? 'text-emerald-700 bg-emerald-100/70' : 'text-gray-500 bg-gray-200/60'}`}>
+                                    <div className={`flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-md shrink-0 ${canTake ? 'text-emerald-700 bg-emerald-100/70' : 'text-gray-600 bg-gray-200/70'}`}>
                                       {canTake ? (
                                         <>
                                           <Unlock size={10} strokeWidth={3} />
-                                          TAKE TEST {test.is_free && !isEnrolled ? '(FREE)' : ''}
+                                          TAKE TEST
                                         </>
                                       ) : (
                                         <>
                                           <Lock size={10} strokeWidth={3} />
-                                          LOCKED
+                                          LOCKED (ENROLL TO UNLOCK)
                                         </>
                                       )}
                                     </div>

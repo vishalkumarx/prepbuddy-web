@@ -133,6 +133,31 @@ export default function TestTaking() {
   useEffect(() => {
     const fetchQuestions = async () => {
       try {
+        const userId = UserManager.getUserId();
+        const isAdmin = UserManager.isAdmin();
+
+        // Verify user enrollment in this course
+        if (!isAdmin && courseId) {
+          if (!userId) {
+            alert('Please sign in and enroll in this test series first.');
+            navigate(`/course/${courseId}`, { replace: true });
+            return;
+          }
+
+          const { data: enrollment, error: enrollError } = await supabase
+            .from('prepbuddy_enrollments')
+            .select('id')
+            .eq('user_id', userId)
+            .eq('course_id', courseId)
+            .maybeSingle();
+
+          if (enrollError || !enrollment) {
+            alert('You must enroll in this test series before attempting any tests.');
+            navigate(`/course/${courseId}`, { replace: true });
+            return;
+          }
+        }
+
         const { data, error } = await supabase
           .from('prepbuddy_questions')
           .select('*')
@@ -157,7 +182,7 @@ export default function TestTaking() {
       }
     };
     fetchQuestions();
-  }, [category, subcategory]);
+  }, [category, subcategory, courseId, navigate]);
 
   const handleSelectOption = (questionId, option) => {
     setAnswers(prev => ({
