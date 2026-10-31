@@ -392,35 +392,26 @@ export default function CourseDetail() {
         
         {/* Title & Price */}
         <div className="mb-4">
-          <div className="flex items-center justify-between gap-2 mb-2">
-            <div className="flex items-center gap-1.5 flex-wrap">
-              {(() => {
-                const isComingSoon = course.is_coming_soon || course.title?.toLowerCase().includes('coming soon') || course.description?.toLowerCase().includes('coming soon');
-                return isComingSoon ? (
-                  <div className="inline-flex bg-orange-100 text-orange-700 font-bold text-[10px] uppercase tracking-wider px-2 py-1 rounded-full items-center gap-1.5 shadow-sm border border-orange-200">
-                    <span className="w-1.5 h-1.5 rounded-full bg-orange-500"></span>
-                    Coming Soon
-                  </div>
-                ) : (
-                  <div className="inline-flex bg-red-600 text-white font-bold text-[10px] uppercase tracking-wider px-2 py-1 rounded-full items-center gap-1.5 shadow-sm">
-                    <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse"></span>
-                    Live
-                  </div>
-                );
-              })()}
-              {Number(course.price) === 0 && (
-                <div className="inline-flex bg-emerald-600 text-white font-bold text-[10px] uppercase tracking-wider px-2 py-1 rounded-full items-center gap-1 shadow-sm">
-                  Free
+          <div className="flex items-center gap-1.5 flex-wrap mb-2">
+            {(() => {
+              const isComingSoon = course.is_coming_soon || course.title?.toLowerCase().includes('coming soon') || course.description?.toLowerCase().includes('coming soon');
+              return isComingSoon ? (
+                <div className="inline-flex bg-orange-100 text-orange-700 font-bold text-[10px] uppercase tracking-wider px-2 py-1 rounded-full items-center gap-1.5 shadow-sm border border-orange-200">
+                  <span className="w-1.5 h-1.5 rounded-full bg-orange-500"></span>
+                  Coming Soon
                 </div>
-              )}
-            </div>
-            <button
-              onClick={handleShare}
-              title="Share Test Series"
-              className="p-1.5 rounded-lg text-gray-500 hover:text-indigo-600 bg-gray-100 hover:bg-indigo-50 border border-gray-200/80 active:scale-95 transition-all flex items-center justify-center flex-shrink-0"
-            >
-              <Share2 size={16} />
-            </button>
+              ) : (
+                <div className="inline-flex bg-red-600 text-white font-bold text-[10px] uppercase tracking-wider px-2 py-1 rounded-full items-center gap-1.5 shadow-sm">
+                  <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse"></span>
+                  Live
+                </div>
+              );
+            })()}
+            {Number(course.price) === 0 && (
+              <div className="inline-flex bg-emerald-600 text-white font-bold text-[10px] uppercase tracking-wider px-2 py-1 rounded-full items-center gap-1 shadow-sm">
+                Free
+              </div>
+            )}
           </div>
           <div className="flex items-start justify-between gap-4">
             <h1 className="text-lg font-black text-[#0B2457] leading-tight flex-1">
@@ -767,18 +758,11 @@ export default function CourseDetail() {
       {/* Fixed Bottom Buy/Enroll Dock (Offset by md:left-64 to exclude desktop sidebar) */}
       {!isEnrolled && (
         <div className="fixed bottom-0 left-0 md:left-64 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-gray-200/80 p-3 md:p-4 shadow-[0_-8px_20px_rgba(0,0,0,0.08)]">
-          <div className="max-w-[1000px] mx-auto w-full px-2 flex items-center gap-2">
-            <button
-              onClick={handleShare}
-              title="Share Test Series"
-              className="p-3.5 md:p-4 rounded-xl text-gray-700 hover:text-indigo-600 bg-gray-100 hover:bg-indigo-50 border border-gray-200 active:scale-95 transition-all flex items-center justify-center flex-shrink-0"
-            >
-              <Share2 size={20} />
-            </button>
+          <div className="max-w-[1000px] mx-auto w-full px-2">
             <button 
               onClick={handleBuyClick}
               disabled={enrollLoading}
-              className="flex-1 font-black py-3.5 md:py-4 rounded-xl text-base shadow-md transition-all flex items-center justify-center gap-2 bg-[#0B2457] text-white hover:bg-blue-900 active:scale-[0.99] disabled:opacity-70"
+              className="w-full font-black py-3.5 md:py-4 rounded-xl text-base shadow-md transition-all flex items-center justify-center gap-2 bg-[#0B2457] text-white hover:bg-blue-900 active:scale-[0.99] disabled:opacity-70"
             >
               {enrollLoading ? 'Processing...' : ((discountedPrice !== null ? discountedPrice : course.price) === 0 ? <><Unlock size={18} /> Enroll Now for Free</> : <><ShoppingCart size={18} /> Buy Now — ₹{discountedPrice !== null ? discountedPrice : course.price}</>)}
             </button>
