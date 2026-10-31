@@ -58,6 +58,45 @@
   padding: 4px 8px;
 }
 
+/* Match the following responsive table styles */
+.match-table-wrapper {
+  margin: 0.75rem 0;
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.match-table {
+  width: 100%;
+  border-collapse: collapse;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.75rem;
+  overflow: hidden;
+  background-color: #ffffff;
+  font-size: 0.875rem;
+}
+
+.match-table th {
+  background-color: #eef2ff !important;
+  color: #1e1b4b !important;
+  font-weight: 700;
+  text-align: left;
+  padding: 0.625rem 0.875rem;
+  border: 1px solid #e2e8f0;
+}
+
+.match-table td {
+  padding: 0.625rem 0.875rem;
+  border: 1px solid #e2e8f0;
+  color: #1f2937;
+  font-weight: 500;
+  vertical-align: top;
+}
+
+.match-table tr:nth-child(even) td {
+  background-color: #f8fafc;
+}
+
 /* Restore semantic HTML styles that Tailwind's preflight resets.
    Without these, <b>, <mark>, <u>, <em> etc. look plain on mobile. */
 .html-content b,
