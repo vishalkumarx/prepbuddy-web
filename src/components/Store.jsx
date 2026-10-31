@@ -191,36 +191,51 @@ export default function Store() {
                     {Math.round(((resource.original_price - resource.price) / resource.original_price) * 100)}% OFF
                   </div>
                 )}
-                {/* 3D Book Container */}
-                <div 
-                  className="relative w-[75%] h-[85%] max-w-[130px] shadow-lg rounded-sm transition-transform duration-300 group-hover:scale-105"
-                  style={{
-                    perspective: '1000px',
-                    transformStyle: 'preserve-3d',
-                    transform: 'rotateY(-12deg) rotateX(4deg)'
-                  }}
-                >
-                  <img 
-                    src={resource.thumbnail_url || "/book-mockup.jpg"} 
-                    alt="Resource Cover" 
-                    className="w-full h-full object-cover rounded-r border border-gray-200/90 absolute inset-0 bg-white shadow-xs"
-                    loading="lazy"
-                  />
-                  {/* Book Spine Overlay */}
-                  <div className="absolute inset-y-0 left-0 w-2.5 bg-gradient-to-r from-black/35 via-black/10 to-transparent rounded-l-sm"></div>
-                  <div className="absolute inset-y-0 left-0 w-[1px] bg-white/50"></div>
-                  
-                  {/* Title Fallback Overlay (in case thumbnail fails) */}
-                  {!resource.thumbnail_url && (
-                     <div className="absolute inset-0 bg-black/40 flex items-end p-1.5">
-                        <h3 className="text-white text-[9px] font-bold leading-tight line-clamp-3">{resource.title}</h3>
-                     </div>
-                  )}
-                  {/* Soft Copy Banner */}
-                  <div className="absolute bottom-1 right-0 bg-blue-600 text-white text-[7px] md:text-[8px] font-bold px-1.5 py-0.5 rounded-l shadow-xs tracking-wider uppercase">
-                    📄 PDF
+                {/* Cover Display: Flat for custom uploaded image, 3D Mockup for auto-extracted PDF */}
+                {resource.thumbnail_url && resource.thumbnail_url.includes('cover_') ? (
+                  <div className="relative w-[85%] h-[92%] rounded-lg overflow-hidden shadow-sm border border-gray-200/80 bg-white group-hover:shadow-md transition-shadow">
+                    <img 
+                      src={resource.thumbnail_url} 
+                      alt={resource.title} 
+                      className="w-full h-full object-cover"
+                      loading="lazy"
+                    />
+                    {/* Soft Copy Banner */}
+                    <div className="absolute bottom-1 right-1 bg-blue-600 text-white text-[7px] md:text-[8px] font-bold px-1.5 py-0.5 rounded shadow-xs tracking-wider uppercase">
+                      📄 PDF
+                    </div>
                   </div>
-                </div>
+                ) : (
+                  <div 
+                    className="relative w-[75%] h-[85%] max-w-[130px] shadow-lg rounded-sm transition-transform duration-300 group-hover:scale-105"
+                    style={{
+                      perspective: '1000px',
+                      transformStyle: 'preserve-3d',
+                      transform: 'rotateY(-12deg) rotateX(4deg)'
+                    }}
+                  >
+                    <img 
+                      src={resource.thumbnail_url || "/book-mockup.jpg"} 
+                      alt="Resource Cover" 
+                      className="w-full h-full object-cover rounded-r border border-gray-200/90 absolute inset-0 bg-white shadow-xs"
+                      loading="lazy"
+                    />
+                    {/* Book Spine Overlay */}
+                    <div className="absolute inset-y-0 left-0 w-2.5 bg-gradient-to-r from-black/35 via-black/10 to-transparent rounded-l-sm"></div>
+                    <div className="absolute inset-y-0 left-0 w-[1px] bg-white/50"></div>
+                    
+                    {/* Title Fallback Overlay (in case thumbnail fails) */}
+                    {!resource.thumbnail_url && (
+                       <div className="absolute inset-0 bg-black/40 flex items-end p-1.5">
+                          <h3 className="text-white text-[9px] font-bold leading-tight line-clamp-3">{resource.title}</h3>
+                       </div>
+                    )}
+                    {/* Soft Copy Banner */}
+                    <div className="absolute bottom-1 right-0 bg-blue-600 text-white text-[7px] md:text-[8px] font-bold px-1.5 py-0.5 rounded-l shadow-xs tracking-wider uppercase">
+                      📄 PDF
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Title & Description */}

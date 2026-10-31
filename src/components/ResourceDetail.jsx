@@ -219,27 +219,41 @@ export default function ResourceDetail() {
                     {Math.round(((resource.original_price - resource.price) / resource.original_price) * 100)}% OFF
                   </div>
                 )}
-                {/* 3D Book Container */}
-                <div 
-                  className="relative w-[180px] h-[255px] md:w-[195px] md:h-[275px] shadow-2xl rounded-sm transition-transform duration-300 hover:rotate-y-0"
-                  style={{
-                    perspective: '1200px',
-                    transformStyle: 'preserve-3d',
-                    transform: 'rotateY(-12deg) rotateX(4deg)'
-                  }}
-                >
-                  <img 
-                    src={resource.thumbnail_url || "/book-mockup.jpg"} 
-                    alt="Resource Cover" 
-                    className="w-full h-full object-cover rounded-r border border-gray-200/90 absolute inset-0 bg-white shadow-sm"
-                  />
-                  <div className="absolute inset-y-0 left-0 w-3.5 bg-gradient-to-r from-black/35 via-black/10 to-transparent rounded-l-sm"></div>
-                  <div className="absolute inset-y-0 left-0 w-0.5 bg-white/50"></div>
-                  {/* Soft Copy Badge */}
-                  <div className="absolute bottom-2.5 right-0 bg-blue-600 text-white text-[9px] font-bold px-2 py-0.5 rounded-l shadow-md tracking-wider uppercase">
-                    📄 Soft Copy PDF
+                {/* Cover Display: Flat for custom uploaded image, 3D Mockup for auto-extracted PDF */}
+                {resource.thumbnail_url && resource.thumbnail_url.includes('cover_') ? (
+                  <div className="relative w-[200px] h-[260px] md:w-[220px] md:h-[290px] rounded-xl overflow-hidden shadow-md border border-gray-200/90 bg-white">
+                    <img 
+                      src={resource.thumbnail_url} 
+                      alt={resource.title} 
+                      className="w-full h-full object-cover"
+                    />
+                    {/* Soft Copy Badge */}
+                    <div className="absolute bottom-2.5 right-2 bg-blue-600 text-white text-[9px] font-bold px-2 py-0.5 rounded shadow-sm tracking-wider uppercase">
+                      📄 Soft Copy PDF
+                    </div>
                   </div>
-                </div>
+                ) : (
+                  <div 
+                    className="relative w-[180px] h-[255px] md:w-[195px] md:h-[275px] shadow-2xl rounded-sm transition-transform duration-300 hover:rotate-y-0"
+                    style={{
+                      perspective: '1200px',
+                      transformStyle: 'preserve-3d',
+                      transform: 'rotateY(-12deg) rotateX(4deg)'
+                    }}
+                  >
+                    <img 
+                      src={resource.thumbnail_url || "/book-mockup.jpg"} 
+                      alt="Resource Cover" 
+                      className="w-full h-full object-cover rounded-r border border-gray-200/90 absolute inset-0 bg-white shadow-sm"
+                    />
+                    <div className="absolute inset-y-0 left-0 w-3.5 bg-gradient-to-r from-black/35 via-black/10 to-transparent rounded-l-sm"></div>
+                    <div className="absolute inset-y-0 left-0 w-0.5 bg-white/50"></div>
+                    {/* Soft Copy Badge */}
+                    <div className="absolute bottom-2.5 right-0 bg-blue-600 text-white text-[9px] font-bold px-2 py-0.5 rounded-l shadow-md tracking-wider uppercase">
+                      📄 Soft Copy PDF
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
