@@ -2,7 +2,7 @@ import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { UserManager } from '../utils/UserManager';
 import { useAuthModal } from '../context/AuthModalContext';
-import { LogOut, LogIn, User, Mail, Award, CheckCircle, Users, Settings, FileCode, Shield, Image, MessageCircle, Headphones } from 'lucide-react';
+import { LogOut, LogIn, User, Mail, Award, CheckCircle, Users, Settings, FileCode, Shield, Image, MessageCircle, Headphones, ShoppingBag } from 'lucide-react';
 
 export default function Profile({ onLogout }) {
   const navigate = useNavigate();
@@ -101,6 +101,13 @@ export default function Profile({ onLogout }) {
               >
                 <Image size={18} />
                 Banner Control Panel
+              </Link>
+              <Link 
+                to="/admin/store"
+                className="w-full py-3.5 mb-3 bg-amber-50 hover:bg-amber-100 text-amber-800 font-bold rounded-xl flex items-center justify-center gap-2 transition-colors border border-amber-200/70 shadow-sm"
+              >
+                <ShoppingBag size={18} />
+                Store Control Panel
               </Link>
               <Link 
                 to="/admin/free-tests"

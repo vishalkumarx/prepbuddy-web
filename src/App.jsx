@@ -18,6 +18,7 @@ import DummyPaymentGateway from './components/DummyPaymentGateway';
 import CourseControlPanel from './components/CourseControlPanel';
 import PreparationSelector from './components/PreparationSelector';
 import StateGovLayout from './components/StateGovLayout';
+import StoreManager from './components/StoreManager';
 import { Home, User, BookOpen, Search, Plus, X, ShoppingBag } from 'lucide-react';
 import { supabase } from './supabase';
 import { UserManager } from './utils/UserManager';
@@ -278,6 +279,7 @@ function App() {
           <Route path="/admin/create-test" element={<CreateTestSeries />} />
           <Route path="/admin/courses" element={<CourseControlPanel />} />
           <Route path="/admin/free-tests" element={<FreeTestManager />} />
+          <Route path="/admin/store" element={<StoreManager />} />
           <Route path="/free-tests" element={<AllFreeTests />} />
           <Route path="/payment/:type/:id" element={<DummyPaymentGateway />} />
 

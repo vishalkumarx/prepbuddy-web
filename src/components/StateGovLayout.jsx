@@ -14,6 +14,7 @@ import BannerManager from './BannerManager';
 import Store from './Store';
 import ResourceDetail from './ResourceDetail';
 import UploadResource from './UploadResource';
+import StoreManager from './StoreManager';
 import { UserManager } from '../utils/UserManager';
 import { useAuthModal } from '../context/AuthModalContext';
 
@@ -152,6 +153,7 @@ export default function StateGovLayout({ onLogout }) {
               <Route path="/leaderboard/:courseId/:category/:subcategory" element={<Leaderboard />} />
               <Route path="/solution/:courseId/:category/:subcategory" element={<ViewSolution />} />
               <Route path="/admin/banners" element={<BannerManager />} />
+              <Route path="/admin/store" element={<StoreManager />} />
             </Routes>
           </div>
         </main>
