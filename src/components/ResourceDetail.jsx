@@ -208,54 +208,67 @@ export default function ResourceDetail() {
       {/* Content */}
       <div className="p-4">
         {/* Cover & Title */}
-        <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 mb-6">
-          <div className="w-full bg-indigo-50/50 rounded-xl overflow-hidden mb-4 py-6 flex items-center justify-center relative aspect-[4/5] max-w-[200px] mx-auto">
-             {/* Discount Banner */}
-             {resource.original_price && resource.original_price > resource.price && (
-                <div className="absolute top-2 right-2 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded shadow-sm z-10">
-                  {Math.round(((resource.original_price - resource.price) / resource.original_price) * 100)}% OFF
+        <div className="bg-white rounded-2xl p-5 md:p-8 shadow-sm border border-gray-100 mb-6 max-w-4xl mx-auto">
+          <div className="flex flex-col md:flex-row gap-6 md:gap-8 items-center md:items-start">
+            {/* 3D Cover Display Area */}
+            <div className="w-full md:w-auto flex-shrink-0 flex items-center justify-center">
+              <div className="w-full max-w-[280px] md:w-[260px] bg-gradient-to-b from-indigo-50/70 to-slate-50/80 rounded-2xl p-6 py-8 flex items-center justify-center relative aspect-[3/4] border border-gray-100 shadow-xs">
+                {/* Discount Banner */}
+                {resource.original_price && resource.original_price > resource.price && (
+                  <div className="absolute top-3 right-3 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded shadow-xs z-10">
+                    {Math.round(((resource.original_price - resource.price) / resource.original_price) * 100)}% OFF
+                  </div>
+                )}
+                {/* 3D Book Container */}
+                <div 
+                  className="relative w-[180px] h-[255px] md:w-[195px] md:h-[275px] shadow-2xl rounded-sm transition-transform duration-300 hover:rotate-y-0"
+                  style={{
+                    perspective: '1200px',
+                    transformStyle: 'preserve-3d',
+                    transform: 'rotateY(-12deg) rotateX(4deg)'
+                  }}
+                >
+                  <img 
+                    src={resource.thumbnail_url || "/book-mockup.jpg"} 
+                    alt="Resource Cover" 
+                    className="w-full h-full object-cover rounded-r border border-gray-200/90 absolute inset-0 bg-white shadow-sm"
+                  />
+                  <div className="absolute inset-y-0 left-0 w-3.5 bg-gradient-to-r from-black/35 via-black/10 to-transparent rounded-l-sm"></div>
+                  <div className="absolute inset-y-0 left-0 w-0.5 bg-white/50"></div>
+                  {/* Soft Copy Badge */}
+                  <div className="absolute bottom-2.5 right-0 bg-blue-600 text-white text-[9px] font-bold px-2 py-0.5 rounded-l shadow-md tracking-wider uppercase">
+                    📄 Soft Copy PDF
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Title, Pricing & Details */}
+            <div className="flex-1 min-w-0 w-full flex flex-col">
+              <h2 className="text-2xl md:text-3xl font-extrabold text-gray-900 mb-3 break-words leading-tight">{resource.title}</h2>
+              
+              <div className="flex items-baseline gap-3 mb-4 border-b border-gray-100 pb-4">
+                <span className={`text-3xl font-black ${resource.price === 0 ? 'text-green-600' : 'text-primary'}`}>
+                  {resource.price === 0 ? 'FREE' : `₹${resource.price}`}
+                </span>
+                {resource.original_price && resource.original_price > resource.price && (
+                  <span className="text-base text-gray-400 line-through font-semibold">₹{resource.original_price}</span>
+                )}
+                {resource.original_price && resource.original_price > resource.price && (
+                  <span className="text-xs font-bold text-green-600 bg-green-50 px-2 py-0.5 rounded">
+                    Save ₹{resource.original_price - resource.price}
+                  </span>
+                )}
+              </div>
+
+              {resource.description && (
+                <div className="mt-1 mb-4">
+                  <h3 className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">About this resource</h3>
+                  <p className="text-gray-700 text-sm md:text-base leading-relaxed whitespace-pre-wrap">{resource.description}</p>
                 </div>
               )}
-              {/* 3D Book Container */}
-             <div 
-               className="relative w-[120px] h-[170px] shadow-2xl rounded-sm"
-               style={{
-                 perspective: '1000px',
-                 transformStyle: 'preserve-3d',
-                 transform: 'rotateY(-15deg) rotateX(5deg)'
-               }}
-             >
-               <img 
-                 src={resource.thumbnail_url || "/book-mockup.jpg"} 
-                 alt="Resource Cover" 
-                 className="w-full h-full object-cover rounded-r-md border border-gray-200 absolute inset-0 bg-white"
-               />
-               <div className="absolute inset-y-0 left-0 w-3 bg-gradient-to-r from-black/30 via-transparent to-transparent rounded-l-sm"></div>
-               <div className="absolute inset-y-0 left-0 w-0.5 bg-white/40"></div>
-               {/* Soft Copy Badge */}
-               <div className="absolute bottom-2 right-0 bg-blue-600 text-white text-[8px] font-bold px-1.5 py-0.5 rounded-l-md shadow-md tracking-wide uppercase">
-                 📄 Soft Copy
-               </div>
-             </div>
-          </div>
-
-          <h2 className="text-2xl font-bold text-gray-900 mb-2 break-words">{resource.title}</h2>
-          
-          <div className="flex items-end gap-3 mb-4 border-b border-gray-100 pb-4">
-            <span className={`text-2xl font-black ${resource.price === 0 ? 'text-green-600' : 'text-primary'}`}>
-              {resource.price === 0 ? 'FREE' : `₹${resource.price}`}
-            </span>
-            {resource.original_price && resource.original_price > resource.price && (
-              <span className="text-sm text-gray-400 line-through mb-1 font-semibold">₹{resource.original_price}</span>
-            )}
-          </div>
-
-          {resource.description && (
-            <div className="mt-1 mb-4">
-              <h3 className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">About this resource</h3>
-              <p className="text-gray-700 text-sm leading-relaxed whitespace-pre-wrap">{resource.description}</p>
             </div>
-          )}
+          </div>
         </div>
 
         {/* Action Button */}
