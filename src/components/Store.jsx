@@ -1,34 +1,133 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ShoppingBag, FileText, Download, ExternalLink, Edit2 } from 'lucide-react';
+import { ShoppingBag, FileText, Download, ExternalLink, Edit2, Loader2 } from 'lucide-react';
 import { supabase } from '../supabase';
 import { UserManager } from '../utils/UserManager';
+
+const PAGE_SIZE = 8;
 
 export default function Store() {
   const navigate = useNavigate();
   const [resources, setResources] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const pageRef = useRef(0);
+  const loadingMoreRef = useRef(false);
+  const hasMoreRef = useRef(true);
+  const sentinelRef = useRef(null);
 
-  useEffect(() => {
-    fetchResources();
-  }, []);
+  const fetchBatch = async (pageNumber, isInitial = false) => {
+    if (isInitial) {
+      setLoading(true);
+    } else {
+      setLoadingMore(true);
+      loadingMoreRef.current = true;
+    }
 
-  const fetchResources = async () => {
-    setLoading(true);
     try {
-      const { data, error } = await supabase
+      const from = pageNumber * PAGE_SIZE;
+      const to = from + PAGE_SIZE - 1;
+
+      const { data, error, count } = await supabase
         .from('prepbuddy_store')
-        .select('*')
-        .order('created_at', { ascending: false });
+        .select('*', { count: 'exact' })
+        .order('created_at', { ascending: false })
+        .range(from, to);
 
       if (error) throw error;
-      setResources(data || []);
+
+      const newItems = data || [];
+      if (isInitial) {
+        setResources(newItems);
+      } else {
+        setResources(prev => {
+          const existingIds = new Set(prev.map(r => r.id));
+          const uniqueNew = newItems.filter(r => !existingIds.has(r.id));
+          return [...prev, ...uniqueNew];
+        });
+      }
+
+      const reachedEnd = newItems.length < PAGE_SIZE;
+      setHasMore(!reachedEnd);
+      hasMoreRef.current = !reachedEnd;
+      pageRef.current = pageNumber;
     } catch (err) {
       console.error("Error fetching store resources:", err);
     } finally {
-      setLoading(false);
+      if (isInitial) {
+        setLoading(false);
+      } else {
+        setLoadingMore(false);
+        loadingMoreRef.current = false;
+      }
     }
   };
+
+  useEffect(() => {
+    pageRef.current = 0;
+    hasMoreRef.current = true;
+    fetchBatch(0, true);
+  }, []);
+
+  const loadMore = useCallback(() => {
+    if (loadingMoreRef.current || !hasMoreRef.current) return;
+    fetchBatch(pageRef.current + 1, false);
+  }, []);
+
+  // IntersectionObserver on sentinelRef
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasMoreRef.current && !loadingMoreRef.current) {
+          loadMore();
+        }
+      },
+      { root: null, rootMargin: '300px', threshold: 0 }
+    );
+
+    const currentSentinel = sentinelRef.current;
+    if (currentSentinel) {
+      observer.observe(currentSentinel);
+    }
+
+    return () => {
+      if (currentSentinel) {
+        observer.unobserve(currentSentinel);
+      }
+    };
+  }, [loadMore, loading]);
+
+  // Fallback scroll listener on window and nearest scrollable ancestor (<main>)
+  useEffect(() => {
+    const handleScroll = (e) => {
+      const target = e.target === document ? document.documentElement : e.target;
+      if (!target) return;
+      
+      const scrollHeight = target.scrollHeight;
+      const scrollTop = target.scrollTop || window.scrollY || 0;
+      const clientHeight = target.clientHeight || window.innerHeight;
+
+      if (scrollHeight - scrollTop - clientHeight < 400) {
+        if (hasMoreRef.current && !loadingMoreRef.current) {
+          loadMore();
+        }
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    const mainEl = document.querySelector('main');
+    if (mainEl) {
+      mainEl.addEventListener('scroll', handleScroll, { passive: true });
+    }
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      if (mainEl) {
+        mainEl.removeEventListener('scroll', handleScroll);
+      }
+    };
+  }, [loadMore]);
 
   const handleAction = (resource) => {
     if (resource.price === 0) {
@@ -164,6 +263,23 @@ export default function Store() {
           ))
         )}
       </div>
+
+      {/* Infinite Scroll Sentinel & Loader */}
+      {!loading && (
+        <div ref={sentinelRef} className="w-full flex justify-center items-center py-6">
+          {loadingMore && (
+            <div className="flex items-center gap-2 text-primary text-sm font-semibold">
+              <Loader2 className="animate-spin text-primary" size={20} />
+              <span>Loading more notes...</span>
+            </div>
+          )}
+          {!hasMore && resources.length > 0 && (
+            <p className="text-xs text-gray-400 font-medium tracking-wide">
+              You've reached the end of the store collection
+            </p>
+          )}
+        </div>
+      )}
     </div>
   );
 }
