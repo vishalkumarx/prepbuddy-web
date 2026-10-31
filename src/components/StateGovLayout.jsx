@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { Routes, Route, Link, useLocation } from 'react-router-dom';
-import { Home, User, Plus, Search, X, BookOpen } from 'lucide-react';
+import { Routes, Route, Link, useLocation, useNavigate } from 'react-router-dom';
+import { Home, User, Plus, Search, X, BookOpen, ShoppingBag } from 'lucide-react';
 import { SearchContext } from '../App';
 import StateHomeFeed from './StateHomeFeed';
 import Profile from './Profile';
@@ -11,11 +11,15 @@ import TestTaking from './TestTaking';
 import Leaderboard from './Leaderboard';
 import ViewSolution from './ViewSolution';
 import BannerManager from './BannerManager';
+import Store from './Store';
+import ResourceDetail from './ResourceDetail';
+import UploadResource from './UploadResource';
 import { UserManager } from '../utils/UserManager';
 import { useAuthModal } from '../context/AuthModalContext';
 
 export default function StateGovLayout({ onLogout }) {
   const location = useLocation();
+  const navigate = useNavigate();
   const { requireAuth } = useAuthModal();
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -23,12 +27,14 @@ export default function StateGovLayout({ onLogout }) {
   const isAdmin = UserManager.isAdmin();
 
   const isHome = location.pathname === '/' || location.pathname === '/state-home';
+  const isStore = location.pathname === '/store';
   const isTestRoute = location.pathname.startsWith('/test/');
-  const showBottomNav = location.pathname === '/' || location.pathname === '/profile' || location.pathname === '/state-home' || location.pathname === '/my-tests';
+  const showBottomNav = location.pathname === '/' || location.pathname === '/profile' || location.pathname === '/state-home' || location.pathname === '/my-tests' || location.pathname === '/store';
 
   const navItems = [
     { path: '/', icon: Home, label: 'Home' },
     { path: '/my-tests', icon: BookOpen, label: 'My Tests', requiresAuth: true },
+    { path: '/store', icon: ShoppingBag, label: 'Store' },
     { path: '/profile', icon: User, label: 'Profile' },
   ];
 
@@ -135,6 +141,10 @@ export default function StateGovLayout({ onLogout }) {
             <Routes>
               <Route path="/" element={<StateHomeFeed />} />
               <Route path="/my-tests" element={<StateHomeFeed onlyEnrolled={true} />} />
+              <Route path="/store" element={<Store />} />
+              <Route path="/store/:id" element={<ResourceDetail />} />
+              <Route path="/upload-resource" element={<UploadResource />} />
+              <Route path="/edit-resource/:id" element={<UploadResource isEdit={true} />} />
               <Route path="/profile" element={<Profile onLogout={onLogout} />} />
               <Route path="/admin/upload-json" element={<UploadJSONQuestions />} />
               <Route path="/course/:id" element={<CourseDetail />} />
@@ -147,10 +157,17 @@ export default function StateGovLayout({ onLogout }) {
         </main>
 
         {/* Floating Action Button (Admin Only) */}
-        {isAdmin && isHome && (
+        {isAdmin && (isHome || isStore) && (
           <button
-            onClick={() => setShowUploadModal(true)}
+            onClick={() => {
+              if (isStore) {
+                navigate('/upload-resource');
+              } else {
+                setShowUploadModal(true);
+              }
+            }}
             className="absolute bottom-24 md:bottom-8 right-6 bg-secondary text-primary p-4 rounded-2xl shadow-lg hover:bg-yellow-500 transition-all z-30 flex items-center justify-center hover:scale-105 active:scale-95"
+            title={isStore ? "Upload Note / Resource" : "Create Test Series"}
           >
             <Plus size={28} strokeWidth={2.5} />
           </button>
