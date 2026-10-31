@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '../supabase';
-import { ArrowLeft, IndianRupee, Layers, FileText, CheckCircle2, Lock, Unlock, ChevronDown, ChevronUp, Tag, CheckCircle, XCircle, Languages, Newspaper, Award, Clock, Star, ShoppingCart, Share2, Sparkles } from 'lucide-react';
+import { ArrowLeft, IndianRupee, Layers, FileText, CheckCircle2, Lock, Unlock, ChevronDown, ChevronUp, Tag, CheckCircle, XCircle, Languages, Newspaper, Award, Clock, Star, ShoppingCart, Share2, Sparkles, PartyPopper, ArrowRight } from 'lucide-react';
 import { UserManager } from '../utils/UserManager';
 import { useAuthModal } from '../context/AuthModalContext';
 import CouponManager from './CouponManager';
@@ -46,6 +46,10 @@ export default function CourseDetail() {
   const [couponData, setCouponData] = useState(null);
   const [discountedPrice, setDiscountedPrice] = useState(null);
   const [showPromoDialog, setShowPromoDialog] = useState(false);
+
+  // Free enrollment custom modal states
+  const [showFreeEnrollConfirm, setShowFreeEnrollConfirm] = useState(false);
+  const [showFreeEnrollSuccess, setShowFreeEnrollSuccess] = useState(false);
 
   const toggleCategory = (cat) => {
     setExpandedCategories(prev => {
@@ -218,8 +222,12 @@ export default function CourseDetail() {
   const handleBuyClick = () => {
     if (isEnrolled) return;
     requireAuth(() => {
-      if (course.price > 0 && couponStatus !== 'valid') {
+      const finalPrice = discountedPrice !== null ? discountedPrice : course.price;
+      if (finalPrice > 0 && couponStatus !== 'valid') {
         setShowPromoDialog(true);
+      } else if (finalPrice === 0) {
+        // Show custom confirm dialog before free enrollment
+        setShowFreeEnrollConfirm(true);
       } else {
         proceedToEnrollmentOrPayment();
       }
@@ -244,7 +252,7 @@ export default function CourseDetail() {
         .from('prepbuddy_enrollments')
         .insert([{ user_id: userId, course_id: id }]);
         
-      if (error) throw error;
+      if (error && !error.message?.includes('duplicate')) throw error;
 
       // If a valid coupon was applied, increment uses_count
       if (couponData?.id) {
@@ -255,11 +263,14 @@ export default function CourseDetail() {
       }
 
       setIsEnrolled(true);
+      setShowFreeEnrollConfirm(false);
+      setShowPromoDialog(false);
+      // Trigger animated success dialog
+      setShowFreeEnrollSuccess(true);
     } catch (err) {
       alert('Error enrolling: ' + err.message);
     } finally {
       setEnrollLoading(false);
-      setShowPromoDialog(false);
     }
   };
 
@@ -842,6 +853,95 @@ export default function CourseDetail() {
                 {discountedPrice !== null ? `Pay ₹${discountedPrice}` : `Pay ₹${course.price}`}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Custom Modal: Confirm Free Enrollment */}
+      {showFreeEnrollConfirm && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl w-full max-w-sm p-6 shadow-2xl relative text-center border border-gray-100 animate-in zoom-in-95 duration-200">
+            <button 
+              onClick={() => setShowFreeEnrollConfirm(false)} 
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-700 transition-colors"
+            >
+              <XCircle size={22} />
+            </button>
+            
+            <div className="w-16 h-16 bg-emerald-50 text-emerald-600 rounded-3xl flex items-center justify-center mx-auto mb-4 border border-emerald-100 shadow-xs">
+              <Sparkles size={32} className="animate-spin-slow" />
+            </div>
+
+            <div className="inline-block bg-emerald-100 text-emerald-800 text-[10px] font-black uppercase tracking-wider px-3 py-1 rounded-full mb-2">
+              100% Free Access
+            </div>
+
+            <h3 className="text-xl font-black text-gray-900 leading-tight">Enroll in Free Test Series?</h3>
+            <p className="text-xs text-gray-500 mt-2 px-2 leading-relaxed">
+              You are about to enroll in <span className="font-bold text-gray-900">"{course.title}"</span>. This grants you full access to all mock tests, progress tracking, and leaderboard rankings at zero cost.
+            </p>
+
+            <div className="mt-6 flex gap-3">
+              <button 
+                onClick={() => setShowFreeEnrollConfirm(false)}
+                disabled={enrollLoading}
+                className="flex-1 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-xl text-sm transition-colors active:scale-95"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={proceedToEnrollmentOrPayment}
+                disabled={enrollLoading}
+                className="flex-[2] py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-sm shadow-md shadow-emerald-600/25 active:scale-95 transition-all flex items-center justify-center gap-1.5"
+              >
+                {enrollLoading ? (
+                  <span>Enrolling...</span>
+                ) : (
+                  <>
+                    <Unlock size={16} />
+                    <span>Confirm & Enroll</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Custom Modal: Animated Celebration Dialog Afterwards Enrolling */}
+      {showFreeEnrollSuccess && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-300">
+          <div className="bg-white rounded-3xl w-full max-w-sm p-6 md:p-8 shadow-2xl relative text-center border border-gray-100 animate-in zoom-in-90 duration-300">
+            {/* Animated Celebration Icon with Ping effect */}
+            <div className="relative w-20 h-20 mx-auto mb-5">
+              <span className="absolute inset-0 rounded-full bg-emerald-400 opacity-30 animate-ping"></span>
+              <div className="relative w-20 h-20 bg-gradient-to-tr from-emerald-500 to-teal-400 text-white rounded-full flex items-center justify-center shadow-lg shadow-emerald-500/30">
+                <PartyPopper size={38} className="animate-bounce" />
+              </div>
+            </div>
+
+            <h3 className="text-2xl font-black text-gray-900 leading-tight">You're Enrolled! 🎉</h3>
+            <p className="text-xs text-gray-600 mt-2 px-1 leading-relaxed">
+              Welcome aboard! All tests in <span className="font-bold text-gray-900">{course.title}</span> are now unlocked and ready for practice.
+            </p>
+
+            <div className="bg-emerald-50/80 border border-emerald-200/80 rounded-2xl p-3.5 my-5 text-left flex items-start gap-3">
+              <div className="w-8 h-8 rounded-xl bg-emerald-600 text-white flex items-center justify-center shrink-0 mt-0.5">
+                <CheckCircle2 size={18} />
+              </div>
+              <div className="text-xs">
+                <p className="font-bold text-emerald-950">Free Unlimited Access Activated</p>
+                <p className="text-emerald-800 text-[11px] mt-0.5">Attempt anytime, pause and resume progress, and review detailed solutions.</p>
+              </div>
+            </div>
+
+            <button 
+              onClick={() => setShowFreeEnrollSuccess(false)}
+              className="w-full py-3.5 bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-black text-sm rounded-xl shadow-lg shadow-emerald-600/30 active:scale-95 transition-all flex items-center justify-center gap-2"
+            >
+              <span>Start Practicing Now</span>
+              <ArrowRight size={16} />
+            </button>
           </div>
         </div>
       )}
