@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { supabase } from '../supabase';
 import { UserManager } from '../utils/UserManager';
-import { ArrowLeft, Upload, FileText, IndianRupee } from 'lucide-react';
+import { ArrowLeft, Upload, FileText, IndianRupee, Image as ImageIcon, Trash2, Sparkles } from 'lucide-react';
 import * as pdfjsLib from 'pdfjs-dist';
 
 // Configure pdfjs worker
@@ -15,6 +15,7 @@ export default function UploadResource({ isEdit = false }) {
   const navigate = useNavigate();
   const { id } = useParams();
   const fileInputRef = useRef(null);
+  const imageInputRef = useRef(null);
   
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -23,6 +24,8 @@ export default function UploadResource({ isEdit = false }) {
   const [file, setFile] = useState(null);
   const [thumbnailBlob, setThumbnailBlob] = useState(null);
   const [thumbnailDataUrl, setThumbnailDataUrl] = useState(null);
+  const [customImageFile, setCustomImageFile] = useState(null);
+  const [isCustomImage, setIsCustomImage] = useState(false);
   const [loading, setLoading] = useState(false);
   const [existingResource, setExistingResource] = useState(null);
 
@@ -104,7 +107,7 @@ export default function UploadResource({ isEdit = false }) {
       
       // Generate thumbnail
       const blob = await generateThumbnail(selected);
-      if (blob) {
+      if (blob && !isCustomImage) {
         setThumbnailBlob(blob);
         setThumbnailDataUrl(URL.createObjectURL(blob));
       }
@@ -112,6 +115,43 @@ export default function UploadResource({ isEdit = false }) {
       alert('Please select a valid PDF file.');
       e.target.value = null;
       setFile(null);
+      if (!isCustomImage) {
+        setThumbnailBlob(null);
+        setThumbnailDataUrl(null);
+      }
+    }
+  };
+
+  const handleCustomImageChange = (e) => {
+    const selected = e.target.files[0];
+    if (selected && selected.type.startsWith('image/')) {
+      setCustomImageFile(selected);
+      setIsCustomImage(true);
+      setThumbnailBlob(selected);
+      setThumbnailDataUrl(URL.createObjectURL(selected));
+    } else if (selected) {
+      alert('Please select an image file (PNG, JPG, WebP).');
+    }
+  };
+
+  const handleRemoveCustomImage = async () => {
+    setCustomImageFile(null);
+    setIsCustomImage(false);
+    if (imageInputRef.current) imageInputRef.current.value = null;
+    
+    // Fall back to PDF first page thumbnail if PDF exists
+    if (file) {
+      const blob = await generateThumbnail(file);
+      if (blob) {
+        setThumbnailBlob(blob);
+        setThumbnailDataUrl(URL.createObjectURL(blob));
+      } else {
+        setThumbnailBlob(null);
+        setThumbnailDataUrl(null);
+      }
+    } else if (existingResource?.thumbnail_url) {
+      setThumbnailDataUrl(existingResource.thumbnail_url);
+    } else {
       setThumbnailBlob(null);
       setThumbnailDataUrl(null);
     }
@@ -129,8 +169,8 @@ export default function UploadResource({ isEdit = false }) {
       let fileUrl = isEdit ? existingResource?.file_url : null;
       let thumbnailUrl = isEdit ? existingResource?.thumbnail_url : null;
 
+      // 1. Upload PDF file if selected
       if (file) {
-        // 1. Upload file to Supabase Storage (bucket: store_resources)
         const fileExt = file.name.split('.').pop();
         const baseName = Math.random().toString(36).substring(2) + '_' + Date.now();
         const fileName = `${baseName}.${fileExt}`;
@@ -141,7 +181,7 @@ export default function UploadResource({ isEdit = false }) {
 
         if (uploadError) {
           console.error("Storage upload error:", uploadError);
-          throw new Error("Failed to upload file to storage.");
+          throw new Error("Failed to upload PDF file to storage.");
         }
 
         const { data: publicUrlData } = supabase.storage
@@ -150,8 +190,8 @@ export default function UploadResource({ isEdit = false }) {
 
         fileUrl = publicUrlData.publicUrl;
 
-        // 2. Upload thumbnail if available
-        if (thumbnailBlob) {
+        // Auto thumbnail from PDF if no custom image was explicitly chosen
+        if (thumbnailBlob && !customImageFile && !thumbnailUrl) {
           const thumbName = `${baseName}_thumb.jpg`;
           const { error: thumbUploadError } = await supabase.storage
             .from('store_resources')
@@ -162,9 +202,40 @@ export default function UploadResource({ isEdit = false }) {
               .from('store_resources')
               .getPublicUrl(thumbName);
             thumbnailUrl = thumbUrlData.publicUrl;
-          } else {
-            console.error("Thumbnail upload error:", thumbUploadError);
           }
+        }
+      }
+
+      // 2. Upload Custom Image if selected
+      if (customImageFile) {
+        const imgExt = customImageFile.name.split('.').pop() || 'jpg';
+        const imgFileName = `cover_${Math.random().toString(36).substring(2)}_${Date.now()}.${imgExt}`;
+        const { error: imgUploadError } = await supabase.storage
+          .from('store_resources')
+          .upload(imgFileName, customImageFile, { contentType: customImageFile.type || 'image/jpeg' });
+
+        if (imgUploadError) {
+          console.error("Custom image upload error:", imgUploadError);
+          throw new Error("Failed to upload custom cover image.");
+        }
+
+        const { data: imgUrlData } = supabase.storage
+          .from('store_resources')
+          .getPublicUrl(imgFileName);
+
+        thumbnailUrl = imgUrlData.publicUrl;
+      } else if (!customImageFile && thumbnailBlob && !thumbnailUrl) {
+        // Fallback thumbnail upload if only PDF thumbnailBlob exists
+        const thumbName = `thumb_${Math.random().toString(36).substring(2)}_${Date.now()}.jpg`;
+        const { error: thumbUploadError } = await supabase.storage
+          .from('store_resources')
+          .upload(thumbName, thumbnailBlob, { contentType: 'image/jpeg' });
+
+        if (!thumbUploadError) {
+          const { data: thumbUrlData } = supabase.storage
+            .from('store_resources')
+            .getPublicUrl(thumbName);
+          thumbnailUrl = thumbUrlData.publicUrl;
         }
       }
 
@@ -278,6 +349,74 @@ export default function UploadResource({ isEdit = false }) {
                 </>
               )}
             </div>
+          </div>
+
+          {/* Custom Cover Image Option */}
+          <div className="bg-slate-50/80 p-4 rounded-xl border border-gray-200">
+            <div className="flex items-center justify-between mb-2">
+              <label className="block text-sm font-bold text-gray-800 flex items-center gap-1.5">
+                <ImageIcon size={18} className="text-primary" />
+                Custom Cover Image (Optional)
+              </label>
+              {customImageFile && (
+                <button
+                  type="button"
+                  onClick={handleRemoveCustomImage}
+                  className="text-xs font-semibold text-red-600 hover:text-red-700 flex items-center gap-1"
+                >
+                  <Trash2 size={13} />
+                  Remove
+                </button>
+              )}
+            </div>
+            <p className="text-xs text-gray-500 mb-3">
+              By default, the 1st page of your PDF is automatically extracted as the cover. You can upload your own custom high-res cover image here instead.
+            </p>
+
+            <input 
+              type="file" 
+              ref={imageInputRef} 
+              onChange={handleCustomImageChange} 
+              className="hidden" 
+              accept="image/*"
+            />
+
+            {customImageFile || (isEdit && thumbnailDataUrl) ? (
+              <div className="flex items-center gap-4 bg-white p-3 rounded-xl border border-gray-200">
+                <div className="w-14 h-18 rounded-lg overflow-hidden bg-gray-100 border border-gray-200 flex-shrink-0">
+                  <img 
+                    src={thumbnailDataUrl} 
+                    alt="Custom cover preview" 
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-bold text-gray-900 truncate">
+                    {customImageFile ? customImageFile.name : 'Current Cover Image'}
+                  </p>
+                  <p className="text-xs text-green-600 font-semibold mt-0.5 flex items-center gap-1">
+                    <Sparkles size={12} />
+                    Custom cover active
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => imageInputRef.current?.click()}
+                    className="mt-1 text-xs text-primary font-bold hover:underline"
+                  >
+                    Replace Image
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => imageInputRef.current?.click()}
+                className="w-full py-3 px-4 bg-white hover:bg-gray-100 border border-dashed border-gray-300 hover:border-primary rounded-xl text-xs font-bold text-gray-700 flex items-center justify-center gap-2 transition-colors"
+              >
+                <Upload size={16} className="text-gray-400" />
+                <span>Upload Custom Image (PNG, JPG, WebP)</span>
+              </button>
+            )}
           </div>
 
           {/* Title */}
