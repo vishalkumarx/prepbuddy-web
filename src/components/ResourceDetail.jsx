@@ -2,7 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../supabase';
 import { UserManager } from '../utils/UserManager';
-import { ArrowLeft, Download, ExternalLink, FileText, Tag, CheckCircle, XCircle } from 'lucide-react';
+import { 
+  ArrowLeft, Download, ExternalLink, FileText, Tag, CheckCircle, 
+  XCircle, Share2, ShieldCheck, Zap, Sparkles, BookOpen, Layers, Clock 
+} from 'lucide-react';
 import * as pdfjsLib from 'pdfjs-dist';
 import CouponManager from './CouponManager';
 
@@ -20,6 +23,7 @@ export default function ResourceDetail() {
   const [samplePages, setSamplePages] = useState([]);
   const [loadingSamples, setLoadingSamples] = useState(false);
   const [sampleError, setSampleError] = useState(null);
+  const [totalPages, setTotalPages] = useState(null);
 
   // Coupon state
   const [couponCode, setCouponCode] = useState('');
@@ -37,6 +41,7 @@ export default function ResourceDetail() {
       const arrayBuffer = await response.arrayBuffer();
       
       const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+      setTotalPages(pdf.numPages);
       const numPages = Math.min(pdf.numPages, 3); // Max 3 pages for sample
       
       const pagesDataUrls = [];
@@ -178,63 +183,120 @@ export default function ResourceDetail() {
     setDiscountedPrice(null);
   };
 
+  const handleShare = async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: resource?.title || 'GoalPrep Resource',
+          text: `Check out "${resource?.title}" on GoalPrep Store!`,
+          url: window.location.href,
+        });
+      } catch (err) {
+        console.log('Share canceled or failed', err);
+      }
+    } else {
+      await navigator.clipboard.writeText(window.location.href);
+      alert('Link copied to clipboard!');
+    }
+  };
+
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-[100dvh]">
+      <div className="flex flex-col justify-center items-center h-[100dvh] bg-gray-50 gap-3">
         <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary"></div>
+        <p className="text-sm text-gray-500 font-medium">Loading resource details...</p>
       </div>
     );
   }
 
   if (!resource) {
     return (
-      <div className="flex flex-col items-center justify-center h-[100dvh]">
-        <h2 className="text-xl font-bold">Resource not found</h2>
-        <button onClick={() => navigate('/store')} className="mt-4 text-primary">Go back to store</button>
+      <div className="flex flex-col items-center justify-center h-[100dvh] bg-gray-50 px-4 text-center">
+        <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mb-4">
+          <BookOpen size={28} />
+        </div>
+        <h2 className="text-xl font-bold text-gray-900 mb-1">Resource not found</h2>
+        <p className="text-sm text-gray-500 mb-6">The study resource you requested could not be found or has been removed.</p>
+        <button 
+          onClick={() => navigate('/store')} 
+          className="px-6 py-2.5 bg-primary text-white font-bold rounded-xl shadow-sm hover:bg-opacity-95 transition-all"
+        >
+          Back to Store
+        </button>
       </div>
     );
   }
 
+  const isFree = resource.price === 0;
+  const currentPrice = discountedPrice !== null ? discountedPrice : resource.price;
+  const hasDiscount = resource.original_price && resource.original_price > resource.price;
+  const discountPercent = hasDiscount 
+    ? Math.round(((resource.original_price - resource.price) / resource.original_price) * 100) 
+    : 0;
+
+  const isCustomCover = resource.thumbnail_url && resource.thumbnail_url.includes('cover_');
+
   return (
-    <div className="flex flex-col min-h-[100dvh] bg-gray-50 pb-20">
-      {/* Header */}
-      <header className="bg-white px-4 py-4 flex items-center sticky top-0 z-20 shadow-sm border-b border-gray-100">
-        <button onClick={() => navigate(-1)} className="p-2 -ml-2 text-gray-500 hover:text-gray-900 rounded-full hover:bg-gray-100 transition-colors">
-          <ArrowLeft size={24} />
+    <div className="min-h-[100dvh] bg-gradient-to-b from-gray-50 via-white to-gray-50 pb-28 md:pb-20">
+      {/* Sticky Top Bar */}
+      <header className="bg-white/90 backdrop-blur-md px-4 md:px-6 py-3.5 flex items-center justify-between sticky top-0 z-30 border-b border-gray-200/80 shadow-2xs">
+        <div className="flex items-center gap-3">
+          <button 
+            onClick={() => navigate(-1)} 
+            className="p-2 -ml-2 text-gray-600 hover:text-gray-900 rounded-xl hover:bg-gray-100 active:scale-95 transition-all"
+            title="Go back"
+          >
+            <ArrowLeft size={20} />
+          </button>
+          <span className="text-xs font-bold text-primary bg-indigo-50 px-2.5 py-1 rounded-md uppercase tracking-wider">
+            GoalPrep Store
+          </span>
+        </div>
+
+        <button 
+          onClick={handleShare}
+          className="p-2 text-gray-600 hover:text-primary rounded-xl hover:bg-indigo-50 active:scale-95 transition-all flex items-center gap-1.5 text-xs font-semibold"
+          title="Share Resource"
+        >
+          <Share2 size={18} />
+          <span className="hidden sm:inline">Share</span>
         </button>
-        <h1 className="text-xl font-bold ml-2 text-primary line-clamp-1 flex-1">Resource Details</h1>
       </header>
 
-      {/* Content */}
-      <div className="p-4">
-        {/* Cover & Title */}
-        <div className="bg-white rounded-2xl p-5 md:p-8 shadow-sm border border-gray-100 mb-6 max-w-4xl mx-auto">
-          <div className="flex flex-col md:flex-row gap-6 md:gap-8 items-center md:items-start">
-            {/* 3D Cover Display Area */}
-            <div className="w-full md:w-auto flex-shrink-0 flex items-center justify-center">
-              <div className="w-full max-w-[280px] md:w-[260px] bg-gradient-to-b from-indigo-50/70 to-slate-50/80 rounded-2xl p-6 py-8 flex items-center justify-center relative aspect-[3/4] border border-gray-100 shadow-xs">
-                {/* Discount Banner */}
-                {resource.original_price && resource.original_price > resource.price && (
-                  <div className="absolute top-3 right-3 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded shadow-xs z-10">
-                    {Math.round(((resource.original_price - resource.price) / resource.original_price) * 100)}% OFF
+      {/* Main Container */}
+      <div className="max-w-5xl mx-auto px-4 md:px-6 pt-6">
+        {/* Hero Section: Cover & Core Info */}
+        <div className="bg-white rounded-3xl p-5 md:p-8 shadow-sm border border-gray-200/80 mb-6 relative overflow-hidden">
+          {/* Subtle gradient aura backdrop */}
+          <div className="absolute top-0 right-0 w-80 h-80 bg-primary/5 rounded-full blur-3xl pointer-events-none -mr-20 -mt-20"></div>
+
+          <div className="flex flex-col md:flex-row gap-6 md:gap-10 items-center md:items-start relative z-10">
+            {/* Cover Column */}
+            <div className="w-full md:w-auto flex flex-col items-center flex-shrink-0">
+              <div className="w-full max-w-[280px] md:w-[270px] bg-gradient-to-b from-slate-100/80 to-indigo-50/50 rounded-2xl p-4 md:p-6 flex items-center justify-center relative aspect-[3/4] border border-gray-200/70 shadow-xs">
+                {/* Discount Badge */}
+                {hasDiscount && (
+                  <div className="absolute top-3 right-3 bg-red-500 text-white text-[11px] font-black px-2 py-0.5 rounded shadow-xs z-20 flex items-center gap-1">
+                    <Sparkles size={12} />
+                    {discountPercent}% OFF
                   </div>
                 )}
+
                 {/* Cover Display: Flat for custom uploaded image, 3D Mockup for auto-extracted PDF */}
-                {resource.thumbnail_url && resource.thumbnail_url.includes('cover_') ? (
-                  <div className="relative w-[200px] h-[260px] md:w-[220px] md:h-[290px] rounded-xl overflow-hidden shadow-md border border-gray-200/90 bg-white">
+                {isCustomCover ? (
+                  <div className="relative w-full h-full rounded-xl overflow-hidden shadow-md border border-gray-200/90 bg-white">
                     <img 
                       src={resource.thumbnail_url} 
                       alt={resource.title} 
                       className="w-full h-full object-cover"
                     />
-                    {/* Soft Copy Badge */}
-                    <div className="absolute bottom-2.5 right-2 bg-blue-600 text-white text-[9px] font-bold px-2 py-0.5 rounded shadow-sm tracking-wider uppercase">
+                    <div className="absolute bottom-2.5 right-2 bg-blue-600 text-white text-[9px] font-bold px-2 py-0.5 rounded shadow-xs tracking-wider uppercase">
                       📄 Soft Copy PDF
                     </div>
                   </div>
                 ) : (
                   <div 
-                    className="relative w-[180px] h-[255px] md:w-[195px] md:h-[275px] shadow-2xl rounded-sm transition-transform duration-300 hover:rotate-y-0"
+                    className="relative w-[185px] h-[260px] md:w-[200px] md:h-[280px] shadow-2xl rounded-sm transition-transform duration-300 hover:rotate-y-0"
                     style={{
                       perspective: '1200px',
                       transformStyle: 'preserve-3d',
@@ -248,7 +310,6 @@ export default function ResourceDetail() {
                     />
                     <div className="absolute inset-y-0 left-0 w-3.5 bg-gradient-to-r from-black/35 via-black/10 to-transparent rounded-l-sm"></div>
                     <div className="absolute inset-y-0 left-0 w-0.5 bg-white/50"></div>
-                    {/* Soft Copy Badge */}
                     <div className="absolute bottom-2.5 right-0 bg-blue-600 text-white text-[9px] font-bold px-2 py-0.5 rounded-l shadow-md tracking-wider uppercase">
                       📄 Soft Copy PDF
                     </div>
@@ -257,93 +318,183 @@ export default function ResourceDetail() {
               </div>
             </div>
 
-            {/* Title, Pricing & Details */}
+            {/* Info Column */}
             <div className="flex-1 min-w-0 w-full flex flex-col">
-              <h2 className="text-2xl md:text-3xl font-extrabold text-gray-900 mb-3 break-words leading-tight">{resource.title}</h2>
-              
-              <div className="flex items-baseline gap-3 mb-4 border-b border-gray-100 pb-4">
-                <span className={`text-3xl font-black ${resource.price === 0 ? 'text-green-600' : 'text-primary'}`}>
-                  {resource.price === 0 ? 'FREE' : `₹${resource.price}`}
+              {/* Tags */}
+              <div className="flex flex-wrap items-center gap-2 mb-3">
+                <span className="bg-blue-50 text-blue-700 text-xs font-bold px-2.5 py-1 rounded-lg">
+                  Curated Notes
                 </span>
-                {resource.original_price && resource.original_price > resource.price && (
-                  <span className="text-base text-gray-400 line-through font-semibold">₹{resource.original_price}</span>
-                )}
-                {resource.original_price && resource.original_price > resource.price && (
-                  <span className="text-xs font-bold text-green-600 bg-green-50 px-2 py-0.5 rounded">
-                    Save ₹{resource.original_price - resource.price}
+                <span className="bg-emerald-50 text-emerald-700 text-xs font-bold px-2.5 py-1 rounded-lg flex items-center gap-1">
+                  <ShieldCheck size={14} />
+                  Verified Study Material
+                </span>
+              </div>
+
+              {/* Title */}
+              <h1 className="text-2xl md:text-3xl font-extrabold text-gray-900 mb-3 break-words leading-tight tracking-tight">
+                {resource.title}
+              </h1>
+
+              {/* Price Row */}
+              <div className="bg-slate-50/90 rounded-2xl p-4 border border-gray-200/70 mb-5 flex items-baseline justify-between gap-4">
+                <div className="flex items-baseline gap-3">
+                  <span className={`text-3xl md:text-4xl font-black ${isFree ? 'text-green-600' : 'text-primary'}`}>
+                    {isFree ? 'FREE' : `₹${currentPrice}`}
+                  </span>
+                  {hasDiscount && (
+                    <span className="text-base text-gray-400 line-through font-semibold">
+                      ₹{resource.original_price}
+                    </span>
+                  )}
+                </div>
+
+                {hasDiscount && (
+                  <span className="text-xs font-bold text-green-700 bg-green-100/90 px-2.5 py-1 rounded-lg">
+                    Save ₹{resource.original_price - currentPrice}
                   </span>
                 )}
               </div>
 
-              {resource.description && (
-                <div className="mt-1 mb-4">
-                  <h3 className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">About this resource</h3>
-                  <p className="text-gray-700 text-sm md:text-base leading-relaxed whitespace-pre-wrap">{resource.description}</p>
+              {/* Quick Spec Highlights */}
+              <div className="grid grid-cols-3 gap-2.5 mb-5">
+                <div className="bg-gray-50/80 rounded-xl p-3 border border-gray-100 text-center">
+                  <FileText size={18} className="text-primary mx-auto mb-1" />
+                  <span className="block text-[11px] text-gray-400 font-medium">Format</span>
+                  <span className="text-xs font-bold text-gray-800">PDF E-Book</span>
                 </div>
-              )}
+                <div className="bg-gray-50/80 rounded-xl p-3 border border-gray-100 text-center">
+                  <Layers size={18} className="text-primary mx-auto mb-1" />
+                  <span className="block text-[11px] text-gray-400 font-medium">Pages</span>
+                  <span className="text-xs font-bold text-gray-800">{totalPages ? `${totalPages} Pages` : 'Complete'}</span>
+                </div>
+                <div className="bg-gray-50/80 rounded-xl p-3 border border-gray-100 text-center">
+                  <Zap size={18} className="text-primary mx-auto mb-1" />
+                  <span className="block text-[11px] text-gray-400 font-medium">Delivery</span>
+                  <span className="text-xs font-bold text-gray-800">Instant Access</span>
+                </div>
+              </div>
+
+              {/* Desktop CTA Button */}
+              <div className="hidden md:block">
+                <button
+                  onClick={handleBuyClick}
+                  className={`w-full flex items-center justify-center gap-2 py-4 rounded-xl font-bold text-base transition-all shadow-md active:scale-[0.99] ${
+                    currentPrice === 0
+                      ? 'bg-green-600 text-white hover:bg-green-700 shadow-green-600/20'
+                      : 'bg-primary text-white hover:bg-primary-light shadow-primary/20'
+                  }`}
+                >
+                  {currentPrice === 0 ? (
+                    <>
+                      <Download size={20} />
+                      Download Resource for Free
+                    </>
+                  ) : (
+                    <>
+                      <ExternalLink size={20} />
+                      Buy Resource — ₹{currentPrice}
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Action Button */}
-        <div className="mb-6">
+        {/* Description Section */}
+        {resource.description && (
+          <div className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-gray-200/80 mb-6">
+            <h2 className="text-lg font-bold text-gray-900 mb-3 flex items-center gap-2">
+              <BookOpen size={20} className="text-primary" />
+              About This Resource
+            </h2>
+            <div className="text-gray-700 text-sm md:text-base leading-relaxed whitespace-pre-wrap">
+              {resource.description}
+            </div>
+          </div>
+        )}
+
+        {/* Sample Pages Preview */}
+        <div className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-gray-200/80 mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+              <FileText className="text-primary" size={20} />
+              Look Inside (Sample Preview)
+            </h2>
+            <span className="text-xs text-gray-500 font-medium">
+              First {Math.min(samplePages.length || 3, 3)} Pages
+            </span>
+          </div>
+
+          {loadingSamples ? (
+            <div className="flex flex-col items-center justify-center py-14 space-y-3">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              <p className="text-xs text-gray-500 font-medium">Rendering PDF sample preview...</p>
+            </div>
+          ) : sampleError ? (
+            <div className="p-4 bg-red-50 text-red-600 rounded-2xl text-center text-xs font-semibold">
+              {sampleError}
+            </div>
+          ) : samplePages.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {samplePages.map((pageDataUrl, index) => (
+                <div key={index} className="rounded-2xl border border-gray-200/90 overflow-hidden shadow-xs hover:shadow-md transition-shadow relative bg-gray-50 group">
+                  <img src={pageDataUrl} alt={`Sample Page ${index + 1}`} className="w-full h-auto object-cover" />
+                  <div className="absolute top-2 left-2 bg-black/70 text-white text-[10px] font-bold px-2 py-0.5 rounded-md backdrop-blur-xs">
+                    Page {index + 1}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-gray-500 text-sm text-center py-8">Preview not available for this item.</p>
+          )}
+        </div>
+
+        {/* Admin Coupon Control */}
+        {UserManager.isAdmin() && (
+          <div className="mb-6">
+            <CouponManager resourceId={id} />
+          </div>
+        )}
+      </div>
+
+      {/* Mobile Floating Action Bar */}
+      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-gray-200 p-3.5 z-40 shadow-lg pb-safe">
+        <div className="flex items-center justify-between gap-3 max-w-md mx-auto">
+          <div className="flex flex-col">
+            <span className="text-[10px] uppercase font-bold text-gray-400">Total Price</span>
+            <div className="flex items-baseline gap-1.5">
+              <span className={`text-xl font-black ${isFree ? 'text-green-600' : 'text-primary'}`}>
+                {isFree ? 'FREE' : `₹${currentPrice}`}
+              </span>
+              {hasDiscount && (
+                <span className="text-xs text-gray-400 line-through">₹{resource.original_price}</span>
+              )}
+            </div>
+          </div>
+
           <button
             onClick={handleBuyClick}
-            className={`w-full flex items-center justify-center gap-2 py-4 rounded-xl font-bold text-lg transition-colors shadow-md active:scale-[0.98] ${
-              (discountedPrice !== null ? discountedPrice : resource.price) === 0
-                ? 'bg-green-600 text-white hover:bg-green-700 shadow-green-600/20'
-                : 'bg-primary text-white hover:bg-primary-light shadow-primary/20'
+            className={`flex-1 py-3 px-5 rounded-xl font-bold text-sm flex items-center justify-center gap-1.5 shadow-md active:scale-95 transition-all ${
+              currentPrice === 0 
+                ? 'bg-green-600 text-white shadow-green-600/20' 
+                : 'bg-primary text-white shadow-primary/20'
             }`}
           >
-            {(discountedPrice !== null ? discountedPrice : resource.price) === 0 ? (
+            {currentPrice === 0 ? (
               <>
-                <Download size={22} />
-                Download Now for Free
+                <Download size={17} />
+                Get for Free
               </>
             ) : (
               <>
-                <ExternalLink size={22} />
-                Buy Now{discountedPrice !== null ? ` — ₹${discountedPrice}` : resource.price > 0 ? ` — ₹${resource.price}` : ''}
+                <ExternalLink size={17} />
+                Buy Now
               </>
             )}
           </button>
-        </div>
-
-        {/* Admin — Coupon Manager */}
-        {UserManager.isAdmin() && (
-          <CouponManager resourceId={id} />
-        )}
-
-        {/* Sample Pages */}
-        <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
-           <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-             <FileText className="text-primary" size={20} />
-             Preview (First {Math.min(samplePages.length || 3, 3)} Pages)
-           </h3>
-           
-           {loadingSamples ? (
-             <div className="flex flex-col items-center justify-center py-10 space-y-4">
-               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-               <p className="text-sm text-gray-500">Generating preview...</p>
-             </div>
-           ) : sampleError ? (
-             <div className="p-4 bg-red-50 text-red-600 rounded-xl text-center text-sm">
-               {sampleError}
-             </div>
-           ) : samplePages.length > 0 ? (
-             <div className="space-y-4">
-                {samplePages.map((pageDataUrl, index) => (
-                  <div key={index} className="rounded-xl border border-gray-200 overflow-hidden shadow-sm relative group">
-                    <img src={pageDataUrl} alt={`Sample Page ${index + 1}`} className="w-full h-auto" />
-                    <div className="absolute top-2 left-2 bg-black/60 text-white text-xs px-2 py-1 rounded backdrop-blur-sm">
-                       Page {index + 1}
-                    </div>
-                  </div>
-                ))}
-             </div>
-           ) : (
-             <p className="text-gray-500 text-sm text-center py-6">No preview available.</p>
-           )}
         </div>
       </div>
 
