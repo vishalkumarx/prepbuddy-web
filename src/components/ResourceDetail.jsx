@@ -4,7 +4,8 @@ import { supabase } from '../supabase';
 import { UserManager } from '../utils/UserManager';
 import { 
   ArrowLeft, Download, ExternalLink, FileText, Tag, CheckCircle, 
-  XCircle, Share2, ShieldCheck, Zap, Sparkles, BookOpen, Layers, Clock 
+  XCircle, Share2, ShieldCheck, Zap, Sparkles, BookOpen, Layers, Clock,
+  Maximize2, ChevronLeft, ChevronRight, ZoomIn, X
 } from 'lucide-react';
 import * as pdfjsLib from 'pdfjs-dist';
 import CouponManager from './CouponManager';
@@ -24,6 +25,7 @@ export default function ResourceDetail() {
   const [loadingSamples, setLoadingSamples] = useState(false);
   const [sampleError, setSampleError] = useState(null);
   const [totalPages, setTotalPages] = useState(null);
+  const [activePreviewIndex, setActivePreviewIndex] = useState(null);
 
   // Coupon state
   const [couponCode, setCouponCode] = useState('');
@@ -439,10 +441,24 @@ export default function ResourceDetail() {
           ) : samplePages.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {samplePages.map((pageDataUrl, index) => (
-                <div key={index} className="rounded-2xl border border-gray-200/90 overflow-hidden shadow-xs hover:shadow-md transition-shadow relative bg-gray-50 group">
+                <div 
+                  key={index} 
+                  onClick={() => setActivePreviewIndex(index)}
+                  className="rounded-2xl border border-gray-200/90 overflow-hidden shadow-xs hover:shadow-lg transition-all relative bg-gray-50 group cursor-pointer hover:-translate-y-1"
+                >
                   <img src={pageDataUrl} alt={`Sample Page ${index + 1}`} className="w-full h-auto object-cover" />
-                  <div className="absolute top-2 left-2 bg-black/70 text-white text-[10px] font-bold px-2 py-0.5 rounded-md backdrop-blur-xs">
+                  
+                  {/* Page Badge */}
+                  <div className="absolute top-2.5 left-2.5 bg-black/75 text-white text-[11px] font-bold px-2.5 py-1 rounded-lg backdrop-blur-xs flex items-center gap-1 shadow-sm">
                     Page {index + 1}
+                  </div>
+
+                  {/* Hover Overlay with Fullscreen Button */}
+                  <div className="absolute inset-0 bg-primary/20 backdrop-blur-[1px] opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                    <div className="bg-white text-primary font-bold text-xs px-3.5 py-2 rounded-xl shadow-lg flex items-center gap-1.5 transform scale-95 group-hover:scale-100 transition-transform">
+                      <ZoomIn size={15} />
+                      <span>View Full Size</span>
+                    </div>
                   </div>
                 </div>
               ))}
@@ -570,6 +586,74 @@ export default function ResourceDetail() {
                 {discountedPrice !== null ? `Pay ₹${discountedPrice}` : `Pay ₹${resource.price}`}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Full-Size Sample Preview Modal / Lightbox */}
+      {activePreviewIndex !== null && samplePages[activePreviewIndex] && (
+        <div 
+          className="fixed inset-0 bg-black/95 z-50 flex flex-col justify-between p-3 md:p-6 backdrop-blur-sm animate-in fade-in duration-200"
+          onClick={() => setActivePreviewIndex(null)}
+        >
+          {/* Lightbox Top Bar */}
+          <div className="flex items-center justify-between text-white pb-3 border-b border-white/10" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center gap-2">
+              <span className="font-bold text-xs md:text-sm bg-white/20 px-3 py-1 rounded-lg backdrop-blur-md">
+                Page {activePreviewIndex + 1} of {samplePages.length}
+              </span>
+              <span className="text-xs text-white/70 hidden sm:inline truncate max-w-sm">{resource.title}</span>
+            </div>
+            <button 
+              onClick={() => setActivePreviewIndex(null)} 
+              className="p-2 text-white/80 hover:text-white rounded-full hover:bg-white/10 transition-colors"
+              title="Close Preview (Esc)"
+            >
+              <X size={24} />
+            </button>
+          </div>
+
+          {/* Lightbox Image Container & Chevrons */}
+          <div className="flex-1 flex items-center justify-center relative overflow-hidden py-3" onClick={e => e.stopPropagation()}>
+            {activePreviewIndex > 0 && (
+              <button
+                onClick={() => setActivePreviewIndex(prev => prev - 1)}
+                className="absolute left-2 md:left-6 z-10 p-3 bg-black/60 hover:bg-black/90 text-white rounded-full backdrop-blur-md transition-all active:scale-95 shadow-lg border border-white/10"
+                title="Previous Page"
+              >
+                <ChevronLeft size={28} />
+              </button>
+            )}
+
+            <img 
+              src={samplePages[activePreviewIndex]} 
+              alt={`Full size sample page ${activePreviewIndex + 1}`} 
+              className="max-h-[82vh] max-w-full object-contain rounded-lg shadow-2xl select-none bg-white"
+            />
+
+            {activePreviewIndex < samplePages.length - 1 && (
+              <button
+                onClick={() => setActivePreviewIndex(prev => prev + 1)}
+                className="absolute right-2 md:right-6 z-10 p-3 bg-black/60 hover:bg-black/90 text-white rounded-full backdrop-blur-md transition-all active:scale-95 shadow-lg border border-white/10"
+                title="Next Page"
+              >
+                <ChevronRight size={28} />
+              </button>
+            )}
+          </div>
+
+          {/* Lightbox Footer Pagination Dots */}
+          <div className="flex items-center justify-center gap-2 pt-2" onClick={e => e.stopPropagation()}>
+            {samplePages.map((_, idx) => (
+              <button
+                key={idx}
+                onClick={() => setActivePreviewIndex(idx)}
+                aria-label={`Jump to page ${idx + 1}`}
+                className={`h-2 rounded-full transition-all ${
+                  activePreviewIndex === idx ? 'w-8 bg-white' : 'w-2 bg-white/40 hover:bg-white/60'
+                }`}
+              />
+            ))}
           </div>
         </div>
       )}
