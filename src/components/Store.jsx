@@ -1,13 +1,15 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useContext } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ShoppingBag, FileText, Download, ExternalLink, Edit2, Loader2 } from 'lucide-react';
 import { supabase } from '../supabase';
 import { UserManager } from '../utils/UserManager';
+import { SearchContext } from '../App';
 
 const PAGE_SIZE = 8;
 
 export default function Store() {
   const navigate = useNavigate();
+  const { searchQuery } = useContext(SearchContext) || { searchQuery: '' };
   const [resources, setResources] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -149,21 +151,33 @@ export default function Store() {
       </div>
 
       {/* Resource List */}
-      <div className="px-3 md:px-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4 mb-20 max-w-6xl mx-auto w-full">
-        {loading ? (
-          <div className="col-span-full flex justify-center items-center py-20">
-            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary"></div>
-          </div>
-        ) : resources.length === 0 ? (
-          <div className="col-span-full flex flex-col items-center justify-center py-20 text-center">
-            <div className="bg-indigo-50 p-4 rounded-full mb-4">
-              <ShoppingBag size={32} className="text-indigo-300" />
-            </div>
-            <h3 className="text-lg font-bold text-gray-800">No resources yet</h3>
-            <p className="text-gray-500 text-sm mt-2">Check back later for new study materials!</p>
-          </div>
-        ) : (
-          resources.map((resource) => (
+      {(() => {
+        const filteredResources = resources.filter(r => 
+          !searchQuery || 
+          r.title?.toLowerCase().includes(searchQuery.toLowerCase()) || 
+          r.description?.toLowerCase().includes(searchQuery.toLowerCase())
+        );
+
+        return (
+          <div className="px-3 md:px-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4 mb-20 max-w-6xl mx-auto w-full">
+            {loading ? (
+              <div className="col-span-full flex justify-center items-center py-20">
+                <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary"></div>
+              </div>
+            ) : filteredResources.length === 0 ? (
+              <div className="col-span-full flex flex-col items-center justify-center py-20 text-center">
+                <div className="bg-indigo-50 p-4 rounded-full mb-4">
+                  <ShoppingBag size={32} className="text-indigo-300" />
+                </div>
+                <h3 className="text-lg font-bold text-gray-800">
+                  {searchQuery ? 'No resources matching your search' : 'No resources yet'}
+                </h3>
+                <p className="text-gray-500 text-sm mt-2">
+                  {searchQuery ? 'Try searching for different keywords.' : 'Check back later for new study materials!'}
+                </p>
+              </div>
+            ) : (
+              filteredResources.map((resource) => (
             <div 
               key={resource.id} 
               onClick={() => navigate(`/store/${resource.id}`)}
@@ -271,6 +285,8 @@ export default function Store() {
           ))
         )}
       </div>
+    );
+  })()}
 
       {/* Infinite Scroll Sentinel & Loader */}
       {!loading && (

@@ -136,6 +136,39 @@ export default function StateGovLayout({ onLogout }) {
           </header>
         )}
 
+        {/* Desktop Search & Navigation Header */}
+        {!isTestRoute && (
+          <header className="hidden md:flex bg-white items-center justify-between py-3 px-8 border-b border-gray-200 z-10 flex-shrink-0 shadow-xs">
+            <div className="flex-1 max-w-xl relative">
+              <Search size={18} className="text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                placeholder="Search test series, questions, notes & resources..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full bg-gray-100/90 border border-transparent focus:border-primary/20 outline-none text-gray-900 pl-10 pr-10 py-2.5 rounded-full placeholder-gray-400 text-sm focus:bg-white focus:ring-2 focus:ring-primary/10 transition-all"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-200/60 transition-colors"
+                  title="Clear search"
+                >
+                  <X size={15} />
+                </button>
+              )}
+            </div>
+
+            <div className="flex items-center gap-3">
+              {isAdmin && (
+                <span className="bg-secondary/20 text-secondary text-[11px] font-bold px-2 py-0.5 rounded uppercase tracking-wide border border-secondary/30">
+                  Admin Active
+                </span>
+              )}
+            </div>
+          </header>
+        )}
+
         {/* Main Content Area */}
         <main className={`flex-1 overflow-y-auto overflow-x-hidden relative scroll-smooth bg-app-bg md:bg-gray-50/50 ${showBottomNav ? 'pb-[70px] md:pb-0' : 'md:pb-0'}`}>
           <div className={`h-full w-full mx-auto relative ${isTestRoute ? 'max-w-none md:p-0' : 'max-w-[1000px] md:p-6 md:pb-20'}`}>
