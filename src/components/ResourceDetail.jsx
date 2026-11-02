@@ -293,15 +293,6 @@ export default function ResourceDetail() {
             GoalPrep Store
           </span>
         </div>
-
-        <button 
-          onClick={handleShare}
-          className="p-2 text-gray-600 hover:text-primary rounded-xl hover:bg-indigo-50 active:scale-95 transition-all flex items-center gap-1.5 text-xs font-semibold"
-          title="Share Resource"
-        >
-          <Share2 size={18} />
-          <span className="hidden sm:inline">Share</span>
-        </button>
       </header>
 
       {/* Main Container */}
