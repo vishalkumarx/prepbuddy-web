@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabase';
 import { Tag, Plus, Trash2, ToggleLeft, ToggleRight, Copy, Check, X, Share2, Sparkles } from 'lucide-react';
 
-export default function CouponManager({ resourceId, resourceTitle, resourcePrice, resourceBanner }) {
+export default function CouponManager({ resourceId, resourceTitle, resourcePrice, resourceBanner, itemType = 'course' }) {
   const [coupons, setCoupons] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -108,7 +108,9 @@ export default function CouponManager({ resourceId, resourceTitle, resourcePrice
   };
 
   const handleShareCoupon = async (coupon) => {
-    const shareUrl = `${window.location.origin}/course/${resourceId}?coupon=${encodeURIComponent(coupon.code)}`;
+    const isResource = itemType === 'resource';
+    const basePath = isResource ? `/store/${resourceId}` : `/course/${resourceId}`;
+    const shareUrl = `${window.location.origin}${basePath}?coupon=${encodeURIComponent(coupon.code)}`;
     const discountText = coupon.discount_type === 'percentage' 
       ? `${coupon.discount_value}% OFF` 
       : `Flat ₹${coupon.discount_value} OFF`;
@@ -124,8 +126,9 @@ export default function CouponManager({ resourceId, resourceTitle, resourcePrice
       priceText = `\n💰 Special Price: ₹${finalPrice} (Original: ₹${resourcePrice})`;
     }
 
-    const shareTitle = `🎉 Exclusive Discount on ${resourceTitle || 'Test Series'}!`;
-    const shareMsg = `🔥 Special Offer for you!\nGet ${discountText} on "${resourceTitle || 'Test Series'}" using promo code:\n\n👉 CODE: ${coupon.code}${priceText}\n\nApply code directly at checkout:\n${shareUrl}`;
+    const typeNoun = isResource ? 'Store Study Material' : 'Test Series';
+    const shareTitle = `🎉 Exclusive Discount on ${resourceTitle || typeNoun}!`;
+    const shareMsg = `🔥 Special Offer for you!\nGet ${discountText} on "${resourceTitle || typeNoun}" using promo code:\n\n👉 CODE: ${coupon.code}${priceText}\n\nApply code directly at checkout:\n${shareUrl}`;
 
     if (navigator.share) {
       try {
@@ -134,7 +137,8 @@ export default function CouponManager({ resourceId, resourceTitle, resourcePrice
           try {
             const res = await fetch(resourceBanner);
             const blob = await res.blob();
-            const file = new File([blob], 'test_series_thumbnail.png', { type: blob.type || 'image/png' });
+            const fileName = isResource ? 'store_item_cover.jpg' : 'test_series_thumbnail.png';
+            const file = new File([blob], fileName, { type: blob.type || 'image/jpeg' });
             if (navigator.canShare({ files: [file] })) {
               filesArray = [file];
             }

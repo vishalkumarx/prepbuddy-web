@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback, useContext } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ShoppingBag, FileText, Download, ExternalLink, Edit2, Loader2 } from 'lucide-react';
+import { ShoppingBag, FileText, Download, ExternalLink, Edit2, Loader2, Share2 } from 'lucide-react';
 import { supabase } from '../supabase';
 import { UserManager } from '../utils/UserManager';
 import { SearchContext } from '../App';
@@ -139,6 +139,53 @@ export default function Store() {
     }
   };
 
+  const handleShare = async (e, resource) => {
+    e.stopPropagation();
+    const shareUrl = `${window.location.origin}/store/${resource.id}`;
+    const coverUrl = resource.thumbnail_url;
+
+    if (navigator.share) {
+      try {
+        let filesArray = [];
+        if (coverUrl && navigator.canShare) {
+          try {
+            const res = await fetch(coverUrl);
+            const blob = await res.blob();
+            const file = new File([blob], 'store_item_cover.jpg', { type: blob.type || 'image/jpeg' });
+            if (navigator.canShare({ files: [file] })) {
+              filesArray = [file];
+            }
+          } catch (fileErr) {
+            console.log('Thumbnail fetch for store share skipped:', fileErr);
+          }
+        }
+
+        const priceText = resource.price === 0 ? 'FREE' : `₹${resource.price}`;
+        const sharePayload = {
+          title: resource.title || 'GoalPrep Store',
+          text: `📚 Check out "${resource.title}" on GoalPrep Store!\nPrice: ${priceText}\n${resource.description ? resource.description.slice(0, 100) + '...' : ''}\n\n👉 Get it here: ${shareUrl}`,
+          url: shareUrl,
+        };
+
+        if (filesArray.length > 0) {
+          sharePayload.files = filesArray;
+        }
+
+        await navigator.share(sharePayload);
+        return;
+      } catch (err) {
+        if (err.name !== 'AbortError') {
+          navigator.clipboard.writeText(shareUrl);
+          alert('Link copied to clipboard!');
+        }
+        return;
+      }
+    }
+
+    navigator.clipboard.writeText(shareUrl);
+    alert('Link copied to clipboard!');
+  };
+
   return (
     <div className="flex flex-col min-h-[100dvh] bg-gray-50 pb-20">
       {/* Header Area */}
@@ -272,29 +319,40 @@ export default function Store() {
                     )}
                   </div>
                 </div>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleAction(resource);
-                  }}
-                  className={`flex items-center justify-center gap-1 w-full py-1.5 rounded-lg font-bold text-[11px] md:text-xs transition-colors shadow-2xs ${
-                    resource.price === 0 
-                      ? 'bg-green-100 text-green-700 hover:bg-green-200' 
-                      : 'bg-primary text-white hover:bg-primary-light active:scale-95'
-                  }`}
-                >
-                  {resource.price === 0 ? (
-                    <>
-                      <Download size={13} />
-                      Get
-                    </>
-                  ) : (
-                    <>
-                      <ExternalLink size={13} />
-                      Buy
-                    </>
-                  )}
-                </button>
+                <div className="flex items-center gap-1.5 w-full">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleAction(resource);
+                    }}
+                    className={`flex-1 flex items-center justify-center gap-1 py-1.5 rounded-lg font-bold text-[11px] md:text-xs transition-colors shadow-2xs ${
+                      resource.price === 0 
+                        ? 'bg-green-100 text-green-700 hover:bg-green-200' 
+                        : 'bg-primary text-white hover:bg-primary-light active:scale-95'
+                    }`}
+                  >
+                    {resource.price === 0 ? (
+                      <>
+                        <Download size={13} />
+                        Get
+                      </>
+                    ) : (
+                      <>
+                        <ExternalLink size={13} />
+                        Buy
+                      </>
+                    )}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={(e) => handleShare(e, resource)}
+                    title="Share Resource"
+                    className="p-1.5 rounded-lg text-gray-500 hover:text-primary bg-gray-100 hover:bg-indigo-50 border border-gray-200/80 active:scale-95 transition-all flex items-center justify-center shrink-0 shadow-2xs"
+                  >
+                    <Share2 size={13} />
+                  </button>
+                </div>
               </div>
             </div>
           ))

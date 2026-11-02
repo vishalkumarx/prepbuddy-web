@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { supabase } from '../supabase';
 import { UserManager } from '../utils/UserManager';
 import { 
@@ -19,6 +19,7 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
 export default function ResourceDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [resource, setResource] = useState(null);
   const [loading, setLoading] = useState(true);
   const [samplePages, setSamplePages] = useState([]);
@@ -179,6 +180,14 @@ export default function ResourceDetail() {
     }
   };
 
+  // Auto-apply coupon from query param e.g. ?coupon=DISCOUNT20
+  useEffect(() => {
+    const queryCoupon = searchParams.get('coupon');
+    if (queryCoupon && resource && couponStatus !== 'valid') {
+      applyCoupon(queryCoupon);
+    }
+  }, [searchParams, resource]);
+
   const removeCoupon = () => {
     setCouponCode('');
     setCouponStatus(null);
@@ -187,20 +196,49 @@ export default function ResourceDetail() {
   };
 
   const handleShare = async () => {
+    const shareUrl = window.location.href;
+    const coverUrl = resource?.thumbnail_url || (samplePages && samplePages.length > 0 ? samplePages[0] : null);
+
     if (navigator.share) {
       try {
-        await navigator.share({
-          title: resource?.title || 'GoalPrep Resource',
-          text: `Check out "${resource?.title}" on GoalPrep Store!`,
-          url: window.location.href,
-        });
+        let filesArray = [];
+        if (coverUrl && navigator.canShare) {
+          try {
+            const res = await fetch(coverUrl);
+            const blob = await res.blob();
+            const file = new File([blob], 'store_item_cover.jpg', { type: blob.type || 'image/jpeg' });
+            if (navigator.canShare({ files: [file] })) {
+              filesArray = [file];
+            }
+          } catch (fileErr) {
+            console.log('Thumbnail fetch for share skipped:', fileErr);
+          }
+        }
+
+        const priceText = resource?.price === 0 ? 'FREE' : `₹${discountedPrice !== null ? discountedPrice : resource?.price}`;
+        const sharePayload = {
+          title: resource?.title || 'GoalPrep Store',
+          text: `📚 Check out "${resource?.title}" on GoalPrep Store!\nPrice: ${priceText}\n${resource?.description ? resource.description.slice(0, 100) + '...' : ''}\n\n👉 Get it here: ${shareUrl}`,
+          url: shareUrl,
+        };
+
+        if (filesArray.length > 0) {
+          sharePayload.files = filesArray;
+        }
+
+        await navigator.share(sharePayload);
+        return;
       } catch (err) {
-        console.log('Share canceled or failed', err);
+        if (err.name !== 'AbortError') {
+          navigator.clipboard.writeText(shareUrl);
+          alert('Link copied to clipboard!');
+        }
+        return;
       }
-    } else {
-      await navigator.clipboard.writeText(window.location.href);
-      alert('Link copied to clipboard!');
     }
+
+    navigator.clipboard.writeText(shareUrl);
+    alert('Link copied to clipboard!');
   };
 
   if (loading) {
@@ -378,11 +416,11 @@ export default function ResourceDetail() {
                 </div>
               </div>
 
-              {/* Desktop CTA Button */}
-              <div className="hidden md:block">
+              {/* Desktop CTA Button & Share */}
+              <div className="hidden md:flex items-center gap-3">
                 <button
                   onClick={handleBuyClick}
-                  className={`w-full flex items-center justify-center gap-2 py-4 rounded-xl font-bold text-base transition-all shadow-md active:scale-[0.99] ${
+                  className={`flex-1 flex items-center justify-center gap-2 py-4 rounded-xl font-bold text-base transition-all shadow-md active:scale-[0.99] ${
                     currentPrice === 0
                       ? 'bg-green-600 text-white hover:bg-green-700 shadow-green-600/20'
                       : 'bg-primary text-white hover:bg-primary-light shadow-primary/20'
@@ -399,6 +437,16 @@ export default function ResourceDetail() {
                       Buy Resource — ₹{currentPrice}
                     </>
                   )}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleShare}
+                  title="Share Resource with Image"
+                  className="px-5 py-4 rounded-xl font-bold text-sm bg-indigo-50 hover:bg-indigo-100 text-primary border border-indigo-200 active:scale-95 transition-all flex items-center justify-center gap-2 shadow-xs"
+                >
+                  <Share2 size={18} />
+                  <span>Share</span>
                 </button>
               </div>
             </div>
@@ -472,7 +520,13 @@ export default function ResourceDetail() {
         {/* Admin Coupon Control */}
         {UserManager.isAdmin() && (
           <div className="mb-6">
-            <CouponManager resourceId={id} />
+            <CouponManager 
+              resourceId={id} 
+              resourceTitle={resource?.title}
+              resourcePrice={resource?.price}
+              resourceBanner={resource?.thumbnail_url || (samplePages && samplePages.length > 0 ? samplePages[0] : null)}
+              itemType="resource"
+            />
           </div>
         )}
       </div>
@@ -492,26 +546,37 @@ export default function ResourceDetail() {
             </div>
           </div>
 
-          <button
-            onClick={handleBuyClick}
-            className={`flex-1 py-3 px-5 rounded-xl font-bold text-sm flex items-center justify-center gap-1.5 shadow-md active:scale-95 transition-all ${
-              currentPrice === 0 
-                ? 'bg-green-600 text-white shadow-green-600/20' 
-                : 'bg-primary text-white shadow-primary/20'
-            }`}
-          >
-            {currentPrice === 0 ? (
-              <>
-                <Download size={17} />
-                Get for Free
-              </>
-            ) : (
-              <>
-                <ExternalLink size={17} />
-                Buy Now
-              </>
-            )}
-          </button>
+          <div className="flex items-center gap-2 flex-1 justify-end">
+            <button
+              onClick={handleBuyClick}
+              className={`flex-1 py-3 px-4 rounded-xl font-bold text-sm flex items-center justify-center gap-1.5 shadow-md active:scale-95 transition-all ${
+                currentPrice === 0 
+                  ? 'bg-green-600 text-white shadow-green-600/20' 
+                  : 'bg-primary text-white shadow-primary/20'
+              }`}
+            >
+              {currentPrice === 0 ? (
+                <>
+                  <Download size={17} />
+                  Get Free
+                </>
+              ) : (
+                <>
+                  <ExternalLink size={17} />
+                  Buy Now
+                </>
+              )}
+            </button>
+
+            <button
+              type="button"
+              onClick={handleShare}
+              title="Share Resource"
+              className="p-3 bg-gray-100 hover:bg-indigo-50 border border-gray-200 text-gray-700 hover:text-primary rounded-xl active:scale-95 transition-all flex items-center justify-center shrink-0"
+            >
+              <Share2 size={18} />
+            </button>
+          </div>
         </div>
       </div>
 
