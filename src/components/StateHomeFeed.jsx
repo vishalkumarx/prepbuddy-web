@@ -561,7 +561,7 @@ export default function StateHomeFeed({ onlyEnrolled = false }) {
                           <Award size={14} className="text-yellow-400" /> Punjab Govt. Exam Focus
                         </span>
                         <span className="inline-flex items-center gap-1.5 text-xs font-bold bg-white/10 border border-white/15 px-3 py-1.5 rounded-xl text-white">
-                          <Star size={14} className="text-amber-300 fill-amber-300" /> Mentored 10,000+ Students
+                          <Star size={14} className="text-amber-300 fill-amber-300" /> Teaching Experience
                         </span>
                       </div>
                     </div>
