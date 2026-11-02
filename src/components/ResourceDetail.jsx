@@ -10,11 +10,15 @@ import {
 import * as pdfjsLib from 'pdfjs-dist';
 import CouponManager from './CouponManager';
 
-// Configure pdfjs worker
-pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
-  'pdfjs-dist/build/pdf.worker.min.mjs',
-  import.meta.url
-).toString();
+// Configure pdfjs worker with fallback
+try {
+  pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
+    'pdfjs-dist/build/pdf.worker.min.mjs',
+    import.meta.url
+  ).toString();
+} catch (e) {
+  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://unpkg.com/pdfjs-dist@6.3.289/build/pdf.worker.min.mjs';
+}
 
 export default function ResourceDetail() {
   const { id } = useParams();
@@ -35,23 +39,40 @@ export default function ResourceDetail() {
   const [discountedPrice, setDiscountedPrice] = useState(null);
   const [showPromoDialog, setShowPromoDialog] = useState(false);
 
-  const generateSamples = async (fileUrl) => {
+  const generateSamples = async (fileUrl, fallbackThumb = null) => {
+    if (!fileUrl) {
+      if (fallbackThumb) setSamplePages([fallbackThumb]);
+      return;
+    }
     setLoadingSamples(true);
     setSampleError(null);
     try {
+      if (!pdfjsLib.GlobalWorkerOptions.workerSrc) {
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://unpkg.com/pdfjs-dist@6.3.289/build/pdf.worker.min.mjs';
+      }
+
       // Fetch the PDF file
       const response = await fetch(fileUrl);
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const arrayBuffer = await response.arrayBuffer();
       
-      const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+      const loadingTask = pdfjsLib.getDocument({
+        data: new Uint8Array(arrayBuffer),
+        cMapUrl: 'https://unpkg.com/pdfjs-dist@6.3.289/cmaps/',
+        cMapPacked: true,
+      });
+
+      const pdf = await loadingTask.promise;
       setTotalPages(pdf.numPages);
       const numPages = Math.min(pdf.numPages, 3); // Max 3 pages for sample
       
       const pagesDataUrls = [];
+      const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+      const renderScale = isMobile ? 1.0 : 1.3;
       
       for (let i = 1; i <= numPages; i++) {
         const page = await pdf.getPage(i);
-        const viewport = page.getViewport({ scale: 1.5 });
+        const viewport = page.getViewport({ scale: renderScale });
         
         const canvas = document.createElement('canvas');
         const context = canvas.getContext('2d');
@@ -65,14 +86,19 @@ export default function ResourceDetail() {
         
         await page.render(renderContext).promise;
         
-        const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
         pagesDataUrls.push(dataUrl);
       }
       
       setSamplePages(pagesDataUrls);
     } catch (err) {
       console.error("Error generating PDF samples:", err);
-      setSampleError("Failed to load PDF samples.");
+      if (fallbackThumb) {
+        setSamplePages([fallbackThumb]);
+        setSampleError(null);
+      } else {
+        setSampleError("Unable to render sample preview on this device.");
+      }
     } finally {
       setLoadingSamples(false);
     }
@@ -90,7 +116,9 @@ export default function ResourceDetail() {
         if (error) throw error;
         setResource(data);
         if (data && data.file_url) {
-          generateSamples(data.file_url);
+          generateSamples(data.file_url, data.thumbnail_url);
+        } else if (data && data.thumbnail_url) {
+          setSamplePages([data.thumbnail_url]);
         }
       } catch (err) {
         console.error("Error fetching resource:", err);
@@ -473,8 +501,17 @@ export default function ResourceDetail() {
               <p className="text-xs text-gray-500 font-medium">Rendering PDF sample preview...</p>
             </div>
           ) : sampleError ? (
-            <div className="p-4 bg-red-50 text-red-600 rounded-2xl text-center text-xs font-semibold">
-              {sampleError}
+            <div className="p-6 bg-amber-50/70 border border-amber-200 rounded-2xl text-center flex flex-col items-center justify-center gap-2">
+              <p className="text-xs text-amber-800 font-medium">{sampleError}</p>
+              {resource?.file_url && (
+                <button
+                  type="button"
+                  onClick={() => generateSamples(resource.file_url, resource.thumbnail_url)}
+                  className="px-3.5 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-bold transition-all active:scale-95 shadow-xs"
+                >
+                  Retry Loading Preview
+                </button>
+              )}
             </div>
           ) : samplePages.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
