@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabase';
 import { UserManager } from '../utils/UserManager';
-import { Shield, Search, UserPlus, Trash2, ArrowLeft, RefreshCw, Layers, Tag, Settings, FileText, Languages, Award, Newspaper, Plus, Clock, X, Edit2, Star, Eye, EyeOff, Lock, Unlock, Flag, AlertCircle, CheckCircle, Clock3, Inbox } from 'lucide-react';
+import { Shield, Search, UserPlus, Trash2, ArrowLeft, RefreshCw, Layers, Tag, Settings, FileText, Languages, Award, Newspaper, Plus, Clock, X, Edit2, Star, Eye, EyeOff, Lock, Unlock, Flag, AlertCircle, CheckCircle, Clock3, Inbox, ShoppingBag, Check } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import CouponManager from './CouponManager';
 
@@ -290,6 +290,54 @@ export default function CourseControlPanel() {
   const [comingSoonSubcat, setComingSoonSubcat] = useState('');
   const [comingSoonQuestions, setComingSoonQuestions] = useState('');
   const [comingSoonDuration, setComingSoonDuration] = useState('');
+
+  // Link Store Items Modal State
+  const [showLinkStoreModal, setShowLinkStoreModal] = useState(false);
+  const [storeResources, setStoreResources] = useState([]);
+  const [loadingStore, setLoadingStore] = useState(false);
+
+  const fetchStoreResourcesForCourse = async () => {
+    setLoadingStore(true);
+    try {
+      const { data, error } = await supabase
+        .from('prepbuddy_store')
+        .select('*')
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      setStoreResources(data || []);
+    } catch (err) {
+      console.error('Error fetching store resources:', err);
+    } finally {
+      setLoadingStore(false);
+    }
+  };
+
+  const handleToggleLinkStoreItem = async (resource) => {
+    if (!selectedCourse) return;
+    setActionLoading(true);
+    try {
+      const currentLinked = selectedCourse.linked_store_items || [];
+      const alreadyLinked = currentLinked.includes(resource.id);
+      const updatedLinked = alreadyLinked
+        ? currentLinked.filter(id => id !== resource.id)
+        : [...currentLinked, resource.id];
+
+      const { data, error } = await supabase
+        .from('prepbuddy_test_series')
+        .update({ linked_store_items: updatedLinked })
+        .eq('id', selectedCourse.id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      setSelectedCourse(data);
+      setCourses(prev => prev.map(c => c.id === data.id ? data : c));
+    } catch (err) {
+      alert('Error updating linked store items: ' + err.message);
+    } finally {
+      setActionLoading(false);
+    }
+  };
 
   const handleAddComingSoonTile = async (e) => {
     e.preventDefault();
@@ -888,6 +936,15 @@ export default function CourseControlPanel() {
                         <div className="flex items-center gap-2">
                           <button
                             onClick={() => {
+                              fetchStoreResourcesForCourse();
+                              setShowLinkStoreModal(true);
+                            }}
+                            className="bg-indigo-50 text-indigo-700 border border-indigo-200 hover:bg-indigo-100 font-bold px-3 py-1.5 rounded-lg text-xs flex items-center gap-1.5 transition-colors shadow-2xs"
+                          >
+                            <ShoppingBag size={14} className="text-indigo-600" /> Link Store Items ({ (selectedCourse.linked_store_items || []).length })
+                          </button>
+                          <button
+                            onClick={() => {
                               // Pre-fill first category if available
                               const existingCategories = Object.keys(grouped);
                               if (existingCategories.length > 0 && !comingSoonCat) {
@@ -1199,6 +1256,107 @@ export default function CourseControlPanel() {
                                 </button>
                               </div>
                             </form>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Link Store Items Modal */}
+                      {showLinkStoreModal && (
+                        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+                          <div className="bg-white rounded-3xl w-full max-w-xl p-6 shadow-2xl relative animate-in fade-in zoom-in-95 max-h-[85vh] flex flex-col">
+                            <div className="flex items-center justify-between pb-4 border-b border-gray-100">
+                              <div className="flex items-center gap-2.5">
+                                <div className="p-2.5 bg-indigo-50 text-indigo-700 rounded-2xl">
+                                  <ShoppingBag size={22} />
+                                </div>
+                                <div>
+                                  <h3 className="font-bold text-lg text-gray-900 leading-tight">Link Store Items</h3>
+                                  <p className="text-xs text-gray-500">Include PDF study resources inside this test series contents.</p>
+                                </div>
+                              </div>
+                              <button
+                                onClick={() => setShowLinkStoreModal(false)}
+                                className="p-2 text-gray-400 hover:text-gray-700 rounded-full hover:bg-gray-100 transition-colors"
+                              >
+                                <X size={20} />
+                              </button>
+                            </div>
+
+                            <div className="flex-1 overflow-y-auto py-4 space-y-3 custom-scrollbar">
+                              {loadingStore ? (
+                                <div className="flex justify-center p-8">
+                                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+                                </div>
+                              ) : storeResources.length === 0 ? (
+                                <div className="text-center py-10 bg-gray-50 rounded-2xl border border-dashed border-gray-200">
+                                  <ShoppingBag size={32} className="mx-auto text-gray-300 mb-2" />
+                                  <p className="text-sm font-bold text-gray-700">No store resources found</p>
+                                  <p className="text-xs text-gray-500 mt-1">Upload PDF items in Store Management first.</p>
+                                </div>
+                              ) : (
+                                storeResources.map(res => {
+                                  const isLinked = (selectedCourse.linked_store_items || []).includes(res.id);
+                                  return (
+                                    <div
+                                      key={res.id}
+                                      className={`p-3 rounded-2xl border flex items-center justify-between gap-3 transition-all ${
+                                        isLinked ? 'bg-indigo-50/70 border-indigo-200 shadow-xs' : 'bg-white border-gray-200 hover:border-gray-300'
+                                      }`}
+                                    >
+                                      <div className="flex items-center gap-3 min-w-0 flex-1">
+                                        <div className="w-12 h-16 rounded-lg overflow-hidden bg-gray-100 border border-gray-200 flex-shrink-0">
+                                          {res.thumbnail_url ? (
+                                            <img src={res.thumbnail_url} alt={res.title} className="w-full h-full object-cover" />
+                                          ) : (
+                                            <div className="w-full h-full flex items-center justify-center text-gray-400">
+                                              <FileText size={18} />
+                                            </div>
+                                          )}
+                                        </div>
+                                        <div className="min-w-0 flex-1">
+                                          <h4 className="font-bold text-sm text-gray-900 leading-snug line-clamp-1">{res.title}</h4>
+                                          {res.description && (
+                                            <p className="text-xs text-gray-500 line-clamp-1 mt-0.5">{res.description}</p>
+                                          )}
+                                          <div className="flex items-center gap-2 mt-1">
+                                            <span className="text-xs font-bold text-primary">
+                                              {Number(res.price) === 0 ? 'FREE' : `₹${res.price}`}
+                                            </span>
+                                            {isLinked && (
+                                              <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-100/80 px-2 py-0.5 rounded-full">
+                                                <Check size={11} strokeWidth={3} /> Linked to course
+                                              </span>
+                                            )}
+                                          </div>
+                                        </div>
+                                      </div>
+
+                                      <button
+                                        type="button"
+                                        disabled={actionLoading}
+                                        onClick={() => handleToggleLinkStoreItem(res)}
+                                        className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 flex-shrink-0 active:scale-95 disabled:opacity-50 ${
+                                          isLinked
+                                            ? 'bg-red-50 text-red-600 hover:bg-red-100 border border-red-200'
+                                            : 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-xs'
+                                        }`}
+                                      >
+                                        {isLinked ? 'Unlink' : 'Link to Course'}
+                                      </button>
+                                    </div>
+                                  );
+                                })
+                              )}
+                            </div>
+
+                            <div className="pt-3 border-t border-gray-100 flex items-center justify-end">
+                              <button
+                                onClick={() => setShowLinkStoreModal(false)}
+                                className="px-5 py-2.5 bg-gray-900 text-white hover:bg-black font-bold rounded-xl text-xs transition-colors"
+                              >
+                                Done
+                              </button>
+                            </div>
                           </div>
                         </div>
                       )}

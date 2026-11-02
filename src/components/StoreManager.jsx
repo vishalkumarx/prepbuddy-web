@@ -3,7 +3,7 @@ import { supabase } from '../supabase';
 import { UserManager } from '../utils/UserManager';
 import { 
   ArrowLeft, Plus, Trash2, Edit2, ShoppingBag, 
-  ExternalLink, FileText, Search, RefreshCw, Eye, Tag, AlertCircle 
+  ExternalLink, FileText, Search, RefreshCw, Eye, Tag, AlertCircle, Link2, Layers, Check, X 
 } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
 
@@ -13,6 +13,12 @@ export default function StoreManager() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [deletingId, setDeletingId] = useState(null);
+
+  // Link to Course modal state
+  const [linkingResource, setLinkingResource] = useState(null);
+  const [courses, setCourses] = useState([]);
+  const [loadingCourses, setLoadingCourses] = useState(false);
+  const [linkActionLoading, setLinkActionLoading] = useState(false);
 
   useEffect(() => {
     fetchResources();
@@ -32,6 +38,49 @@ export default function StoreManager() {
       console.error("Error fetching store resources:", err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const openLinkModal = async (resource) => {
+    setLinkingResource(resource);
+    setLoadingCourses(true);
+    try {
+      const { data, error } = await supabase
+        .from('prepbuddy_test_series')
+        .select('*')
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      setCourses((data || []).filter(c => !c.title?.startsWith('INTERNAL_')));
+    } catch (err) {
+      console.error("Error fetching courses for linking:", err);
+    } finally {
+      setLoadingCourses(false);
+    }
+  };
+
+  const handleToggleCourseLink = async (course) => {
+    if (!linkingResource) return;
+    setLinkActionLoading(true);
+    try {
+      const currentLinked = course.linked_store_items || [];
+      const alreadyLinked = currentLinked.includes(linkingResource.id);
+      const updatedLinked = alreadyLinked
+        ? currentLinked.filter(id => id !== linkingResource.id)
+        : [...currentLinked, linkingResource.id];
+
+      const { data, error } = await supabase
+        .from('prepbuddy_test_series')
+        .update({ linked_store_items: updatedLinked })
+        .eq('id', course.id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      setCourses(prev => prev.map(c => c.id === data.id ? data : c));
+    } catch (err) {
+      alert("Error linking course: " + err.message);
+    } finally {
+      setLinkActionLoading(false);
     }
   };
 
@@ -271,6 +320,14 @@ export default function StoreManager() {
 
                     <div className="flex items-center gap-2">
                       <button
+                        onClick={() => openLinkModal(resource)}
+                        className="px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg text-xs font-bold flex items-center gap-1 transition-colors"
+                        title="Link to Test Series"
+                      >
+                        <Link2 size={14} />
+                        <span>Link Course</span>
+                      </button>
+                      <button
                         onClick={() => navigate(`/edit-resource/${resource.id}`)}
                         className="px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-lg text-xs font-bold flex items-center gap-1 transition-colors"
                       >
@@ -293,6 +350,103 @@ export default function StoreManager() {
           </div>
         )}
       </div>
+
+      {/* Link to Test Series Modal */}
+      {linkingResource && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl w-full max-w-xl p-6 shadow-2xl relative animate-in fade-in zoom-in-95 max-h-[85vh] flex flex-col">
+            <div className="flex items-center justify-between pb-4 border-b border-gray-100">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2.5 bg-emerald-50 text-emerald-700 rounded-2xl">
+                  <Link2 size={22} />
+                </div>
+                <div>
+                  <h3 className="font-bold text-lg text-gray-900 leading-tight">Link to Test Series</h3>
+                  <p className="text-xs text-gray-500">Select which test series will include "{linkingResource.title}".</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setLinkingResource(null)}
+                className="p-2 text-gray-400 hover:text-gray-700 rounded-full hover:bg-gray-100 transition-colors"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto py-4 space-y-3 custom-scrollbar">
+              {loadingCourses ? (
+                <div className="flex justify-center p-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600"></div>
+                </div>
+              ) : courses.length === 0 ? (
+                <div className="text-center py-10 bg-gray-50 rounded-2xl border border-dashed border-gray-200">
+                  <Layers size={32} className="mx-auto text-gray-300 mb-2" />
+                  <p className="text-sm font-bold text-gray-700">No test series found</p>
+                </div>
+              ) : (
+                courses.map(course => {
+                  const isLinked = (course.linked_store_items || []).includes(linkingResource.id);
+                  return (
+                    <div
+                      key={course.id}
+                      className={`p-3.5 rounded-2xl border flex items-center justify-between gap-3 transition-all ${
+                        isLinked ? 'bg-emerald-50/70 border-emerald-200 shadow-xs' : 'bg-white border-gray-200 hover:border-gray-300'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3 min-w-0 flex-1">
+                        <div className="w-12 h-14 rounded-lg overflow-hidden bg-gray-100 border border-gray-200 flex-shrink-0">
+                          {course.banner_url ? (
+                            <img src={course.banner_url} alt={course.title} className="w-full h-full object-cover" />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center text-gray-400">
+                              <Layers size={18} />
+                            </div>
+                          )}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <h4 className="font-bold text-sm text-gray-900 leading-snug line-clamp-1">{course.title}</h4>
+                          <div className="flex items-center gap-2 mt-1">
+                            <span className="text-xs font-bold text-primary">
+                              {Number(course.price) === 0 ? 'FREE' : `₹${course.price}`}
+                            </span>
+                            {isLinked && (
+                              <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-100/80 px-2 py-0.5 rounded-full">
+                                <Check size={11} strokeWidth={3} /> Linked
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      <button
+                        type="button"
+                        disabled={linkActionLoading}
+                        onClick={() => handleToggleCourseLink(course)}
+                        className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 flex-shrink-0 active:scale-95 disabled:opacity-50 ${
+                          isLinked
+                            ? 'bg-red-50 text-red-600 hover:bg-red-100 border border-red-200'
+                            : 'bg-emerald-600 text-white hover:bg-emerald-700 shadow-xs'
+                        }`}
+                      >
+                        {isLinked ? 'Remove from Course' : 'Add to Course'}
+                      </button>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+
+            <div className="pt-3 border-t border-gray-100 flex items-center justify-end">
+              <button
+                onClick={() => setLinkingResource(null)}
+                className="px-5 py-2.5 bg-gray-900 text-white hover:bg-black font-bold rounded-xl text-xs transition-colors"
+              >
+                Done
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { supabase } from '../supabase';
 import { UserManager } from '../utils/UserManager';
-import { ArrowLeft, Upload, FileText, IndianRupee, Image as ImageIcon, Trash2, Sparkles } from 'lucide-react';
+import { ArrowLeft, Upload, FileText, IndianRupee, Image as ImageIcon, Trash2, Sparkles, Layers } from 'lucide-react';
 import * as pdfjsLib from 'pdfjs-dist';
 
 // Configure pdfjs worker
@@ -28,6 +28,32 @@ export default function UploadResource({ isEdit = false }) {
   const [isCustomImage, setIsCustomImage] = useState(false);
   const [loading, setLoading] = useState(false);
   const [existingResource, setExistingResource] = useState(null);
+  const [availableCourses, setAvailableCourses] = useState([]);
+  const [selectedCourseIds, setSelectedCourseIds] = useState([]);
+
+  useEffect(() => {
+    // Load courses for optional linking
+    const fetchCourses = async () => {
+      try {
+        const { data } = await supabase
+          .from('prepbuddy_test_series')
+          .select('id, title, linked_store_items')
+          .order('created_at', { ascending: false });
+        const validCourses = (data || []).filter(c => !c.title?.startsWith('INTERNAL_'));
+        setAvailableCourses(validCourses);
+
+        if (isEdit && id) {
+          const linked = validCourses
+            .filter(c => (c.linked_store_items || []).includes(id))
+            .map(c => c.id);
+          setSelectedCourseIds(linked);
+        }
+      } catch (e) {
+        console.error("Error loading courses for resource:", e);
+      }
+    };
+    fetchCourses();
+  }, [isEdit, id]);
 
   useEffect(() => {
     if (isEdit && id) {
@@ -248,6 +274,7 @@ export default function UploadResource({ isEdit = false }) {
         thumbnail_url: thumbnailUrl,
       };
 
+      let savedResourceId = id;
       if (isEdit) {
         const { data: updateData, error: dbError } = await supabase
           .from('prepbuddy_store')
@@ -264,20 +291,48 @@ export default function UploadResource({ isEdit = false }) {
         if (!updateData || updateData.length === 0) {
           throw new Error("Update matched 0 rows. Check that the record ID exists and RLS policy allows updates.");
         }
-        alert("Resource updated successfully!");
       } else {
         payload.uploaded_by = UserManager.getUserId();
-        const { error: dbError } = await supabase
+        const { data: insertData, error: dbError } = await supabase
           .from('prepbuddy_store')
-          .insert([payload]);
+          .insert([payload])
+          .select();
 
         if (dbError) {
           console.error("DB insert error:", dbError);
           throw new Error("Failed to save resource record. Did you create the 'prepbuddy_store' table?");
         }
-        alert("Resource uploaded successfully!");
+        if (insertData && insertData.length > 0) {
+          savedResourceId = insertData[0].id;
+        }
       }
 
+      // Sync linked test series courses
+      if (savedResourceId) {
+        await Promise.all(
+          availableCourses.map(async (course) => {
+            const currentLinked = course.linked_store_items || [];
+            const shouldBeLinked = selectedCourseIds.includes(course.id);
+            const isCurrentlyLinked = currentLinked.includes(savedResourceId);
+
+            if (shouldBeLinked && !isCurrentlyLinked) {
+              const updated = [...currentLinked, savedResourceId];
+              await supabase
+                .from('prepbuddy_test_series')
+                .update({ linked_store_items: updated })
+                .eq('id', course.id);
+            } else if (!shouldBeLinked && isCurrentlyLinked) {
+              const updated = currentLinked.filter(itemId => itemId !== savedResourceId);
+              await supabase
+                .from('prepbuddy_test_series')
+                .update({ linked_store_items: updated })
+                .eq('id', course.id);
+            }
+          })
+        );
+      }
+
+      alert(isEdit ? "Resource updated successfully!" : "Resource uploaded successfully!");
       navigate('/store');
 
     } catch (err) {
@@ -483,6 +538,48 @@ export default function UploadResource({ isEdit = false }) {
               <p className="text-xs text-gray-500 mt-1.5">Shows a discount banner.</p>
             </div>
           </div>
+
+          {/* Link to Test Series Courses */}
+          {availableCourses.length > 0 && (
+            <div className="bg-indigo-50/50 p-4 rounded-2xl border border-indigo-100">
+              <label className="block text-sm font-bold text-gray-800 mb-1 flex items-center gap-2">
+                <Layers size={16} className="text-indigo-600" />
+                <span>Link to Test Series (Optional)</span>
+              </label>
+              <p className="text-xs text-gray-500 mb-3">
+                Students who view or enroll in these test series will also see this resource in their course contents.
+              </p>
+              <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+                {availableCourses.map(course => {
+                  const isChecked = selectedCourseIds.includes(course.id);
+                  return (
+                    <label
+                      key={course.id}
+                      className={`flex items-center gap-3 p-2.5 rounded-xl border cursor-pointer transition-colors ${
+                        isChecked ? 'bg-indigo-50 border-indigo-200' : 'bg-white border-gray-200 hover:bg-gray-50'
+                      }`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={isChecked}
+                        onChange={() => {
+                          setSelectedCourseIds(prev => 
+                            prev.includes(course.id)
+                              ? prev.filter(cId => cId !== course.id)
+                              : [...prev, course.id]
+                          );
+                        }}
+                        className="w-4 h-4 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500"
+                      />
+                      <span className="text-xs font-bold text-gray-900 leading-tight select-none">
+                        {course.title}
+                      </span>
+                    </label>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
           {/* Submit */}
           <button 

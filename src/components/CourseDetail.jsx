@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '../supabase';
-import { ArrowLeft, IndianRupee, Layers, FileText, CheckCircle2, Lock, Unlock, ChevronDown, ChevronUp, Tag, CheckCircle, XCircle, Languages, Newspaper, Award, Clock, Star, ShoppingCart, Share2, Sparkles, PartyPopper, ArrowRight } from 'lucide-react';
+import { ArrowLeft, IndianRupee, Layers, FileText, CheckCircle2, Lock, Unlock, ChevronDown, ChevronUp, Tag, CheckCircle, XCircle, Languages, Newspaper, Award, Clock, Star, ShoppingCart, Share2, Sparkles, PartyPopper, ArrowRight, ShoppingBag, Eye, Download } from 'lucide-react';
 import { UserManager } from '../utils/UserManager';
 import { useAuthModal } from '../context/AuthModalContext';
 import { processHtml } from '../utils/htmlUtils';
@@ -40,6 +40,7 @@ export default function CourseDetail() {
   const [expandedCategories, setExpandedCategories] = useState({});
   const [attempts, setAttempts] = useState({});
   const [questionCounts, setQuestionCounts] = useState({});
+  const [linkedResources, setLinkedResources] = useState([]);
 
   // Coupon state
   const [couponCode, setCouponCode] = useState('');
@@ -137,6 +138,23 @@ export default function CourseDetail() {
             counts[`${test.category}-${test.subcategory}`] = count || 0;
           }));
           setQuestionCounts(counts);
+        }
+
+        // Fetch linked store items
+        if (data && data.linked_store_items && data.linked_store_items.length > 0) {
+          try {
+            const { data: storeItemsData, error: storeError } = await supabase
+              .from('prepbuddy_store')
+              .select('*')
+              .in('id', data.linked_store_items);
+            if (!storeError && storeItemsData) {
+              setLinkedResources(storeItemsData);
+            }
+          } catch (storeErr) {
+            console.error('Error fetching linked store resources:', storeErr);
+          }
+        } else {
+          setLinkedResources([]);
         }
 
       } catch (err) {
@@ -769,6 +787,119 @@ export default function CourseDetail() {
                   </div>
                 );
               })}
+            </div>
+          )}
+
+          {/* Linked Store Items (Study Material & PDF Notes) */}
+          {linkedResources.length > 0 && (
+            <div className="pt-6 space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="p-1.5 rounded-lg bg-emerald-50 text-emerald-700">
+                    <ShoppingBag size={18} />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-base text-gray-900 tracking-tight">Study Material & Notes</h3>
+                    <p className="text-xs text-gray-500 font-medium">Included PDF resources & reference guides for this course</p>
+                  </div>
+                </div>
+                <span className="text-xs font-bold bg-emerald-100 text-emerald-800 px-2.5 py-1 rounded-full">
+                  {linkedResources.length} {linkedResources.length === 1 ? 'Resource' : 'Resources'}
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {linkedResources.map((res) => {
+                  const canAccess = isEnrolled || Number(res.price) === 0;
+                  return (
+                    <div
+                      key={res.id}
+                      onClick={() => navigate(`/store/${res.id}`)}
+                      className={`p-3.5 rounded-2xl border transition-all cursor-pointer flex items-center justify-between gap-3 group ${
+                        canAccess
+                          ? 'bg-white hover:bg-emerald-50/40 border-gray-200 hover:border-emerald-300 shadow-xs hover:shadow-md'
+                          : 'bg-gray-50/80 border-gray-200 hover:border-gray-300'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3 min-w-0 flex-1">
+                        <div className="w-14 h-18 rounded-xl overflow-hidden bg-white border border-gray-200/80 shadow-xs flex-shrink-0 relative">
+                          {res.thumbnail_url ? (
+                            <img src={res.thumbnail_url} alt={res.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                          ) : (
+                            <div className="w-full h-full flex flex-col items-center justify-center text-gray-400 p-1 text-center bg-gray-50">
+                              <FileText size={20} className="mb-0.5 text-gray-400" />
+                              <span className="text-[8px] font-bold">PDF</span>
+                            </div>
+                          )}
+                          <span className="absolute bottom-0 inset-x-0 bg-black/60 text-white text-[8px] font-bold text-center py-0.5">
+                            PDF
+                          </span>
+                        </div>
+
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className="text-[9px] font-black uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-200/60 px-1.5 py-0.5 rounded">
+                              Course Material
+                            </span>
+                            {Number(res.price) === 0 && (
+                              <span className="text-[9px] font-bold bg-green-100 text-green-800 px-1.5 py-0.5 rounded uppercase">
+                                Free
+                              </span>
+                            )}
+                          </div>
+                          <h4 className="font-bold text-sm text-gray-900 leading-snug line-clamp-1 mt-1 group-hover:text-emerald-900 transition-colors">
+                            {res.title}
+                          </h4>
+                          {res.description && (
+                            <p className="text-xs text-gray-500 line-clamp-1 mt-0.5">
+                              {res.description}
+                            </p>
+                          )}
+                          <div className="flex items-center gap-2 mt-2">
+                            {canAccess ? (
+                              <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-100/70 px-2 py-0.5 rounded-md">
+                                <Unlock size={11} strokeWidth={2.5} />
+                                {isEnrolled ? 'UNLOCKED WITH COURSE' : 'FREE ACCESS'}
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 text-[10px] font-bold text-gray-600 bg-gray-200/70 px-2 py-0.5 rounded-md">
+                                <Lock size={11} strokeWidth={2.5} />
+                                ENROLL TO UNLOCK
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-1.5 flex-shrink-0 self-center">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(`/store/${res.id}`);
+                          }}
+                          className="px-3 py-1.5 rounded-xl text-xs font-bold bg-gray-100 hover:bg-emerald-100 text-gray-700 hover:text-emerald-800 transition-colors flex items-center gap-1"
+                        >
+                          <Eye size={13} />
+                          <span>View</span>
+                        </button>
+                        {canAccess && res.file_url && (
+                          <a
+                            href={res.file_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={(e) => e.stopPropagation()}
+                            className="p-1.5 rounded-xl text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 transition-colors"
+                            title="Download PDF"
+                          >
+                            <Download size={14} />
+                          </a>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           )}
         </div>
