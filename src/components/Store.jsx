@@ -135,7 +135,7 @@ export default function Store() {
     if (resource.price === 0) {
       window.open(resource.file_url, '_blank');
     } else {
-      alert(`Payment gateway coming soon for ₹${resource.price}!`);
+      navigate(`/payment/resource/${resource.id}?price=${resource.price}`);
     }
   };
 

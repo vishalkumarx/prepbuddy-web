@@ -116,7 +116,8 @@ export default function ResourceDetail() {
     if (finalPrice === 0) {
       window.open(resource.file_url, '_blank');
     } else {
-      navigate(`/payment/resource/${id}?price=${finalPrice}`);
+      const couponQuery = couponData?.id ? `&coupon=${encodeURIComponent(couponData.code)}&couponId=${encodeURIComponent(couponData.id)}` : '';
+      navigate(`/payment/resource/${id}?price=${finalPrice}${couponQuery}`);
     }
   };
 

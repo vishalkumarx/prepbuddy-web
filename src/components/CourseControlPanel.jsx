@@ -90,19 +90,23 @@ export default function CourseControlPanel() {
   };
 
   const handleApproveJoinRequest = async (req) => {
-    if (!window.confirm(`Approve payment and enroll ${req.user_name || req.user_email} into ${req.course_title || 'this course'}?`)) return;
+    const isResource = req.item_type === 'resource';
+    const actionLabel = isResource ? 'resource order' : 'course enrollment';
+    if (!window.confirm(`Approve payment for ${req.user_name || req.user_email} for ${req.course_title || (isResource ? 'this resource' : 'this course')}?`)) return;
     setActionLoading(true);
     try {
-      // 1. Insert into prepbuddy_enrollments
-      const { error: enrollError } = await supabase
-        .from('prepbuddy_enrollments')
-        .insert([{
-          user_id: req.user_id,
-          course_id: req.course_id
-        }]);
+      // 1. If course, insert into prepbuddy_enrollments
+      if (!isResource) {
+        const { error: enrollError } = await supabase
+          .from('prepbuddy_enrollments')
+          .insert([{
+            user_id: req.user_id,
+            course_id: req.course_id
+          }]);
 
-      if (enrollError && !enrollError.message?.includes('duplicate')) {
-        throw enrollError;
+        if (enrollError && !enrollError.message?.includes('duplicate')) {
+          throw enrollError;
+        }
       }
 
       // 2. If coupon was applied, ensure its uses_count is incremented
@@ -136,7 +140,7 @@ export default function CourseControlPanel() {
       // 4. Remove from localStorage
       try {
         const local = JSON.parse(localStorage.getItem('prepbuddy_join_requests') || '[]');
-        const updated = local.filter(l => !(l.user_email === req.user_email && l.course_id === req.course_id));
+        const updated = local.filter(l => !(l.user_email === req.user_email && (l.course_id === req.course_id || l.id === req.id)));
         localStorage.setItem('prepbuddy_join_requests', JSON.stringify(updated));
       } catch (e) {}
 
@@ -144,11 +148,11 @@ export default function CourseControlPanel() {
       setJoinRequests(prev => prev.filter(r => r !== req && r.comment_id !== req.comment_id));
 
       // Refresh enrollments if current course is selected
-      if (selectedCourse && selectedCourse.id === req.course_id) {
+      if (!isResource && selectedCourse && selectedCourse.id === req.course_id) {
         loadEnrollments(selectedCourse.id);
       }
 
-      alert(`✅ User ${req.user_name || req.user_email} successfully enrolled!`);
+      alert(`✅ User ${req.user_name || req.user_email} payment approved successfully!`);
     } catch (err) {
       alert("Error approving request: " + err.message);
     } finally {
@@ -726,6 +730,15 @@ export default function CourseControlPanel() {
                                   <span className="text-xs text-gray-500 font-mono bg-gray-100 px-2 py-0.5 rounded-md">
                                     {req.user_email}
                                   </span>
+                                  {req.item_type === 'resource' ? (
+                                    <span className="bg-blue-100 text-blue-800 text-[10px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider">
+                                      Store Resource
+                                    </span>
+                                  ) : (
+                                    <span className="bg-indigo-100 text-indigo-800 text-[10px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider">
+                                      Course
+                                    </span>
+                                  )}
                                   {req.amount && (
                                     <span className="bg-emerald-100 text-emerald-800 text-[11px] font-black px-2.5 py-0.5 rounded-full">
                                       ₹{req.amount}
@@ -738,7 +751,8 @@ export default function CourseControlPanel() {
                                   )}
                                 </div>
                                 <p className="text-xs font-semibold text-gray-700">
-                                  Course: <span className="font-bold text-gray-900">{req.course_title || 'Test Series'}</span>
+                                  {req.item_type === 'resource' ? 'Resource: ' : 'Course: '}
+                                  <span className="font-bold text-gray-900">{req.course_title || (req.item_type === 'resource' ? 'Store Resource' : 'Test Series')}</span>
                                 </p>
                                 <div className="flex items-center gap-3 text-[11px] text-gray-400 font-medium flex-wrap pt-0.5">
                                   {req.utr_number ? (
@@ -764,7 +778,7 @@ export default function CourseControlPanel() {
                                 className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-4 py-2 rounded-xl flex items-center gap-1.5 shadow-sm active:scale-95 transition-all disabled:opacity-50"
                               >
                                 <CheckCircle size={15} />
-                                <span>Approve & Enroll</span>
+                                <span>{req.item_type === 'resource' ? 'Approve Order' : 'Approve & Enroll'}</span>
                               </button>
                               <button
                                 onClick={() => handleRejectJoinRequest(req)}

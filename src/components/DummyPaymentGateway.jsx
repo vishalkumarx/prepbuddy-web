@@ -58,12 +58,22 @@ export default function DummyPaymentGateway() {
             .single();
           if (data?.title) setItemTitle(data.title);
         } else if (type === 'resource') {
-          const { data } = await supabase
-            .from('prepbuddy_resources')
+          // Check prepbuddy_store first (primary store table) then fallback to prepbuddy_resources
+          const { data: storeData } = await supabase
+            .from('prepbuddy_store')
             .select('title')
             .eq('id', id)
-            .single();
-          if (data?.title) setItemTitle(data.title);
+            .maybeSingle();
+          if (storeData?.title) {
+            setItemTitle(storeData.title);
+          } else {
+            const { data: resData } = await supabase
+              .from('prepbuddy_resources')
+              .select('title')
+              .eq('id', id)
+              .maybeSingle();
+            if (resData?.title) setItemTitle(resData.title);
+          }
         }
       } catch (err) {
         console.error('Error fetching title:', err);
@@ -81,12 +91,15 @@ export default function DummyPaymentGateway() {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const isResource = type === 'resource';
+  const itemTypeLabel = isResource ? 'Store Note / Resource' : 'Test Series / Course';
+
   const handleConfirmEnrollment = async () => {
     const isAuthed = requireAuth(async () => {
       await processJoinRequest();
     }, {
-      title: 'Sign in to Submit Join Request',
-      description: 'Please sign in with your Google account so admin can verify and grant access to your test series.'
+      title: 'Sign in to Submit Payment Request',
+      description: `Please sign in with your Google account so admin can verify and grant access to your ${isResource ? 'resource' : 'test series'}.`
     });
 
     if (isAuthed) {
@@ -110,6 +123,7 @@ export default function DummyPaymentGateway() {
       // Create Join Request payload
       const requestPayload = {
         __type: 'JOIN_REQUEST',
+        item_type: isResource ? 'resource' : 'course',
         course_id: id,
         course_title: itemTitle,
         user_id: userId,
@@ -170,13 +184,13 @@ export default function DummyPaymentGateway() {
       // Prepare WhatsApp message for admin with verified user email
       const adminPhone = '917888683399';
       const utrText = utrNumber?.trim() ? `\n*UTR / Ref No:* ${utrNumber.trim()}` : '';
-      const waMessage = `*Payment & Join Request — GoalPrep*\n\n` +
+      const waMessage = `*Payment & Order Request — GoalPrep*\n\n` +
         `👤 *User Name:* ${userName}\n` +
         `📧 *User Email:* ${userEmail}\n` +
-        `📚 *Test Series / Course:* ${itemTitle}\n` +
+        `📚 *${itemTypeLabel}:* ${itemTitle}\n` +
         `💰 *Amount Paid:* ₹${price}${utrText}\n` +
         `📅 *Time:* ${new Date().toLocaleString('en-IN')}\n\n` +
-        `I have completed the payment. Please verify and approve my course access for ${userEmail}. Thank you!`;
+        `I have completed the payment. Please verify and approve access for ${userEmail}. Thank you!`;
 
       const whatsappUrl = `https://wa.me/${adminPhone}?text=${encodeURIComponent(waMessage)}`;
 
@@ -197,6 +211,8 @@ export default function DummyPaymentGateway() {
       setTimeout(() => {
         if (type === 'course') {
           navigate(`/course/${id}`);
+        } else if (type === 'resource') {
+          navigate(`/store/${id}`);
         } else {
           navigate(-1);
         }
@@ -212,13 +228,13 @@ export default function DummyPaymentGateway() {
     const userName = UserManager.getUsername() || 'User';
     const adminPhone = '917888683399';
     const utrText = utrNumber?.trim() ? `\n*UTR / Ref No:* ${utrNumber.trim()}` : '';
-    const waMessage = `*Payment & Join Request — GoalPrep*\n\n` +
+    const waMessage = `*Payment & Order Request — GoalPrep*\n\n` +
       `👤 *User Name:* ${userName}\n` +
       `📧 *User Email:* ${userEmail}\n` +
-      `📚 *Test Series / Course:* ${itemTitle}\n` +
+      `📚 *${itemTypeLabel}:* ${itemTitle}\n` +
       `💰 *Amount Paid:* ₹${price}${utrText}\n` +
       `📅 *Time:* ${new Date().toLocaleString('en-IN')}\n\n` +
-      `I have completed the payment. Please verify and approve my course access for ${userEmail}. Thank you!`;
+      `I have completed the payment. Please verify and approve access for ${userEmail}. Thank you!`;
     const fallbackWhatsappUrl = `https://wa.me/${adminPhone}?text=${encodeURIComponent(waMessage)}`;
 
     return (
@@ -401,7 +417,7 @@ export default function DummyPaymentGateway() {
               {loading ? (
                 <>
                   <Loader2 className="animate-spin shrink-0" size={18} />
-                  <span>Submitting Join Request...</span>
+                  <span>Submitting Payment Request...</span>
                 </>
               ) : (
                 <>
