@@ -293,6 +293,14 @@ export default function ResourceDetail() {
             GoalPrep Store
           </span>
         </div>
+        <button
+          onClick={handleShare}
+          title="Share Resource"
+          className="p-2 px-3 rounded-xl text-gray-700 hover:text-primary hover:bg-indigo-50 border border-gray-200/80 active:scale-95 transition-all flex items-center gap-1.5 text-xs font-bold shadow-2xs"
+        >
+          <Share2 size={16} />
+          <span>Share</span>
+        </button>
       </header>
 
       {/* Main Container */}
@@ -407,11 +415,11 @@ export default function ResourceDetail() {
                 </div>
               </div>
 
-              {/* Desktop CTA Button & Share */}
-              <div className="hidden md:flex items-center gap-3">
+              {/* Desktop CTA Button */}
+              <div className="hidden md:flex items-center">
                 <button
                   onClick={handleBuyClick}
-                  className={`flex-1 flex items-center justify-center gap-2 py-4 rounded-xl font-bold text-base transition-all shadow-md active:scale-[0.99] ${
+                  className={`w-full flex items-center justify-center gap-2 py-4 px-8 rounded-xl font-bold text-base transition-all shadow-md active:scale-[0.99] ${
                     currentPrice === 0
                       ? 'bg-green-600 text-white hover:bg-green-700 shadow-green-600/20'
                       : 'bg-primary text-white hover:bg-primary-light shadow-primary/20'
@@ -428,16 +436,6 @@ export default function ResourceDetail() {
                       Buy Resource — ₹{currentPrice}
                     </>
                   )}
-                </button>
-
-                <button
-                  type="button"
-                  onClick={handleShare}
-                  title="Share Resource with Image"
-                  className="px-5 py-4 rounded-xl font-bold text-sm bg-indigo-50 hover:bg-indigo-100 text-primary border border-indigo-200 active:scale-95 transition-all flex items-center justify-center gap-2 shadow-xs"
-                >
-                  <Share2 size={18} />
-                  <span>Share</span>
                 </button>
               </div>
             </div>
@@ -540,7 +538,7 @@ export default function ResourceDetail() {
           <div className="flex items-center gap-2 flex-1 justify-end">
             <button
               onClick={handleBuyClick}
-              className={`flex-1 py-3 px-4 rounded-xl font-bold text-sm flex items-center justify-center gap-1.5 shadow-md active:scale-95 transition-all ${
+              className={`w-full py-3 px-4 rounded-xl font-bold text-sm flex items-center justify-center gap-1.5 shadow-md active:scale-95 transition-all ${
                 currentPrice === 0 
                   ? 'bg-green-600 text-white shadow-green-600/20' 
                   : 'bg-primary text-white shadow-primary/20'
@@ -557,15 +555,6 @@ export default function ResourceDetail() {
                   Buy Now
                 </>
               )}
-            </button>
-
-            <button
-              type="button"
-              onClick={handleShare}
-              title="Share Resource"
-              className="p-3 bg-gray-100 hover:bg-indigo-50 border border-gray-200 text-gray-700 hover:text-primary rounded-xl active:scale-95 transition-all flex items-center justify-center shrink-0"
-            >
-              <Share2 size={18} />
             </button>
           </div>
         </div>
