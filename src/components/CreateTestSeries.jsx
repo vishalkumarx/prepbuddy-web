@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../supabase';
-import { ArrowLeft, Plus, Edit2, Trash2, ListPlus, Sparkles, X, RefreshCw, Link2, Download, FileJson } from 'lucide-react';
+import { ArrowLeft, Plus, Edit2, Trash2, ListPlus, Sparkles, X, RefreshCw, Link2, Download, FileJson, Check } from 'lucide-react';
 import { processHtml, formatMatchTheFollowing, cleanOptionText } from '../utils/htmlUtils';
 
 // Reusable sidebar test item to avoid repetition
@@ -92,6 +92,141 @@ function SidebarTestItem({ group, isActive, linkedCoursesCount, selectedSidebarI
           </span>
         </div>
       </div>
+    </div>
+  );
+}
+
+// Inline editable field with hover pencil button, content overlay, and Enter key saving
+function InlineEditableField({ value, onSave, label, multiline = false, className = "", isCorrectBadge = false }) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [draft, setDraft] = useState(value || "");
+  const [isHovered, setIsHovered] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const inputRef = useRef(null);
+
+  useEffect(() => {
+    setDraft(value || "");
+  }, [value]);
+
+  useEffect(() => {
+    if (isEditing && inputRef.current) {
+      inputRef.current.focus();
+      if (inputRef.current.select) inputRef.current.select();
+    }
+  }, [isEditing]);
+
+  const handleCommit = async () => {
+    if (draft.trim() === (value || "").trim()) {
+      setIsEditing(false);
+      return;
+    }
+    setIsSaving(true);
+    try {
+      await onSave(draft.trim());
+      setIsEditing(false);
+    } catch (err) {
+      // onSave handles alert/toast
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter' && (!multiline || e.ctrlKey || e.metaKey)) {
+      e.preventDefault();
+      e.stopPropagation();
+      handleCommit();
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      e.stopPropagation();
+      setDraft(value || "");
+      setIsEditing(false);
+    }
+  };
+
+  return (
+    <div
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+      className={`relative group/inline-field ${className}`}
+    >
+      {/* Display Element */}
+      <div className={`transition-colors rounded-md ${isHovered && !isEditing ? 'bg-indigo-50/70 ring-1 ring-indigo-300' : ''}`}>
+        <span dangerouslySetInnerHTML={{ __html: processHtml(value) }} />
+      </div>
+
+      {/* Hover Edit trigger button overlay */}
+      {!isEditing && isHovered && (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            setDraft(value || "");
+            setIsEditing(true);
+          }}
+          className="absolute right-1 top-1/2 -translate-y-1/2 p-1 bg-white hover:bg-indigo-600 text-indigo-600 hover:text-white rounded shadow-md border border-indigo-200 transition-all z-20 flex items-center gap-1 text-[11px] font-semibold cursor-pointer animate-in fade-in"
+          title={`Edit ${label || 'field'} (Press Enter to save)`}
+        >
+          <Edit2 size={11} />
+          <span className="text-[10px] hidden sm:inline">Edit</span>
+        </button>
+      )}
+
+      {/* Popover / Overlay Input Box */}
+      {isEditing && (
+        <div 
+          onClick={(e) => e.stopPropagation()}
+          className="absolute inset-0 z-30 flex items-center bg-white shadow-xl rounded-lg border-2 border-indigo-500 p-1 min-w-[200px]"
+        >
+          {multiline ? (
+            <textarea
+              ref={inputRef}
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              onKeyDown={handleKeyDown}
+              disabled={isSaving}
+              rows={2}
+              className="w-full text-xs text-gray-900 bg-white border-0 outline-none p-1 resize-y font-medium focus:ring-0"
+              placeholder={`Edit ${label}...`}
+            />
+          ) : (
+            <input
+              ref={inputRef}
+              type="text"
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              onKeyDown={handleKeyDown}
+              disabled={isSaving}
+              className="w-full text-xs text-gray-900 bg-white border-0 outline-none px-1.5 py-0.5 font-medium focus:ring-0"
+              placeholder={`Edit ${label}...`}
+            />
+          )}
+
+          <div className="flex items-center gap-1 pl-1 pr-0.5 flex-shrink-0">
+            <button
+              type="button"
+              onClick={handleCommit}
+              disabled={isSaving}
+              className="p-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded transition-colors"
+              title="Save (Press Enter)"
+            >
+              {isSaving ? <RefreshCw size={12} className="animate-spin" /> : <Check size={12} />}
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setDraft(value || "");
+                setIsEditing(false);
+              }}
+              disabled={isSaving}
+              className="p-1 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded transition-colors"
+              title="Cancel (Escape)"
+            >
+              <X size={12} />
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -231,6 +366,74 @@ export default function CreateTestSeries() {
     } catch (err) {
       console.error('Export error:', err);
       alert('Failed to export questions: ' + err.message);
+    }
+  };
+
+  // Updates a single field on a question directly in Supabase
+  const handleUpdateQuestionField = async (questionId, fieldName, newValue) => {
+    try {
+      const { error } = await supabase
+        .from('prepbuddy_questions')
+        .update({ [fieldName]: newValue })
+        .eq('id', questionId);
+
+      if (error) throw error;
+
+      // Optimistically update local questions list
+      setQuestionsList(prev => prev.map(q => {
+        if (q.id === questionId) {
+          return { ...q, [fieldName]: newValue };
+        }
+        return q;
+      }));
+
+      showToast(`Updated ${fieldName} successfully!`);
+    } catch (err) {
+      console.error(`Failed to update ${fieldName}:`, err);
+      alert(`Failed to update ${fieldName}: ` + err.message);
+      throw err;
+    }
+  };
+
+  // Updates an option at optIndex and keeps answer in sync if necessary
+  const handleUpdateOptionField = async (questionItem, optIndex, newOptValue) => {
+    try {
+      const origOpts = Array.isArray(questionItem.options)
+        ? [...questionItem.options]
+        : (typeof questionItem.options === 'string' ? JSON.parse(questionItem.options) : []);
+      
+      const prevOptVal = origOpts[optIndex] || '';
+      origOpts[optIndex] = newOptValue;
+
+      // If the answer matched the old option text, also update the answer to the new option text
+      let newAnswer = questionItem.answer;
+      if (
+        questionItem.answer === prevOptVal ||
+        String(questionItem.answer).trim().toLowerCase() === String(prevOptVal).trim().toLowerCase()
+      ) {
+        newAnswer = newOptValue;
+      }
+
+      const { error } = await supabase
+        .from('prepbuddy_questions')
+        .update({ options: origOpts, answer: newAnswer })
+        .eq('id', questionItem.id);
+
+      if (error) throw error;
+
+      // Optimistically update local questions list
+      setQuestionsList(prev => prev.map(q => {
+        if (q.id === questionItem.id) {
+          return { ...q, options: origOpts, answer: newAnswer };
+        }
+        return q;
+      }));
+
+      showToast(`Updated Option ${String.fromCharCode(65 + optIndex)}!`);
+    } catch (err) {
+      console.error('Failed to update option:', err);
+      alert('Failed to update option: ' + err.message);
+      throw err;
     }
   };
 
@@ -1760,9 +1963,15 @@ export default function CreateTestSeries() {
                       <Trash2 size={14} />
                     </button>
                   </div>
-                  <div className="font-bold text-gray-900 text-sm pr-16 flex gap-1">
-                    <span>Q.</span>
-                    <span dangerouslySetInnerHTML={{ __html: processHtml(q.question) }} />
+                  <div className="font-bold text-gray-900 text-sm pr-16 flex items-start gap-1">
+                    <span className="mt-0.5">Q.</span>
+                    <InlineEditableField
+                      value={q.question}
+                      label="Question"
+                      multiline={true}
+                      className="flex-1"
+                      onSave={(newVal) => handleUpdateQuestionField(q.id, 'question', newVal)}
+                    />
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
                     {options.map((opt, oIdx) => {
@@ -1782,21 +1991,48 @@ export default function CreateTestSeries() {
                       return (
                       <div 
                         key={oIdx} 
-                        className={`p-2.5 rounded-lg border ${
+                        className={`p-2.5 rounded-lg border transition-all ${
                           isCorrect 
-                            ? 'bg-emerald-50 border-emerald-300 text-emerald-900 font-bold' 
+                            ? 'bg-emerald-50 border-emerald-300 text-emerald-900 font-bold ring-1 ring-emerald-300/60' 
                             : 'bg-white border-gray-200 text-gray-700'
                         }`}
                       >
-                        <span className="font-bold mr-2">{optLetter}.</span>
-                        <span dangerouslySetInnerHTML={{ __html: processHtml(opt) }} />
+                        <div className="flex items-start gap-1.5 w-full">
+                          <span 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleUpdateQuestionField(q.id, 'answer', opt);
+                            }}
+                            title="Click letter to set as correct answer"
+                            className={`font-bold px-1.5 py-0.5 rounded text-[11px] cursor-pointer transition-colors ${
+                              isCorrect 
+                                ? 'bg-emerald-600 text-white' 
+                                : 'bg-gray-100 hover:bg-emerald-100 text-gray-600 hover:text-emerald-800'
+                            }`}
+                          >
+                            {optLetter}
+                          </span>
+                          <InlineEditableField
+                            value={opt}
+                            label={`Option ${optLetter}`}
+                            multiline={false}
+                            className="flex-1 min-w-0"
+                            onSave={(newVal) => handleUpdateOptionField(q, oIdx, newVal)}
+                          />
+                        </div>
                       </div>
                     )})}
                   </div>
                   {q.explanation && (
-                    <div className="text-gray-500 italic pt-2 border-t border-gray-200 text-xs flex gap-1">
-                      <strong>Explanation:</strong> 
-                      <span dangerouslySetInnerHTML={{ __html: processHtml(q.explanation) }} />
+                    <div className="text-gray-500 italic pt-2 border-t border-gray-200 text-xs flex items-start gap-1">
+                      <strong className="mt-0.5">Explanation:</strong> 
+                      <InlineEditableField
+                        value={q.explanation}
+                        label="Explanation"
+                        multiline={true}
+                        className="flex-1 not-italic"
+                        onSave={(newVal) => handleUpdateQuestionField(q.id, 'explanation', newVal)}
+                      />
                     </div>
                   )}
                 </div>
