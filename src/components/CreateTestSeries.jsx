@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../supabase';
-import { ArrowLeft, Plus, Edit2, Trash2, ListPlus, Sparkles, X, RefreshCw, Link2, Download, FileJson, Check } from 'lucide-react';
+import { ArrowLeft, Plus, Edit2, Trash2, ListPlus, Sparkles, X, RefreshCw, Link2, Download, FileJson, Check, Scissors } from 'lucide-react';
 import { processHtml, formatMatchTheFollowing, cleanOptionText } from '../utils/htmlUtils';
 
 // Reusable sidebar test item to avoid repetition
@@ -97,7 +97,7 @@ function SidebarTestItem({ group, isActive, linkedCoursesCount, selectedSidebarI
 }
 
 // Inline editable field with hover pencil button, content overlay, and Enter key saving
-function InlineEditableField({ value, onSave, label, multiline = false, className = "", isCorrectBadge = false }) {
+function InlineEditableField({ value, onSave, onSplit = null, label, multiline = false, className = "", isCorrectBadge = false }) {
   const [isEditing, setIsEditing] = useState(false);
   const [draft, setDraft] = useState(value || "");
   const [isHovered, setIsHovered] = useState(false);
@@ -115,6 +115,27 @@ function InlineEditableField({ value, onSave, label, multiline = false, classNam
     }
   }, [isEditing]);
 
+  // Detect if draft text contains an embedded option marker like (d), D), (b), etc.
+  const detectEmbeddedOption = (text) => {
+    if (!text || typeof text !== 'string') return null;
+    const splitRegex = /(?:^|\s)[\(\[]?([b-eB-E])[\)\].\-–—]\s*/;
+    const match = text.match(splitRegex);
+    if (match && match.index > 0) {
+      const firstPart = text.substring(0, match.index).trim();
+      const secondPart = text.substring(match.index + match[0].length).trim();
+      if (firstPart && secondPart) {
+        return {
+          marker: match[1].toUpperCase(),
+          firstPart,
+          secondPart
+        };
+      }
+    }
+    return null;
+  };
+
+  const detectedSplit = onSplit ? detectEmbeddedOption(draft) : null;
+
   const handleCommit = async () => {
     if (draft.trim() === (value || "").trim()) {
       setIsEditing(false);
@@ -126,6 +147,23 @@ function InlineEditableField({ value, onSave, label, multiline = false, classNam
       setIsEditing(false);
     } catch (err) {
       // onSave handles alert/toast
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleApplySplit = async (e) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    if (!detectedSplit || !onSplit) return;
+    setIsSaving(true);
+    try {
+      await onSplit(detectedSplit.firstPart, detectedSplit.secondPart);
+      setIsEditing(false);
+    } catch (err) {
+      // handled
     } finally {
       setIsSaving(false);
     }
@@ -157,74 +195,111 @@ function InlineEditableField({ value, onSave, label, multiline = false, classNam
 
       {/* Hover Edit trigger button overlay */}
       {!isEditing && isHovered && (
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            setDraft(value || "");
-            setIsEditing(true);
-          }}
-          className="absolute right-1 top-1/2 -translate-y-1/2 p-1 bg-white hover:bg-indigo-600 text-indigo-600 hover:text-white rounded shadow-md border border-indigo-200 transition-all z-20 flex items-center gap-1 text-[11px] font-semibold cursor-pointer animate-in fade-in"
-          title={`Edit ${label || 'field'} (Press Enter to save)`}
-        >
-          <Edit2 size={11} />
-          <span className="text-[10px] hidden sm:inline">Edit</span>
-        </button>
+        <div className="absolute right-1 top-1/2 -translate-y-1/2 flex items-center gap-1 z-20 animate-in fade-in">
+          {onSplit && detectEmbeddedOption(value) && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                const s = detectEmbeddedOption(value);
+                if (s) onSplit(s.firstPart, s.secondPart);
+              }}
+              className="p-1 bg-amber-500 hover:bg-amber-600 text-white rounded shadow-md transition-all flex items-center gap-1 text-[10px] font-bold cursor-pointer"
+              title={`Auto-split into option and next option (${detectEmbeddedOption(value)?.marker})`}
+            >
+              <Scissors size={10} />
+              <span>Split {detectEmbeddedOption(value)?.marker}</span>
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              setDraft(value || "");
+              setIsEditing(true);
+            }}
+            className="p-1 bg-white hover:bg-indigo-600 text-indigo-600 hover:text-white rounded shadow-md border border-indigo-200 transition-all flex items-center gap-1 text-[11px] font-semibold cursor-pointer"
+            title={`Edit ${label || 'field'} (Press Enter to save)`}
+          >
+            <Edit2 size={11} />
+            <span className="text-[10px] hidden sm:inline">Edit</span>
+          </button>
+        </div>
       )}
 
       {/* Popover / Overlay Input Box */}
       {isEditing && (
         <div 
           onClick={(e) => e.stopPropagation()}
-          className="absolute inset-0 z-30 flex items-center bg-white shadow-xl rounded-lg border-2 border-indigo-500 p-1 min-w-[200px]"
+          className="absolute inset-0 z-30 flex flex-col justify-center bg-white shadow-xl rounded-lg border-2 border-indigo-500 p-1 min-w-[220px]"
         >
-          {multiline ? (
-            <textarea
-              ref={inputRef}
-              value={draft}
-              onChange={(e) => setDraft(e.target.value)}
-              onKeyDown={handleKeyDown}
-              disabled={isSaving}
-              rows={2}
-              className="w-full text-xs text-gray-900 bg-white border-0 outline-none p-1 resize-y font-medium focus:ring-0"
-              placeholder={`Edit ${label}...`}
-            />
-          ) : (
-            <input
-              ref={inputRef}
-              type="text"
-              value={draft}
-              onChange={(e) => setDraft(e.target.value)}
-              onKeyDown={handleKeyDown}
-              disabled={isSaving}
-              className="w-full text-xs text-gray-900 bg-white border-0 outline-none px-1.5 py-0.5 font-medium focus:ring-0"
-              placeholder={`Edit ${label}...`}
-            />
-          )}
+          <div className="flex items-center w-full">
+            {multiline ? (
+              <textarea
+                ref={inputRef}
+                value={draft}
+                onChange={(e) => setDraft(e.target.value)}
+                onKeyDown={handleKeyDown}
+                disabled={isSaving}
+                rows={2}
+                className="w-full text-xs text-gray-900 bg-white border-0 outline-none p-1 resize-y font-medium focus:ring-0"
+                placeholder={`Edit ${label}...`}
+              />
+            ) : (
+              <input
+                ref={inputRef}
+                type="text"
+                value={draft}
+                onChange={(e) => setDraft(e.target.value)}
+                onKeyDown={handleKeyDown}
+                disabled={isSaving}
+                className="w-full text-xs text-gray-900 bg-white border-0 outline-none px-1.5 py-0.5 font-medium focus:ring-0"
+                placeholder={`Edit ${label}...`}
+              />
+            )}
 
-          <div className="flex items-center gap-1 pl-1 pr-0.5 flex-shrink-0">
-            <button
-              type="button"
-              onClick={handleCommit}
-              disabled={isSaving}
-              className="p-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded transition-colors"
-              title="Save (Press Enter)"
-            >
-              {isSaving ? <RefreshCw size={12} className="animate-spin" /> : <Check size={12} />}
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setDraft(value || "");
-                setIsEditing(false);
-              }}
-              disabled={isSaving}
-              className="p-1 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded transition-colors"
-              title="Cancel (Escape)"
-            >
-              <X size={12} />
-            </button>
+            <div className="flex items-center gap-1 pl-1 pr-0.5 flex-shrink-0">
+              <button
+                type="button"
+                onClick={handleCommit}
+                disabled={isSaving}
+                className="p-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded transition-colors"
+                title="Save (Press Enter)"
+              >
+                {isSaving ? <RefreshCw size={12} className="animate-spin" /> : <Check size={12} />}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setDraft(value || "");
+                  setIsEditing(false);
+                }}
+                disabled={isSaving}
+                className="p-1 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded transition-colors"
+                title="Cancel (Escape)"
+              >
+                <X size={12} />
+              </button>
+            </div>
           </div>
+
+          {/* Quick Split Suggestion Prompt inside Edit Box */}
+          {detectedSplit && (
+            <div className="mt-1 pt-1 border-t border-amber-200 flex items-center justify-between gap-1 text-[10px] bg-amber-50/90 px-1.5 py-0.5 rounded">
+              <span className="text-amber-800 truncate">
+                Split at <strong>({detectedSplit.marker})</strong> &rarr; <em>{detectedSplit.secondPart.slice(0, 20)}...</em>
+              </span>
+              <button
+                type="button"
+                onClick={handleApplySplit}
+                disabled={isSaving}
+                className="px-1.5 py-0.5 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded text-[10px] flex items-center gap-1 whitespace-nowrap cursor-pointer"
+              >
+                <Scissors size={10} />
+                <span>Split Now</span>
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -433,6 +508,58 @@ export default function CreateTestSeries() {
     } catch (err) {
       console.error('Failed to update option:', err);
       alert('Failed to update option: ' + err.message);
+      throw err;
+    }
+  };
+
+  // Splits a merged option (e.g. Option C contains both C and D) and places remainder into next option
+  const handleSplitMergedOption = async (questionItem, optIndex, currentPart, nextPart) => {
+    try {
+      const origOpts = Array.isArray(questionItem.options)
+        ? [...questionItem.options]
+        : (typeof questionItem.options === 'string' ? JSON.parse(questionItem.options) : []);
+      
+      // Ensure at least 4 option slots exist
+      while (origOpts.length < 4) origOpts.push('');
+
+      const cleanCurr = cleanOptionText(currentPart);
+      const cleanNext = cleanOptionText(nextPart);
+
+      origOpts[optIndex] = cleanCurr;
+      const nextIdx = optIndex + 1;
+      if (nextIdx < origOpts.length) {
+        origOpts[nextIdx] = cleanNext;
+      } else {
+        origOpts.push(cleanNext);
+      }
+
+      // Check if answer needs updating
+      let newAnswer = questionItem.answer;
+      if (questionItem.answer === currentPart || questionItem.answer === cleanCurr) {
+        newAnswer = cleanCurr;
+      } else if (questionItem.answer === nextPart || questionItem.answer === cleanNext) {
+        newAnswer = cleanNext;
+      }
+
+      const { error } = await supabase
+        .from('prepbuddy_questions')
+        .update({ options: origOpts, answer: newAnswer })
+        .eq('id', questionItem.id);
+
+      if (error) throw error;
+
+      // Optimistically update
+      setQuestionsList(prev => prev.map(q => {
+        if (q.id === questionItem.id) {
+          return { ...q, options: origOpts, answer: newAnswer };
+        }
+        return q;
+      }));
+
+      showToast(`Split Option ${String.fromCharCode(65 + optIndex)} into ${String.fromCharCode(65 + optIndex)} & ${String.fromCharCode(65 + nextIdx)}!`);
+    } catch (err) {
+      console.error('Failed to split option:', err);
+      alert('Failed to split option: ' + err.message);
       throw err;
     }
   };
@@ -2018,6 +2145,7 @@ export default function CreateTestSeries() {
                             multiline={false}
                             className="flex-1 min-w-0"
                             onSave={(newVal) => handleUpdateOptionField(q, oIdx, newVal)}
+                            onSplit={(currPart, nextPart) => handleSplitMergedOption(q, oIdx, currPart, nextPart)}
                           />
                         </div>
                       </div>
