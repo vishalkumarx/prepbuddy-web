@@ -2,7 +2,7 @@ import React, { useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { SearchContext } from '../App';
 import { supabase } from '../supabase';
-import { IndianRupee, Layers, Languages, Award, Newspaper, CheckCircle2, Tag, CheckCircle, XCircle, ArrowRight, Clock, Star, ShoppingCart, Unlock, Share2, Sparkles, PartyPopper } from 'lucide-react';
+import { IndianRupee, Layers, Languages, Award, Newspaper, CheckCircle2, Tag, CheckCircle, XCircle, ArrowRight, Clock, Star, ShoppingCart, Unlock, Share2, Sparkles, PartyPopper, GraduationCap, Check } from 'lucide-react';
 import TestimonialCarousel from './TestimonialCarousel';
 import { UserManager } from '../utils/UserManager';
 import { useAuthModal } from '../context/AuthModalContext';
@@ -370,134 +370,214 @@ export default function StateHomeFeed({ onlyEnrolled = false }) {
           <p>{onlyEnrolled ? "You haven't enrolled in any test series yet." : "No test series found matching your search."}</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {finalTestSeriesRegular.map((ts) => {
-          const showFeatures = ts.title?.toLowerCase().includes('senior') || ts.title?.toLowerCase().includes('assistant') || ts.title?.toLowerCase().includes('asi') || true;
+        (() => {
+          const splitIndex = onlyEnrolled || finalTestSeriesRegular.length <= 1 
+            ? finalTestSeriesRegular.length 
+            : Math.min(2, Math.ceil(finalTestSeriesRegular.length / 2));
+          const firstBatch = finalTestSeriesRegular.slice(0, splitIndex);
+          const secondBatch = finalTestSeriesRegular.slice(splitIndex);
 
-          let progressPercent = 0;
-          if (enrolledIds.has(ts.id)) {
-            const linkedTests = ts.linked_tests || [];
-            const totalTests = linkedTests.length;
-            if (totalTests > 0) {
-              const courseAttempts = attemptsByCourse[ts.id] || new Set();
-              const completedCount = linkedTests.filter(t => courseAttempts.has(`${t.category}-${t.subcategory}`)).length;
-              progressPercent = Math.round((completedCount / totalTests) * 100);
+          const renderCourseCard = (ts) => {
+            let progressPercent = 0;
+            if (enrolledIds.has(ts.id)) {
+              const linkedTests = ts.linked_tests || [];
+              const totalTests = linkedTests.length;
+              if (totalTests > 0) {
+                const courseAttempts = attemptsByCourse[ts.id] || new Set();
+                const completedCount = linkedTests.filter(t => courseAttempts.has(`${t.category}-${t.subcategory}`)).length;
+                progressPercent = Math.round((completedCount / totalTests) * 100);
+              }
             }
-          }
 
-          return (
-            <div 
-              key={ts.id} 
-              onClick={() => navigate(`/course/${ts.id}`)}
-              className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex flex-col h-full cursor-pointer hover:shadow-md hover:border-indigo-100 transition-all active:scale-[0.99]"
-            >
-              <div className="relative">
-                {ts.banner_url ? (
-                  <img src={ts.banner_url} alt={ts.title} className="w-full h-48 md:h-52 object-contain bg-white" />
-                ) : (
-                  <div className="w-full h-48 md:h-52 bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center border-b border-gray-100">
-                    <span className="text-primary/40 font-bold text-base">{ts.title}</span>
-                  </div>
-                )}
-              </div>
-              
-              <div className="p-4 flex flex-col gap-2">
-                <div className="flex items-center justify-between gap-1.5">
-                  <div className="flex items-center gap-1.5 flex-wrap">
-                    {(() => {
-                      const isComingSoon = isTsComingSoon(ts);
-                      return isComingSoon ? (
-                        <div className="self-start bg-orange-100 text-orange-700 font-bold text-[10px] uppercase tracking-wider px-2 py-1 rounded-full flex items-center gap-1.5 shadow-sm border border-orange-200">
-                          <span className="w-1.5 h-1.5 rounded-full bg-orange-500"></span>
-                          Coming Soon
-                        </div>
-                      ) : (
-                        <div className="self-start bg-red-600 text-white font-bold text-[10px] uppercase tracking-wider px-2 py-1 rounded-full flex items-center gap-1.5 shadow-sm">
-                          <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse"></span>
-                          Live
-                        </div>
-                      );
-                    })()}
-                    {Number(ts.price) === 0 && (
-                      <div className="self-start bg-emerald-600 text-white font-bold text-[10px] uppercase tracking-wider px-2 py-1 rounded-full flex items-center gap-1 shadow-sm">
-                        Free
-                      </div>
-                    )}
-                  </div>
-                  <button
-                    type="button"
-                    onClick={(e) => handleShare(e, ts)}
-                    title="Share Test Series"
-                    className="p-1.5 rounded-lg text-gray-500 hover:text-indigo-600 bg-gray-100 hover:bg-indigo-50 border border-gray-200/80 active:scale-95 transition-all flex items-center justify-center flex-shrink-0"
-                  >
-                    <Share2 size={15} />
-                  </button>
-                </div>
-                <h3 className="font-bold text-base text-gray-900 leading-tight">{ts.title}</h3>
-                {ts.description && (
-                  <div className="text-xs text-gray-600 html-content line-clamp-3 overflow-hidden" dangerouslySetInnerHTML={{ __html: processHtml(ts.description) }} />
-                )}
-
-                {/* Action Row: Price (with striked MRP & discount) or Progress + View Details */}
-                <div className="mt-3 flex items-center justify-between gap-2">
-                  {enrolledIds.has(ts.id) ? (
-                    <div className="flex items-center gap-2">
-                      <div className="relative flex-shrink-0 w-10 h-10">
-                        <svg viewBox="0 0 36 36" className="w-10 h-10 -rotate-90">
-                          <circle cx="18" cy="18" r="15.9" fill="none" stroke="#e5e7eb" strokeWidth="3" />
-                          <circle cx="18" cy="18" r="15.9" fill="none" stroke="#10b981" strokeWidth="3"
-                            strokeDasharray={`${progressPercent} ${100 - progressPercent}`}
-                            strokeLinecap="round"
-                            style={{ transition: 'stroke-dasharray 0.5s ease' }}
-                          />
-                        </svg>
-                        <span className="absolute inset-0 flex items-center justify-center text-[9px] font-black text-emerald-600">
-                          {progressPercent}%
-                        </span>
-                      </div>
-                      <div>
-                        <p className="text-[10px] font-bold text-gray-800">Progress</p>
-                        <p className="text-[9px] text-gray-400">{progressPercent === 100 ? 'Completed! 🎉' : 'Keep going!'}</p>
-                      </div>
-                    </div>
+            return (
+              <div 
+                key={ts.id} 
+                onClick={() => navigate(`/course/${ts.id}`)}
+                className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex flex-col h-full cursor-pointer hover:shadow-md hover:border-indigo-100 transition-all active:scale-[0.99]"
+              >
+                <div className="relative">
+                  {ts.banner_url ? (
+                    <img src={ts.banner_url} alt={ts.title} className="w-full h-48 md:h-52 object-contain bg-white" />
                   ) : (
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-black text-lg text-[#0B2457] flex items-center">
-                        <IndianRupee size={15} className="mr-0" />{ts.price ?? 0}
-                      </span>
-                      {Number(ts.mrp) > Number(ts.price || 0) && (
-                        <>
-                          <span className="text-sm text-gray-400 line-through flex items-center">
-                            <IndianRupee size={12} className="mr-0" />{ts.mrp}
-                          </span>
-                          <span className="bg-green-100 text-green-700 font-black text-[10px] px-2 py-0.5 rounded-full">
-                            {Math.round(((Number(ts.mrp) - Number(ts.price || 0)) / Number(ts.mrp)) * 100)}% OFF
-                          </span>
-                        </>
-                      )}
+                    <div className="w-full h-48 md:h-52 bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center border-b border-gray-100">
+                      <span className="text-primary/40 font-bold text-base">{ts.title}</span>
                     </div>
                   )}
-                  <button className="bg-[#0B2457] text-white font-bold py-2 px-4 rounded-xl text-xs active:scale-95 transition-transform flex-shrink-0">
-                    View Details
-                  </button>
                 </div>
+                
+                <div className="p-4 flex flex-col gap-2">
+                  <div className="flex items-center justify-between gap-1.5">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      {(() => {
+                        const isComingSoon = isTsComingSoon(ts);
+                        return isComingSoon ? (
+                          <div className="self-start bg-orange-100 text-orange-700 font-bold text-[10px] uppercase tracking-wider px-2 py-1 rounded-full flex items-center gap-1.5 shadow-sm border border-orange-200">
+                            <span className="w-1.5 h-1.5 rounded-full bg-orange-500"></span>
+                            Coming Soon
+                          </div>
+                        ) : (
+                          <div className="self-start bg-red-600 text-white font-bold text-[10px] uppercase tracking-wider px-2 py-1 rounded-full flex items-center gap-1.5 shadow-sm">
+                            <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse"></span>
+                            Live
+                          </div>
+                        );
+                      })()}
+                      {Number(ts.price) === 0 && (
+                        <div className="self-start bg-emerald-600 text-white font-bold text-[10px] uppercase tracking-wider px-2 py-1 rounded-full flex items-center gap-1 shadow-sm">
+                          Free
+                        </div>
+                      )}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={(e) => handleShare(e, ts)}
+                      title="Share Test Series"
+                      className="p-1.5 rounded-lg text-gray-500 hover:text-indigo-600 bg-gray-100 hover:bg-indigo-50 border border-gray-200/80 active:scale-95 transition-all flex items-center justify-center flex-shrink-0"
+                    >
+                      <Share2 size={15} />
+                    </button>
+                  </div>
+                  <h3 className="font-bold text-base text-gray-900 leading-tight">{ts.title}</h3>
+                  {ts.description && (
+                    <div className="text-xs text-gray-600 html-content line-clamp-3 overflow-hidden" dangerouslySetInnerHTML={{ __html: processHtml(ts.description) }} />
+                  )}
+
+                  {/* Action Row: Price or Progress + View Details */}
+                  <div className="mt-3 flex items-center justify-between gap-2">
+                    {enrolledIds.has(ts.id) ? (
+                      <div className="flex items-center gap-2">
+                        <div className="relative flex-shrink-0 w-10 h-10">
+                          <svg viewBox="0 0 36 36" className="w-10 h-10 -rotate-90">
+                            <circle cx="18" cy="18" r="15.9" fill="none" stroke="#e5e7eb" strokeWidth="3" />
+                            <circle cx="18" cy="18" r="15.9" fill="none" stroke="#10b981" strokeWidth="3"
+                              strokeDasharray={`${progressPercent} ${100 - progressPercent}`}
+                              strokeLinecap="round"
+                              style={{ transition: 'stroke-dasharray 0.5s ease' }}
+                            />
+                          </svg>
+                          <span className="absolute inset-0 flex items-center justify-center text-[9px] font-black text-emerald-600">
+                            {progressPercent}%
+                          </span>
+                        </div>
+                        <div>
+                          <p className="text-[10px] font-bold text-gray-800">Progress</p>
+                          <p className="text-[9px] text-gray-400">{progressPercent === 100 ? 'Completed! 🎉' : 'Keep going!'}</p>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-black text-lg text-[#0B2457] flex items-center">
+                          <IndianRupee size={15} className="mr-0" />{ts.price ?? 0}
+                        </span>
+                        {Number(ts.mrp) > Number(ts.price || 0) && (
+                          <>
+                            <span className="text-sm text-gray-400 line-through flex items-center">
+                              <IndianRupee size={12} className="mr-0" />{ts.mrp}
+                            </span>
+                            <span className="bg-green-100 text-green-700 font-black text-[10px] px-2 py-0.5 rounded-full">
+                              {Math.round(((Number(ts.mrp) - Number(ts.price || 0)) / Number(ts.mrp)) * 100)}% OFF
+                            </span>
+                          </>
+                        )}
+                      </div>
+                    )}
+                    <button className="bg-[#0B2457] text-white font-bold py-2 px-4 rounded-xl text-xs active:scale-95 transition-transform flex-shrink-0">
+                      View Details
+                    </button>
+                  </div>
+                </div>
+
+                {/* Full-width Buy Now button at bottom — non-enrolled only */}
+                {!enrolledIds.has(ts.id) && (
+                  <div className="mt-auto">
+                    <button
+                      onClick={(e) => handleBuyClick(e, ts)}
+                      className="w-full bg-[#0B2457] text-white font-bold py-3 text-sm active:scale-[0.98] transition-all shadow-sm flex items-center justify-center gap-2"
+                    >
+                      {ts.price > 0 ? <><ShoppingCart size={16} /> Buy Now</> : <><Unlock size={16} /> Enroll Now</>}
+                    </button>
+                  </div>
+                )}
+              </div>
+            );
+          };
+
+          return (
+            <>
+              {/* First Batch of Courses */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {firstBatch.map(renderCourseCard)}
               </div>
 
-              {/* Full-width Buy Now button at bottom — non-enrolled only */}
-              {!enrolledIds.has(ts.id) && (
-                <div className="mt-auto">
-                  <button
-                    onClick={(e) => handleBuyClick(e, ts)}
-                    className="w-full bg-[#0B2457] text-white font-bold py-3 text-sm active:scale-[0.98] transition-all shadow-sm flex items-center justify-center gap-2"
-                  >
-                    {ts.price > 0 ? <><ShoppingCart size={16} /> Buy Now</> : <><Unlock size={16} /> Enroll Now</>}
-                  </button>
+              {/* OUR FACULTY SPOTLIGHT SECTION (Between Courses) */}
+              {!onlyEnrolled && (
+                <div className="my-6 relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#0B2457] via-[#0E2C6A] to-[#123884] p-5 sm:p-7 md:p-8 text-white shadow-xl border border-blue-900/60">
+                  {/* Subtle decorative background elements */}
+                  <div className="absolute top-0 right-0 w-80 h-80 bg-gradient-to-br from-yellow-400/15 to-transparent rounded-full blur-3xl pointer-events-none -mr-20 -mt-20"></div>
+                  <div className="absolute bottom-0 left-0 w-64 h-64 bg-blue-500/10 rounded-full blur-2xl pointer-events-none -ml-16 -mb-16"></div>
+
+                  <div className="relative z-10 flex flex-col md:flex-row items-center gap-6 md:gap-8">
+                    {/* Faculty Profile Image */}
+                    <div className="relative flex-shrink-0 group">
+                      <div className="relative w-36 h-36 sm:w-44 sm:h-44 md:w-48 md:h-48 rounded-full p-1 bg-gradient-to-tr from-yellow-400 via-yellow-200 to-yellow-500 shadow-2xl">
+                        <img 
+                          src="/assets/faculty-sanjeev-banotra.jpg" 
+                          alt="Sanjeev Banotra - Faculty Member at GoalPrep.in" 
+                          className="w-full h-full object-cover rounded-full select-none"
+                          loading="lazy"
+                        />
+                      </div>
+                      <div className="absolute -bottom-2 inset-x-0 flex justify-center">
+                        <span className="bg-[#0B2457] border border-yellow-400/80 text-yellow-300 text-[10px] sm:text-xs font-black uppercase tracking-wider px-3 py-1 rounded-full shadow-md flex items-center gap-1">
+                          <GraduationCap size={13} className="text-yellow-400" /> Lead Mentor
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Faculty Info & Highlights */}
+                    <div className="flex-1 text-center md:text-left">
+                      <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/15 text-yellow-300 text-xs font-bold uppercase tracking-widest mb-2.5">
+                        <Sparkles size={13} className="text-yellow-400" />
+                        <span>Meet Our Faculty</span>
+                      </div>
+
+                      <h3 className="text-2xl sm:text-3xl font-black text-white tracking-tight leading-tight">
+                        Sanjeev Banotra
+                      </h3>
+                      <p className="text-yellow-400 font-bold text-sm sm:text-base mt-0.5">
+                        Senior Faculty Member at GoalPrep.in
+                      </p>
+
+                      <p className="text-white/80 text-xs sm:text-sm mt-3 leading-relaxed max-w-xl">
+                        Dedicated to mentoring aspirants for Punjab & Northern region state government competitive exams. Expert curated mock test series, comprehensive analysis, and high-yield question patterns designed to get you exam-ready.
+                      </p>
+
+                      {/* Credentials Badges */}
+                      <div className="mt-4 flex flex-wrap items-center justify-center md:justify-start gap-2">
+                        <span className="inline-flex items-center gap-1.5 text-xs font-bold bg-white/10 border border-white/15 px-3 py-1.5 rounded-xl text-white">
+                          <Check size={14} className="text-emerald-400 stroke-[3]" /> Exam-Pattern Specialist
+                        </span>
+                        <span className="inline-flex items-center gap-1.5 text-xs font-bold bg-white/10 border border-white/15 px-3 py-1.5 rounded-xl text-white">
+                          <Award size={14} className="text-yellow-400" /> Punjab Govt. Exam Focus
+                        </span>
+                        <span className="inline-flex items-center gap-1.5 text-xs font-bold bg-white/10 border border-white/15 px-3 py-1.5 rounded-xl text-white">
+                          <Star size={14} className="text-amber-300 fill-amber-300" /> Mentored 10,000+ Students
+                        </span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               )}
-            </div>
+
+              {/* Second Batch of Courses */}
+              {secondBatch.length > 0 && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {secondBatch.map(renderCourseCard)}
+                </div>
+              )}
+            </>
           );
-          })}
-        </div>
+        })()
       )}
 
       {/* Coming Soon Section */}
