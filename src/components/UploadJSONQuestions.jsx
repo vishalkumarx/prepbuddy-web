@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '../supabase';
 import { ArrowLeft, Upload, FileCode, Sparkles, CheckCircle2, AlertCircle, Copy, Check } from 'lucide-react';
 
+import { cleanOptionText } from '../utils/htmlUtils';
+
 export default function UploadJSONQuestions() {
   const navigate = useNavigate();
   const [jsonText, setJsonText] = useState('');
@@ -50,21 +52,28 @@ export default function UploadJSONQuestions() {
       }
 
       const formatted = data.map((q, idx) => {
-        let answerVal = q.answer || q.correct_answer || q.correctAnswer || q.optionA || '';
+        let rawOpts = Array.isArray(q.options) ? q.options : [q.optionA, q.optionB, q.optionC, q.optionD, q.optionE].filter(Boolean);
+        const cleanedOpts = rawOpts.map(o => cleanOptionText(o));
+
+        let answerVal = q.answer || q.correct_answer || q.correctAnswer || rawOpts[0] || '';
         if (typeof answerVal === 'string') {
           const lowerAns = answerVal.trim().toLowerCase();
-          const optsArray = Array.isArray(q.options) ? q.options : [];
-          if (lowerAns === 'optiona' || lowerAns === 'a') answerVal = q.optionA || optsArray[0] || answerVal;
-          else if (lowerAns === 'optionb' || lowerAns === 'b') answerVal = q.optionB || optsArray[1] || answerVal;
-          else if (lowerAns === 'optionc' || lowerAns === 'c') answerVal = q.optionC || optsArray[2] || answerVal;
-          else if (lowerAns === 'optiond' || lowerAns === 'd') answerVal = q.optionD || optsArray[3] || answerVal;
-          else if (lowerAns === 'optione' || lowerAns === 'e') answerVal = q.optionE || optsArray[4] || answerVal;
+          if (lowerAns === 'optiona' || lowerAns === 'a') answerVal = cleanedOpts[0] || answerVal;
+          else if (lowerAns === 'optionb' || lowerAns === 'b') answerVal = cleanedOpts[1] || answerVal;
+          else if (lowerAns === 'optionc' || lowerAns === 'c') answerVal = cleanedOpts[2] || answerVal;
+          else if (lowerAns === 'optiond' || lowerAns === 'd') answerVal = cleanedOpts[3] || answerVal;
+          else if (lowerAns === 'optione' || lowerAns === 'e') answerVal = cleanedOpts[4] || answerVal;
+          else {
+            const cleanAns = cleanOptionText(answerVal);
+            const matchIdx = cleanedOpts.findIndex(o => o.toLowerCase() === cleanAns.toLowerCase());
+            answerVal = matchIdx !== -1 ? cleanedOpts[matchIdx] : cleanAns;
+          }
         }
 
         return {
           id: idx + 1,
           question: q.question || q.q || q.title || '',
-          options: Array.isArray(q.options) ? q.options : [q.optionA, q.optionB, q.optionC, q.optionD, q.optionE].filter(Boolean),
+          options: cleanedOpts,
           answer: answerVal,
           explanation: q.explanation || q.desc || q.solution || '',
           category: q.category || category,

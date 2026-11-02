@@ -79,3 +79,14 @@ export function processHtml(html) {
     .replace(/\n/g, '<br/>'); // Handles actual newlines from textareas
 }
 
+export function cleanOptionText(text) {
+  if (typeof text !== 'string') return text;
+  let s = text.trim();
+  // Strip trailing noise like (a) NS] C, (a) NS] B
+  s = s.replace(/\s*\([a-eA-E0-9]\)\s*NS\]\s*[a-eA-E0-9]\s*$/i, '').trim();
+  // Strip leading option markers such as: ")", "(a)", "a)", "a.", "(1)", "1)", "1."
+  s = s.replace(/^[\s\)\(\.\-–—]+/, '');
+  s = s.replace(/^(?:option\s*)?\(?[a-eA-E0-9]\s*[\)\.\-–—]\s*/i, '');
+  s = s.replace(/^[\s\)\(\.\-–—]+/, '');
+  return s.trim();
+}

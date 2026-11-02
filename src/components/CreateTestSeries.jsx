@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../supabase';
 import { ArrowLeft, Plus, Edit2, Trash2, ListPlus, Sparkles, X, RefreshCw, Link2, Download, FileJson } from 'lucide-react';
-import { processHtml, formatMatchTheFollowing } from '../utils/htmlUtils';
+import { processHtml, formatMatchTheFollowing, cleanOptionText } from '../utils/htmlUtils';
 
 // Reusable sidebar test item to avoid repetition
 function SidebarTestItem({ group, isActive, linkedCoursesCount, selectedSidebarItems, toggleSidebarItemSelection, handleRenameCategory, setLinkModalGroup, handleRenameTestSeries, handleDeleteTestSeries, setCategory, setSubcategory, showToast, shouldScrollToPreviewRef, exportQuestionsAsJson }) {
@@ -194,10 +194,24 @@ export default function CreateTestSeries() {
         if (typeof options === 'string') {
           try { options = JSON.parse(options); } catch (e) { options = []; }
         }
+        if (!Array.isArray(options)) options = [];
+
+        // Clean options of unwanted leading prefixes/brackets/markers
+        const cleanedOptions = options.map(opt => cleanOptionText(opt));
+
+        // Clean answer: if answer was matching an option, map to the cleaned option
+        let cleanedAnswer = q.answer;
+        const matchingIdx = options.findIndex(opt => opt === q.answer);
+        if (matchingIdx !== -1 && cleanedOptions[matchingIdx]) {
+          cleanedAnswer = cleanedOptions[matchingIdx];
+        } else {
+          cleanedAnswer = cleanOptionText(q.answer);
+        }
+
         return {
           question: q.question,
-          options: options,
-          answer: q.answer,
+          options: cleanedOptions,
+          answer: cleanedAnswer,
           explanation: q.explanation || "",
           category: q.category,
           subcategory: q.subcategory
@@ -491,10 +505,10 @@ export default function CreateTestSeries() {
       }
       
       setQuestion(qText);
-      setOptionA(optionsText['A']);
-      setOptionB(optionsText['B']);
-      setOptionC(optionsText['C']);
-      setOptionD(optionsText['D']);
+      setOptionA(cleanOptionText(optionsText['A']));
+      setOptionB(cleanOptionText(optionsText['B']));
+      setOptionC(cleanOptionText(optionsText['C']));
+      setOptionD(cleanOptionText(optionsText['D']));
       return;
     }
     
@@ -504,10 +518,10 @@ export default function CreateTestSeries() {
     
     if (match) {
       setQuestion(match[1].trim());
-      setOptionA(match[2].trim());
-      setOptionB(match[3].trim());
-      setOptionC(match[4].trim());
-      setOptionD(match[5].trim());
+      setOptionA(cleanOptionText(match[2]));
+      setOptionB(cleanOptionText(match[3]));
+      setOptionC(cleanOptionText(match[4]));
+      setOptionD(cleanOptionText(match[5]));
       return;
     }
     
@@ -558,12 +572,15 @@ export default function CreateTestSeries() {
             opts = [q.optionA, q.optionB, q.optionC, q.optionD, q.optionE].filter(Boolean);
           }
           
+          // Clean all options of leading markers, prefixes or trailing noise
+          opts = opts.map(o => cleanOptionText(o));
+          
           // Determine answer: support correct_option_id (0-indexed), answer letter, or answer text
           let answerText = '';
           if (q.correct_option_id !== undefined && opts[q.correct_option_id]) {
             answerText = opts[q.correct_option_id];
           } else if (q.answer !== undefined || q.correct_answer !== undefined) {
-            const ansRaw = q.answer !== undefined ? q.answer : q.correct_answer;
+            const ansRaw = cleanOptionText(q.answer !== undefined ? q.answer : q.correct_answer);
             const upperAns = String(ansRaw).replace(/<[^>]*>?/gm, '').trim().toUpperCase();
             const cleanOpts = opts.map(o => String(o).replace(/<[^>]*>?/gm, '').trim().toUpperCase());
             
@@ -572,7 +589,10 @@ export default function CreateTestSeries() {
             else if ((upperAns === 'C' || upperAns === '3' || upperAns === 'OPTION C' || upperAns === cleanOpts[2]) && opts[2]) answerText = opts[2];
             else if ((upperAns === 'D' || upperAns === '4' || upperAns === 'OPTION D' || upperAns === cleanOpts[3]) && opts[3]) answerText = opts[3];
             else if ((upperAns === 'E' || upperAns === '5' || upperAns === 'OPTION E' || upperAns === cleanOpts[4]) && opts[4]) answerText = opts[4];
-            else answerText = ansRaw;
+            else {
+              const matchIdx = opts.findIndex(o => o.toLowerCase() === String(ansRaw).toLowerCase());
+              answerText = matchIdx !== -1 ? opts[matchIdx] : ansRaw;
+            }
           } else {
             answerText = opts[0] || '';
           }
@@ -652,6 +672,7 @@ export default function CreateTestSeries() {
         } else {
           opts = [data.optionA, data.optionB, data.optionC, data.optionD, data.optionE].filter(Boolean);
         }
+        opts = opts.map(o => cleanOptionText(o));
         if (opts[0]) setOptionA(opts[0]);
         if (opts[1]) setOptionB(opts[1]);
         if (opts[2]) setOptionC(opts[2]);
