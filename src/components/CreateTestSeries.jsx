@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../supabase';
-import { ArrowLeft, Plus, Edit2, Trash2, ListPlus, Sparkles, X, RefreshCw, Link2 } from 'lucide-react';
+import { ArrowLeft, Plus, Edit2, Trash2, ListPlus, Sparkles, X, RefreshCw, Link2, Download, FileJson } from 'lucide-react';
 import { processHtml, formatMatchTheFollowing } from '../utils/htmlUtils';
 
 // Reusable sidebar test item to avoid repetition
-function SidebarTestItem({ group, isActive, linkedCoursesCount, selectedSidebarItems, toggleSidebarItemSelection, handleRenameCategory, setLinkModalGroup, handleRenameTestSeries, handleDeleteTestSeries, setCategory, setSubcategory, showToast, shouldScrollToPreviewRef }) {
+function SidebarTestItem({ group, isActive, linkedCoursesCount, selectedSidebarItems, toggleSidebarItemSelection, handleRenameCategory, setLinkModalGroup, handleRenameTestSeries, handleDeleteTestSeries, setCategory, setSubcategory, showToast, shouldScrollToPreviewRef, exportQuestionsAsJson }) {
   return (
     <div
       onClick={() => {
@@ -42,6 +42,18 @@ function SidebarTestItem({ group, isActive, linkedCoursesCount, selectedSidebarI
           </button>
         </div>
         <div className="opacity-0 group-hover/sidebar:opacity-100 flex items-center gap-1 z-10 transition-opacity">
+          {exportQuestionsAsJson && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                exportQuestionsAsJson(group.category, group.subcategory);
+              }}
+              title="Export as JSON"
+              className="p-1.5 bg-white text-emerald-600 rounded-md shadow-sm border border-emerald-100 hover:bg-emerald-50 transition-opacity"
+            >
+              <FileJson size={12} />
+            </button>
+          )}
           <button
             onClick={(e) => { e.stopPropagation(); setLinkModalGroup(group); }}
             title="Link to Course"
@@ -156,6 +168,56 @@ export default function CreateTestSeries() {
   const toggleSidebarItemSelection = (cat, subcat) => {
     const key = `${cat}:::${subcat}`;
     setSelectedSidebarItems(prev => prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key]);
+  };
+
+  const exportQuestionsAsJson = async (cat, subcat, questionsToExport = null) => {
+    try {
+      let data = questionsToExport;
+      if (!data || data.length === 0) {
+        const { data: fetchedData, error } = await supabase
+          .from('prepbuddy_questions')
+          .select('question, options, answer, explanation, category, subcategory')
+          .eq('category', cat)
+          .eq('subcategory', subcat)
+          .order('created_at', { ascending: true });
+        if (error) throw error;
+        data = fetchedData;
+      }
+
+      if (!data || data.length === 0) {
+        alert(`No questions found to export for ${subcat || cat}`);
+        return;
+      }
+
+      const formatted = data.map(q => {
+        let options = q.options;
+        if (typeof options === 'string') {
+          try { options = JSON.parse(options); } catch (e) { options = []; }
+        }
+        return {
+          question: q.question,
+          options: options,
+          answer: q.answer,
+          explanation: q.explanation || "",
+          category: q.category,
+          subcategory: q.subcategory
+        };
+      });
+
+      const jsonString = `data:text/json;charset=utf-8,${encodeURIComponent(JSON.stringify(formatted, null, 2))}`;
+      const downloadAnchor = document.createElement('a');
+      downloadAnchor.setAttribute('href', jsonString);
+      const safeFileName = `${cat}_${subcat}`.replace(/[^a-zA-Z0-9_-]/g, '_');
+      downloadAnchor.setAttribute('download', `${safeFileName}.json`);
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
+
+      showToast(`Exported ${formatted.length} questions as JSON!`);
+    } catch (err) {
+      console.error('Export error:', err);
+      alert('Failed to export questions: ' + err.message);
+    }
   };
 
   const handleBulkDeleteTestSeries = async () => {
@@ -1135,6 +1197,7 @@ export default function CreateTestSeries() {
                                 setSubcategory={setSubcategory}
                                 showToast={showToast}
                                 shouldScrollToPreviewRef={shouldScrollToPreviewRef}
+                                exportQuestionsAsJson={exportQuestionsAsJson}
                               />
                             );
                           }
@@ -1185,6 +1248,7 @@ export default function CreateTestSeries() {
                                         setSubcategory={setSubcategory}
                                         showToast={showToast}
                                         shouldScrollToPreviewRef={shouldScrollToPreviewRef}
+                                        exportQuestionsAsJson={exportQuestionsAsJson}
                                       />
                                     );
                                   })}
@@ -1650,6 +1714,16 @@ export default function CreateTestSeries() {
                 Questions in Database ({questionsList.length})
                 {isLoadingQuestions && <RefreshCw size={14} className="animate-spin text-gray-400" />}
               </h3>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => exportQuestionsAsJson(category, subcategory, questionsList)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-xl text-xs font-bold transition-all shadow-xs active:scale-95 cursor-pointer"
+                  title={`Export all questions for ${subcategory || category} as JSON`}
+                >
+                  <Download size={14} />
+                  <span>Export as JSON</span>
+                </button>
+              </div>
             </div>
 
             <div className="space-y-4 max-h-[500px] overflow-y-auto pr-2">
