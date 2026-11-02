@@ -793,17 +793,17 @@ export default function CourseDetail() {
           {/* Linked Store Items (Study Material & PDF Notes) */}
           {linkedResources.length > 0 && (
             <div className="pt-6 space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="p-1.5 rounded-lg bg-emerald-50 text-emerald-700">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2 min-w-0 flex-1">
+                  <div className="p-1.5 rounded-lg bg-emerald-50 text-emerald-700 flex-shrink-0">
                     <ShoppingBag size={18} />
                   </div>
-                  <div>
+                  <div className="min-w-0">
                     <h3 className="font-bold text-base text-gray-900 tracking-tight">Study Material & Notes</h3>
-                    <p className="text-xs text-gray-500 font-medium">Included PDF resources & reference guides for this course</p>
+                    <p className="text-xs text-gray-500 font-medium truncate">Included PDF resources & reference guides for this course</p>
                   </div>
                 </div>
-                <span className="text-xs font-bold bg-emerald-100 text-emerald-800 px-2.5 py-1 rounded-full">
+                <span className="text-xs font-bold bg-emerald-100 text-emerald-800 px-2.5 py-1 rounded-full whitespace-nowrap flex-shrink-0">
                   {linkedResources.length} {linkedResources.length === 1 ? 'Resource' : 'Resources'}
                 </span>
               </div>
