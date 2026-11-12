@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '../supabase';
-import { ArrowLeft, IndianRupee, Layers, FileText, CheckCircle2, Lock, Unlock, ChevronDown, ChevronUp, Tag, CheckCircle, XCircle, Languages, Newspaper, Award, Clock, Star, ShoppingCart, Share2, Sparkles, PartyPopper, ArrowRight, ShoppingBag, Eye, Download } from 'lucide-react';
+import { ArrowLeft, IndianRupee, Layers, FileText, CheckCircle2, Lock, Unlock, ChevronDown, ChevronUp, Tag, CheckCircle, XCircle, Languages, Newspaper, Award, Clock, Star, ShoppingCart, Share2, Sparkles, PartyPopper, ArrowRight, ShoppingBag, Eye, Download, Plus, Trash2 } from 'lucide-react';
 import { UserManager } from '../utils/UserManager';
 import { useAuthModal } from '../context/AuthModalContext';
 import { processHtml } from '../utils/htmlUtils';
 import CouponManager from './CouponManager';
+import AddCoursePdfModal from './AddCoursePdfModal';
 
 const getMonthWeight = (name) => {
   const lowerName = name.toLowerCase();
@@ -52,6 +53,21 @@ export default function CourseDetail() {
   // Free enrollment custom modal states
   const [showFreeEnrollConfirm, setShowFreeEnrollConfirm] = useState(false);
   const [showFreeEnrollSuccess, setShowFreeEnrollSuccess] = useState(false);
+
+  // Add PDF Modal state
+  const [showAddPdfModal, setShowAddPdfModal] = useState(false);
+
+  const handlePdfAdded = (newResource, updatedCourse) => {
+    if (updatedCourse) {
+      setCourse(updatedCourse);
+    }
+    if (newResource) {
+      setLinkedResources(prev => {
+        const exists = prev.some(r => r.id === newResource.id);
+        return exists ? prev : [...prev, newResource];
+      });
+    }
+  };
 
   const toggleCategory = (cat) => {
     setExpandedCategories(prev => {
@@ -803,9 +819,25 @@ export default function CourseDetail() {
                     <p className="text-xs text-gray-500 font-medium truncate">Included PDF resources & reference guides for this course</p>
                   </div>
                 </div>
-                <span className="text-xs font-bold bg-emerald-100 text-emerald-800 px-2.5 py-1 rounded-full whitespace-nowrap flex-shrink-0">
-                  {linkedResources.length} {linkedResources.length === 1 ? 'Resource' : 'Resources'}
-                </span>
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  <span className="text-xs font-bold bg-emerald-100 text-emerald-800 px-2.5 py-1 rounded-full whitespace-nowrap">
+                    {linkedResources.length} {linkedResources.length === 1 ? 'Resource' : 'Resources'}
+                  </span>
+                  {UserManager.isAdmin() && (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setShowAddPdfModal(true);
+                      }}
+                      className="bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold px-3 py-1.5 rounded-xl text-xs flex items-center gap-1 shadow-xs transition-all"
+                      title="Add more PDF content to this course"
+                    >
+                      <Plus size={13} />
+                      <span>Add PDF</span>
+                    </button>
+                  )}
+                </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -899,6 +931,34 @@ export default function CourseDetail() {
                     </div>
                   );
                 })}
+              </div>
+            </div>
+          )}
+
+          {/* Admin Empty State for Study Material */}
+          {linkedResources.length === 0 && UserManager.isAdmin() && (
+            <div className="pt-6">
+              <div className="p-4 rounded-2xl border-2 border-dashed border-emerald-300 bg-emerald-50/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
+                <div className="flex items-center gap-3">
+                  <div className="p-2.5 bg-white text-emerald-700 rounded-xl shadow-xs border border-emerald-200 shrink-0">
+                    <FileText size={22} />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h4 className="font-bold text-sm text-gray-900">Course PDF Content & Study Material</h4>
+                      <span className="bg-emerald-100 text-emerald-800 text-[10px] font-black px-1.5 py-0.5 rounded-md uppercase">Admin</span>
+                    </div>
+                    <p className="text-xs text-gray-500 mt-0.5">Attach study notes, formula sheets, or syllabus PDFs to this course.</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowAddPdfModal(true)}
+                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white text-xs font-bold rounded-xl shadow-xs transition-all flex items-center gap-1.5 self-start sm:self-auto shrink-0"
+                >
+                  <Plus size={14} />
+                  <span>Add PDF Content</span>
+                </button>
               </div>
             </div>
           )}
@@ -1083,6 +1143,16 @@ export default function CourseDetail() {
             </button>
           </div>
         </div>
+      )}
+
+      {/* Add PDF Modal */}
+      {showAddPdfModal && (
+        <AddCoursePdfModal
+          isOpen={showAddPdfModal}
+          onClose={() => setShowAddPdfModal(false)}
+          course={course}
+          onPdfAdded={handlePdfAdded}
+        />
       )}
     </div>
   );

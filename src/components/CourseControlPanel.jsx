@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabase';
 import { UserManager } from '../utils/UserManager';
-import { Shield, Search, UserPlus, Trash2, ArrowLeft, RefreshCw, Layers, Tag, Settings, FileText, Languages, Award, Newspaper, Plus, Clock, X, Edit2, Star, Eye, EyeOff, Lock, Unlock, Flag, AlertCircle, CheckCircle, Clock3, Inbox, ShoppingBag, Check } from 'lucide-react';
+import { Shield, Search, UserPlus, Trash2, ArrowLeft, RefreshCw, Layers, Tag, Settings, FileText, Languages, Award, Newspaper, Plus, Clock, X, Edit2, Star, Eye, EyeOff, Lock, Unlock, Flag, AlertCircle, CheckCircle, Clock3, Inbox, ShoppingBag, Check, ExternalLink, BookOpen } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import CouponManager from './CouponManager';
+import AddCoursePdfModal from './AddCoursePdfModal';
 
 const getMonthWeight = (name) => {
   const lowerName = name.toLowerCase();
@@ -41,6 +42,9 @@ export default function CourseControlPanel() {
   const [flagsLoading, setFlagsLoading] = useState(false);
   const [joinRequests, setJoinRequests] = useState([]);
   const [requestsLoading, setRequestsLoading] = useState(false);
+  const [showAddPdfModal, setShowAddPdfModal] = useState(false);
+  const [coursePdfs, setCoursePdfs] = useState([]);
+  const [loadingPdfs, setLoadingPdfs] = useState(false);
 
   const fetchJoinRequests = async () => {
     setRequestsLoading(true);
@@ -312,6 +316,62 @@ export default function CourseControlPanel() {
     }
   };
 
+  const loadCoursePdfs = async (courseToLoad) => {
+    const target = courseToLoad || selectedCourse;
+    if (!target?.linked_store_items || target.linked_store_items.length === 0) {
+      setCoursePdfs([]);
+      return;
+    }
+    setLoadingPdfs(true);
+    try {
+      const { data, error } = await supabase
+        .from('prepbuddy_store')
+        .select('*')
+        .in('id', target.linked_store_items);
+      if (!error && data) {
+        setCoursePdfs(data);
+      } else {
+        setCoursePdfs([]);
+      }
+    } catch (err) {
+      console.error('Error loading course PDFs:', err);
+      setCoursePdfs([]);
+    } finally {
+      setLoadingPdfs(false);
+    }
+  };
+
+  const handleUnlinkPdf = async (resourceId) => {
+    if (!selectedCourse) return;
+    if (!window.confirm("Remove this PDF from this course? (The PDF will remain in your store library)")) return;
+    setActionLoading(true);
+    try {
+      const updatedLinked = (selectedCourse.linked_store_items || []).filter(id => id !== resourceId);
+      const { data, error } = await supabase
+        .from('prepbuddy_test_series')
+        .update({ linked_store_items: updatedLinked })
+        .eq('id', selectedCourse.id)
+        .select()
+        .single();
+      if (error) throw error;
+      setSelectedCourse(data);
+      setCourses(prev => prev.map(c => c.id === data.id ? data : c));
+      setCoursePdfs(prev => prev.filter(p => p.id !== resourceId));
+    } catch (err) {
+      alert("Error removing PDF: " + err.message);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handlePdfAdded = (newResource, updatedCourse) => {
+    if (updatedCourse) {
+      setSelectedCourse(updatedCourse);
+      setCourses(prev => prev.map(c => c.id === updatedCourse.id ? updatedCourse : c));
+      loadCoursePdfs(updatedCourse);
+    }
+  };
+
   const handleToggleLinkStoreItem = async (resource) => {
     if (!selectedCourse) return;
     setActionLoading(true);
@@ -332,6 +392,7 @@ export default function CourseControlPanel() {
       if (error) throw error;
       setSelectedCourse(data);
       setCourses(prev => prev.map(c => c.id === data.id ? data : c));
+      loadCoursePdfs(data);
     } catch (err) {
       alert('Error updating linked store items: ' + err.message);
     } finally {
@@ -569,6 +630,7 @@ export default function CourseControlPanel() {
   const handleCourseSelect = (course) => {
     setSelectedCourse(course);
     loadEnrollments(course.id);
+    loadCoursePdfs(course);
   };
 
   const handleDeEnroll = async (enrollmentId) => {
@@ -931,6 +993,117 @@ export default function CourseControlPanel() {
                   ];
                   return (
                     <div className="p-4">
+                      {/* COURSE PDF CONTENT & STUDY MATERIALS */}
+                      <div className="mb-6 bg-white p-5 rounded-2xl border border-gray-200/80 shadow-xs">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-gray-100">
+                          <div className="flex items-center gap-3">
+                            <div className="p-2.5 bg-emerald-50 text-emerald-700 rounded-2xl border border-emerald-100/60 shrink-0">
+                              <FileText size={20} />
+                            </div>
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <h3 className="font-bold text-gray-900 text-sm sm:text-base">Course PDF Content & Notes</h3>
+                                <span className="text-[11px] font-black bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full">
+                                  {coursePdfs.length} {coursePdfs.length === 1 ? 'PDF' : 'PDFs'}
+                                </span>
+                              </div>
+                              <p className="text-xs text-gray-500 mt-0.5">
+                                Study notes, mocks, syllabus & booklets attached to this course.
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => setShowAddPdfModal(true)}
+                              className="bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold px-3.5 py-2 rounded-xl text-xs flex items-center gap-1.5 transition-all shadow-xs"
+                            >
+                              <Plus size={15} /> Add PDF Content
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* List of Attached PDFs */}
+                        {loadingPdfs ? (
+                          <div className="py-8 flex justify-center">
+                            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-emerald-600" />
+                          </div>
+                        ) : coursePdfs.length === 0 ? (
+                          <div className="py-6 px-4 text-center mt-3 bg-gray-50/60 rounded-2xl border border-dashed border-gray-200">
+                            <FileText size={26} className="mx-auto text-gray-300 mb-1.5" />
+                            <p className="text-xs font-bold text-gray-700">No PDF content added to this course yet</p>
+                            <p className="text-[11px] text-gray-400 mt-0.5 max-w-sm mx-auto">
+                              Students enrolled in this course can view or download attached PDF notes and study materials.
+                            </p>
+                            <button
+                              type="button"
+                              onClick={() => setShowAddPdfModal(true)}
+                              className="mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-emerald-300 hover:bg-emerald-50 text-emerald-700 rounded-xl text-xs font-bold shadow-2xs transition-colors"
+                            >
+                              <Plus size={13} /> Add First PDF
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
+                            {coursePdfs.map((pdf) => (
+                              <div
+                                key={pdf.id}
+                                className="p-3 bg-gray-50/70 hover:bg-white rounded-2xl border border-gray-200 hover:border-emerald-200 shadow-2xs hover:shadow-xs transition-all flex items-center justify-between gap-3 group"
+                              >
+                                <div className="flex items-center gap-3 min-w-0 flex-1">
+                                  <div className="w-11 h-15 rounded-xl overflow-hidden bg-white border border-gray-200 shrink-0 relative">
+                                    {pdf.thumbnail_url ? (
+                                      <img src={pdf.thumbnail_url} alt={pdf.title} className="w-full h-full object-cover" />
+                                    ) : (
+                                      <div className="w-full h-full flex flex-col items-center justify-center text-gray-400 p-1 bg-gray-50">
+                                        <FileText size={16} className="mb-0.5 text-gray-400" />
+                                        <span className="text-[7px] font-bold">PDF</span>
+                                      </div>
+                                    )}
+                                  </div>
+                                  <div className="min-w-0 flex-1">
+                                    <h4 className="font-bold text-xs sm:text-sm text-gray-900 leading-snug line-clamp-1 group-hover:text-emerald-900 transition-colors">
+                                      {pdf.title}
+                                    </h4>
+                                    {pdf.description && (
+                                      <p className="text-[11px] text-gray-500 line-clamp-1 mt-0.5">{pdf.description}</p>
+                                    )}
+                                    <div className="flex items-center gap-2 mt-1.5">
+                                      <span className="text-[10px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full">
+                                        {Number(pdf.price) === 0 ? 'Free with Course' : `₹${pdf.price}`}
+                                      </span>
+                                    </div>
+                                  </div>
+                                </div>
+
+                                <div className="flex items-center gap-1 shrink-0">
+                                  {pdf.file_url && (
+                                    <a
+                                      href={pdf.file_url}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="p-2 text-gray-400 hover:text-emerald-700 hover:bg-emerald-50 rounded-xl transition-colors"
+                                      title="View PDF"
+                                    >
+                                      <ExternalLink size={15} />
+                                    </a>
+                                  )}
+                                  <button
+                                    type="button"
+                                    onClick={() => handleUnlinkPdf(pdf.id)}
+                                    disabled={actionLoading}
+                                    className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-colors"
+                                    title="Remove PDF from course"
+                                  >
+                                    <Trash2 size={15} />
+                                  </button>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+
                       <div className="flex justify-between items-center mb-4 gap-2 flex-wrap">
                         <h3 className="font-bold text-gray-800">Test Tiles</h3>
                         <div className="flex items-center gap-2">
@@ -1359,6 +1532,15 @@ export default function CourseControlPanel() {
                             </div>
                           </div>
                         </div>
+                      )}
+                      {/* Add Course PDF Modal */}
+                      {showAddPdfModal && (
+                        <AddCoursePdfModal
+                          isOpen={showAddPdfModal}
+                          onClose={() => setShowAddPdfModal(false)}
+                          course={selectedCourse}
+                          onPdfAdded={handlePdfAdded}
+                        />
                       )}
                     </div>
                   );

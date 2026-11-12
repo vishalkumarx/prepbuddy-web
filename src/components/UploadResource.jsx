@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { supabase } from '../supabase';
 import { UserManager } from '../utils/UserManager';
 import { ArrowLeft, Upload, FileText, IndianRupee, Image as ImageIcon, Trash2, Sparkles, Layers } from 'lucide-react';
@@ -14,6 +14,8 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
 export default function UploadResource({ isEdit = false }) {
   const navigate = useNavigate();
   const { id } = useParams();
+  const [searchParams] = useSearchParams();
+  const preselectedCourseId = searchParams.get('courseId');
   const fileInputRef = useRef(null);
   const imageInputRef = useRef(null);
   
@@ -47,13 +49,15 @@ export default function UploadResource({ isEdit = false }) {
             .filter(c => (c.linked_store_items || []).includes(id))
             .map(c => c.id);
           setSelectedCourseIds(linked);
+        } else if (preselectedCourseId) {
+          setSelectedCourseIds(prev => prev.includes(preselectedCourseId) ? prev : [...prev, preselectedCourseId]);
         }
       } catch (e) {
         console.error("Error loading courses for resource:", e);
       }
     };
     fetchCourses();
-  }, [isEdit, id]);
+  }, [isEdit, id, preselectedCourseId]);
 
   useEffect(() => {
     if (isEdit && id) {
@@ -333,7 +337,11 @@ export default function UploadResource({ isEdit = false }) {
       }
 
       alert(isEdit ? "Resource updated successfully!" : "Resource uploaded successfully!");
-      navigate('/store');
+      if (preselectedCourseId) {
+        navigate(`/course/${preselectedCourseId}`);
+      } else {
+        navigate('/store');
+      }
 
     } catch (err) {
       console.error(err);
@@ -342,6 +350,8 @@ export default function UploadResource({ isEdit = false }) {
       setLoading(false);
     }
   };
+
+  const targetCourse = availableCourses.find(c => c.id === preselectedCourseId);
 
   return (
     <div className="flex flex-col min-h-[100dvh] bg-gray-50">
@@ -355,6 +365,16 @@ export default function UploadResource({ isEdit = false }) {
 
       {/* Upload Form */}
       <div className="p-5 flex-1 pb-24">
+        {targetCourse && (
+          <div className="mb-5 max-w-xl mx-auto bg-emerald-50 border border-emerald-200 text-emerald-900 px-4 py-3 rounded-2xl flex items-center gap-3 shadow-xs">
+            <Layers className="text-emerald-700 shrink-0" size={20} />
+            <div className="text-xs">
+              <span className="font-bold">Attaching to Course: </span>
+              <span className="font-extrabold">{targetCourse.title}</span>
+              <p className="text-[11px] text-emerald-700 mt-0.5">This PDF will be automatically linked to this course content.</p>
+            </div>
+          </div>
+        )}
         
         {/* Live Store Preview */}
         <div className="mb-6 flex flex-col items-center">
