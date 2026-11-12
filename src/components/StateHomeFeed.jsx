@@ -202,7 +202,7 @@ export default function StateHomeFeed({ onlyEnrolled = false }) {
         
         // Extract free tests and validate they still exist in the questions table
         const freeCourse = data.find(c => c.title === 'INTERNAL_FREE_TEST_SECTION');
-        const freeTestList = freeCourse ? (freeCourse.linked_tests || []) : [];
+        const freeTestList = freeCourse ? (freeCourse.linked_tests || []).filter(t => t && t.type !== 'pdf') : [];
         if (freeTestList.length > 0) {
           const counts = await Promise.all(
             freeTestList.map(async (t) => {
@@ -380,7 +380,7 @@ export default function StateHomeFeed({ onlyEnrolled = false }) {
           const renderCourseCard = (ts) => {
             let progressPercent = 0;
             if (enrolledIds.has(ts.id)) {
-              const linkedTests = ts.linked_tests || [];
+              const linkedTests = (ts.linked_tests || []).filter(t => t && t.type !== 'pdf');
               const totalTests = linkedTests.length;
               if (totalTests > 0) {
                 const courseAttempts = attemptsByCourse[ts.id] || new Set();

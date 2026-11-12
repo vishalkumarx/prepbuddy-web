@@ -146,6 +146,7 @@ export default function CourseDetail() {
         if (data && data.linked_tests && data.linked_tests.length > 0) {
           const counts = {};
           await Promise.all(data.linked_tests.map(async (test) => {
+            if (test.type === 'pdf' || !test.category || !test.subcategory) return;
             const { count } = await supabase
               .from('prepbuddy_questions')
               .select('*', { count: 'exact', head: true })
@@ -384,12 +385,16 @@ export default function CourseDetail() {
   }
 
   const linkedTests = (course.linked_tests || []).filter(t => {
+    if (t.type === 'pdf') return false;
     // Always show coming_soon tests even if questions are not yet uploaded
     if (t.coming_soon) return true;
     // Hide tests deleted from the questions table (count will be 0 or missing)
     const count = questionCounts[`${t.category}-${t.subcategory}`];
     return count === undefined || count > 0; // show if count not yet loaded or has questions
   });
+
+  const directCoursePdfs = (course.linked_tests || []).filter(t => t && t.type === 'pdf');
+  const allCoursePdfs = [...directCoursePdfs, ...linkedResources];
   
   // Group tests by category
   const grouped = linkedTests.reduce((acc, test) => {
@@ -806,8 +811,8 @@ export default function CourseDetail() {
             </div>
           )}
 
-          {/* Linked Store Items (Study Material & PDF Notes) */}
-          {linkedResources.length > 0 && (
+          {/* Course Study Material & PDF Notes */}
+          {allCoursePdfs.length > 0 && (
             <div className="pt-6 space-y-4">
               <div className="flex items-center justify-between gap-3">
                 <div className="flex items-center gap-2 min-w-0 flex-1">
@@ -821,7 +826,7 @@ export default function CourseDetail() {
                 </div>
                 <div className="flex items-center gap-2 flex-shrink-0">
                   <span className="text-xs font-bold bg-emerald-100 text-emerald-800 px-2.5 py-1 rounded-full whitespace-nowrap">
-                    {linkedResources.length} {linkedResources.length === 1 ? 'Resource' : 'Resources'}
+                    {allCoursePdfs.length} {allCoursePdfs.length === 1 ? 'Resource' : 'Resources'}
                   </span>
                   {UserManager.isAdmin() && (
                     <button
@@ -841,12 +846,25 @@ export default function CourseDetail() {
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {linkedResources.map((res) => {
-                  const canAccess = isEnrolled || Number(res.price) === 0;
+                {allCoursePdfs.map((res) => {
+                  const canAccess = isEnrolled || Number(res.price) === 0 || res.is_free;
+                  const isDirectPdf = res.type === 'pdf';
+                  const handleItemClick = () => {
+                    if (isDirectPdf) {
+                      if (canAccess && res.file_url) {
+                        window.open(res.file_url, '_blank');
+                      } else {
+                        handleBuyClick();
+                      }
+                    } else {
+                      navigate(`/store/${res.id}`);
+                    }
+                  };
+
                   return (
                     <div
                       key={res.id}
-                      onClick={() => navigate(`/store/${res.id}`)}
+                      onClick={handleItemClick}
                       className={`p-3.5 rounded-2xl border transition-all cursor-pointer flex items-center justify-between gap-3 group ${
                         canAccess
                           ? 'bg-white hover:bg-emerald-50/40 border-gray-200 hover:border-emerald-300 shadow-xs hover:shadow-md'
@@ -873,7 +891,7 @@ export default function CourseDetail() {
                             <span className="text-[9px] font-black uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-200/60 px-1.5 py-0.5 rounded">
                               Course Material
                             </span>
-                            {Number(res.price) === 0 && (
+                            {(Number(res.price) === 0 || res.is_free) && (
                               <span className="text-[9px] font-bold bg-green-100 text-green-800 px-1.5 py-0.5 rounded uppercase">
                                 Free
                               </span>
@@ -908,12 +926,12 @@ export default function CourseDetail() {
                           type="button"
                           onClick={(e) => {
                             e.stopPropagation();
-                            navigate(`/store/${res.id}`);
+                            handleItemClick();
                           }}
                           className="px-3 py-1.5 rounded-xl text-xs font-bold bg-gray-100 hover:bg-emerald-100 text-gray-700 hover:text-emerald-800 transition-colors flex items-center gap-1"
                         >
                           <Eye size={13} />
-                          <span>View</span>
+                          <span>{isDirectPdf ? 'Open PDF' : 'View'}</span>
                         </button>
                         {canAccess && res.file_url && (
                           <a
@@ -936,7 +954,7 @@ export default function CourseDetail() {
           )}
 
           {/* Admin Empty State for Study Material */}
-          {linkedResources.length === 0 && UserManager.isAdmin() && (
+          {allCoursePdfs.length === 0 && UserManager.isAdmin() && (
             <div className="pt-6">
               <div className="p-4 rounded-2xl border-2 border-dashed border-emerald-300 bg-emerald-50/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
                 <div className="flex items-center gap-3">

@@ -318,45 +318,59 @@ export default function CourseControlPanel() {
 
   const loadCoursePdfs = async (courseToLoad) => {
     const target = courseToLoad || selectedCourse;
-    if (!target?.linked_store_items || target.linked_store_items.length === 0) {
+    if (!target) {
       setCoursePdfs([]);
       return;
     }
+    const directPdfs = (target.linked_tests || []).filter(item => item && item.type === 'pdf');
+
+    if (!target.linked_store_items || target.linked_store_items.length === 0) {
+      setCoursePdfs(directPdfs);
+      return;
+    }
+
     setLoadingPdfs(true);
     try {
       const { data, error } = await supabase
         .from('prepbuddy_store')
         .select('*')
         .in('id', target.linked_store_items);
-      if (!error && data) {
-        setCoursePdfs(data);
-      } else {
-        setCoursePdfs([]);
-      }
+      const storeItems = (!error && data) ? data.map(d => ({ ...d, isStoreItem: true })) : [];
+      setCoursePdfs([...directPdfs, ...storeItems]);
     } catch (err) {
       console.error('Error loading course PDFs:', err);
-      setCoursePdfs([]);
+      setCoursePdfs(directPdfs);
     } finally {
       setLoadingPdfs(false);
     }
   };
 
-  const handleUnlinkPdf = async (resourceId) => {
+  const handleUnlinkPdf = async (pdf) => {
     if (!selectedCourse) return;
-    if (!window.confirm("Remove this PDF from this course? (The PDF will remain in your store library)")) return;
+    if (!window.confirm(`Remove "${pdf.title}" from this course?`)) return;
     setActionLoading(true);
     try {
-      const updatedLinked = (selectedCourse.linked_store_items || []).filter(id => id !== resourceId);
+      let updatePayload = {};
+      const isStore = pdf.isStoreItem || (selectedCourse.linked_store_items || []).includes(pdf.id);
+      
+      if (isStore) {
+        updatePayload.linked_store_items = (selectedCourse.linked_store_items || []).filter(id => id !== pdf.id);
+      } else {
+        updatePayload.linked_tests = (selectedCourse.linked_tests || []).filter(
+          item => !(item.type === 'pdf' && (item.id === pdf.id || item.file_url === pdf.file_url))
+        );
+      }
+
       const { data, error } = await supabase
         .from('prepbuddy_test_series')
-        .update({ linked_store_items: updatedLinked })
+        .update(updatePayload)
         .eq('id', selectedCourse.id)
         .select()
         .single();
       if (error) throw error;
       setSelectedCourse(data);
       setCourses(prev => prev.map(c => c.id === data.id ? data : c));
-      setCoursePdfs(prev => prev.filter(p => p.id !== resourceId));
+      loadCoursePdfs(data);
     } catch (err) {
       alert("Error removing PDF: " + err.message);
     } finally {
@@ -979,7 +993,7 @@ export default function CourseControlPanel() {
 
                 {/* CONTENTS TAB */}
                 {activeTab === 'contents' && (() => {
-                  const linkedTests = selectedCourse.linked_tests || [];
+                  const linkedTests = (selectedCourse.linked_tests || []).filter(t => t && t.type !== 'pdf');
                   const grouped = linkedTests.reduce((acc, t, i) => {
                     if (!acc[t.category]) acc[t.category] = [];
                     acc[t.category].push({ ...t, _idx: i });
@@ -1090,7 +1104,7 @@ export default function CourseControlPanel() {
                                   )}
                                   <button
                                     type="button"
-                                    onClick={() => handleUnlinkPdf(pdf.id)}
+                                    onClick={() => handleUnlinkPdf(pdf)}
                                     disabled={actionLoading}
                                     className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-colors"
                                     title="Remove PDF from course"

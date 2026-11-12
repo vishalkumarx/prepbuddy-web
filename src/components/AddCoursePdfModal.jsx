@@ -36,6 +36,7 @@ export default function AddCoursePdfModal({ isOpen, onClose, course, onPdfAdded 
   const [customImageFile, setCustomImageFile] = useState(null);
   const [isCustomImage, setIsCustomImage] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [alsoAddToStore, setAlsoAddToStore] = useState(false);
 
   // Library Tab State
   const [storeResources, setStoreResources] = useState([]);
@@ -211,39 +212,71 @@ export default function AddCoursePdfModal({ isOpen, onClose, course, onPdfAdded 
         }
       }
 
-      // 3. Insert into prepbuddy_store
+      // 3. Save PDF
       const finalPrice = isFree ? 0 : (parseFloat(price) || 0);
-      const { data: storeItem, error: dbError } = await supabase
-        .from('prepbuddy_store')
-        .insert([{
+
+      if (alsoAddToStore) {
+        // Insert into prepbuddy_store as a standalone store item
+        const { data: storeItem, error: dbError } = await supabase
+          .from('prepbuddy_store')
+          .insert([{
+            title: title.trim(),
+            description: description.trim(),
+            price: finalPrice,
+            original_price: originalPrice ? parseFloat(originalPrice) : null,
+            file_url: fileUrl,
+            thumbnail_url: thumbnailUrl,
+            uploaded_by: UserManager.getUserId(),
+          }])
+          .select()
+          .single();
+
+        if (dbError) throw dbError;
+
+        // Attach store item ID to this course in prepbuddy_test_series
+        const currentList = Array.isArray(course.linked_store_items) ? course.linked_store_items : [];
+        const updatedLinked = [...currentList, storeItem.id];
+
+        const { data: updatedCourse, error: courseUpdateErr } = await supabase
+          .from('prepbuddy_test_series')
+          .update({ linked_store_items: updatedLinked })
+          .eq('id', course.id)
+          .select()
+          .single();
+
+        if (courseUpdateErr) throw courseUpdateErr;
+
+        setLinkedIds(updatedLinked);
+        onPdfAdded?.(storeItem, updatedCourse);
+      } else {
+        // Course-only PDF: Save directly in course linked_tests (NOT in prepbuddy_store)
+        const pdfItem = {
+          id: 'pdf_' + Math.random().toString(36).substring(2) + '_' + Date.now(),
+          type: 'pdf',
           title: title.trim(),
           description: description.trim(),
-          price: finalPrice,
-          original_price: originalPrice ? parseFloat(originalPrice) : null,
           file_url: fileUrl,
           thumbnail_url: thumbnailUrl,
-          uploaded_by: UserManager.getUserId(),
-        }])
-        .select()
-        .single();
+          created_at: new Date().toISOString(),
+          is_free: isFree,
+          price: finalPrice
+        };
 
-      if (dbError) throw dbError;
+        const currentTests = Array.isArray(course.linked_tests) ? course.linked_tests : [];
+        const updatedTests = [...currentTests, pdfItem];
 
-      // 4. Attach to this course in prepbuddy_test_series
-      const currentList = Array.isArray(course.linked_store_items) ? course.linked_store_items : [];
-      const updatedLinked = [...currentList, storeItem.id];
+        const { data: updatedCourse, error: courseUpdateErr } = await supabase
+          .from('prepbuddy_test_series')
+          .update({ linked_tests: updatedTests })
+          .eq('id', course.id)
+          .select()
+          .single();
 
-      const { data: updatedCourse, error: courseUpdateErr } = await supabase
-        .from('prepbuddy_test_series')
-        .update({ linked_store_items: updatedLinked })
-        .eq('id', course.id)
-        .select()
-        .single();
+        if (courseUpdateErr) throw courseUpdateErr;
 
-      if (courseUpdateErr) throw courseUpdateErr;
+        onPdfAdded?.(pdfItem, updatedCourse);
+      }
 
-      setLinkedIds(updatedLinked);
-      onPdfAdded?.(storeItem, updatedCourse);
       alert(`✅ "${title}" has been successfully added to ${course.title}!`);
       onClose();
     } catch (err) {
@@ -524,6 +557,22 @@ export default function AddCoursePdfModal({ isOpen, onClose, course, onPdfAdded 
                   </div>
                 )}
               </div>
+
+              {/* Optional: Also publish to Store */}
+              <label className="flex items-start gap-3 p-3.5 bg-slate-50 hover:bg-slate-100/70 border border-slate-200 rounded-2xl cursor-pointer transition-colors">
+                <input
+                  type="checkbox"
+                  checked={alsoAddToStore}
+                  onChange={(e) => setAlsoAddToStore(e.target.checked)}
+                  className="w-4 h-4 mt-0.5 rounded text-emerald-600 focus:ring-emerald-500 border-gray-300"
+                />
+                <div className="flex-1">
+                  <span className="text-xs font-bold text-gray-900">Also add as a standalone item in Store</span>
+                  <p className="text-[11px] text-gray-500 mt-0.5 leading-relaxed">
+                    By default, this PDF is exclusive to this course and will <strong className="text-gray-700">not</strong> be added to the public Store. Check this only if you want it listed for individual purchase in Store.
+                  </p>
+                </div>
+              </label>
 
               {/* Optional Cover Thumbnail */}
               <div className="bg-gray-50/70 p-3.5 rounded-2xl border border-gray-200">
