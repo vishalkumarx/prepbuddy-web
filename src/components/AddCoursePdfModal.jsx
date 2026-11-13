@@ -406,7 +406,7 @@ export default function AddCoursePdfModal({ isOpen, onClose, course, onPdfAdded 
                       <span className="text-[8px] font-black uppercase mt-0.5">PDF</span>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-bold text-gray-900 truncate">{file.name}</p>
+                      <p className="text-sm font-bold text-gray-900 break-words">{file.name}</p>
                       <p className="text-xs text-gray-500 mt-0.5">{(file.size / (1024 * 1024)).toFixed(2)} MB</p>
                       <p className="text-[11px] text-emerald-700 font-semibold mt-0.5 flex items-center gap-1">
                         <Sparkles size={12} /> Auto-generating cover preview
@@ -606,7 +606,7 @@ export default function AddCoursePdfModal({ isOpen, onClose, course, onPdfAdded 
                       <img src={thumbnailDataUrl} alt="Cover preview" className="w-full h-full object-cover" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs font-bold text-gray-900 truncate">
+                      <p className="text-xs font-bold text-gray-900 break-words">
                         {customImageFile ? customImageFile.name : 'Extracted from PDF Page 1'}
                       </p>
                       <p className="text-[11px] text-emerald-600 font-medium mt-0.5">
@@ -712,7 +712,7 @@ export default function AddCoursePdfModal({ isOpen, onClose, course, onPdfAdded 
                             )}
                           </div>
                           <div className="min-w-0 flex-1">
-                            <h4 className="font-bold text-sm text-gray-900 leading-snug line-clamp-1">{res.title}</h4>
+                            <h4 className="font-bold text-sm text-gray-900 leading-snug break-words">{res.title}</h4>
                             {res.description && (
                               <p className="text-xs text-gray-500 line-clamp-1 mt-0.5">{res.description}</p>
                             )}

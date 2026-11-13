@@ -8,6 +8,7 @@ import {
   Maximize2, ChevronLeft, ChevronRight, ZoomIn, X
 } from 'lucide-react';
 import * as pdfjsLib from 'pdfjs-dist';
+import '../utils/pdfPolyfill';
 import CouponManager from './CouponManager';
 
 // Configure pdfjs worker with fallback
@@ -64,33 +65,43 @@ export default function ResourceDetail() {
 
       const pdf = await loadingTask.promise;
       setTotalPages(pdf.numPages);
-      const numPages = Math.min(pdf.numPages, 3); // Max 3 pages for sample
+      const numPages = Math.min(pdf.numPages, 5); // Up to 5 pages for sample preview
       
       const pagesDataUrls = [];
       const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
-      const renderScale = isMobile ? 1.0 : 1.3;
+      const renderScale = isMobile ? 0.95 : 1.3;
       
       for (let i = 1; i <= numPages; i++) {
-        const page = await pdf.getPage(i);
-        const viewport = page.getViewport({ scale: renderScale });
-        
-        const canvas = document.createElement('canvas');
-        const context = canvas.getContext('2d');
-        canvas.height = viewport.height;
-        canvas.width = viewport.width;
+        try {
+          const page = await pdf.getPage(i);
+          const viewport = page.getViewport({ scale: renderScale });
+          
+          const canvas = document.createElement('canvas');
+          const context = canvas.getContext('2d');
+          canvas.height = viewport.height;
+          canvas.width = viewport.width;
 
-        const renderContext = {
-          canvasContext: context,
-          viewport: viewport,
-        };
-        
-        await page.render(renderContext).promise;
-        
-        const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
-        pagesDataUrls.push(dataUrl);
+          const renderContext = {
+            canvasContext: context,
+            viewport: viewport,
+          };
+          
+          await page.render(renderContext).promise;
+          
+          const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+          pagesDataUrls.push(dataUrl);
+        } catch (pageErr) {
+          console.warn(`Failed rendering sample page ${i}:`, pageErr);
+        }
       }
       
-      setSamplePages(pagesDataUrls);
+      if (pagesDataUrls.length > 0) {
+        setSamplePages(pagesDataUrls);
+      } else if (fallbackThumb) {
+        setSamplePages([fallbackThumb]);
+      } else {
+        setSampleError("Unable to render sample preview on this device.");
+      }
     } catch (err) {
       console.error("Error generating PDF samples:", err);
       if (fallbackThumb) {
@@ -490,9 +501,11 @@ export default function ResourceDetail() {
               <FileText className="text-primary" size={20} />
               Look Inside (Sample Preview)
             </h2>
-            <span className="text-xs text-gray-500 font-medium">
-              First {Math.min(samplePages.length || 3, 3)} Pages
-            </span>
+            {samplePages.length > 0 && (
+              <span className="text-xs text-gray-500 font-medium">
+                First {samplePages.length} Pages
+              </span>
+            )}
           </div>
 
           {loadingSamples ? (

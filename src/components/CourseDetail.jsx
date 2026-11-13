@@ -7,6 +7,7 @@ import { useAuthModal } from '../context/AuthModalContext';
 import { processHtml } from '../utils/htmlUtils';
 import CouponManager from './CouponManager';
 import AddCoursePdfModal from './AddCoursePdfModal';
+import PdfViewerModal from './PdfViewerModal';
 
 const getMonthWeight = (name) => {
   const lowerName = name.toLowerCase();
@@ -56,6 +57,7 @@ export default function CourseDetail() {
 
   // Add PDF Modal state
   const [showAddPdfModal, setShowAddPdfModal] = useState(false);
+  const [viewingPdf, setViewingPdf] = useState(null);
 
   const handlePdfAdded = (newResource, updatedCourse) => {
     if (updatedCourse) {
@@ -852,12 +854,16 @@ export default function CourseDetail() {
                   const handleItemClick = () => {
                     if (isDirectPdf) {
                       if (canAccess && res.file_url) {
-                        window.open(res.file_url, '_blank');
+                        setViewingPdf({ file_url: res.file_url, title: res.title });
                       } else {
                         handleBuyClick();
                       }
                     } else {
-                      navigate(`/store/${res.id}`);
+                      if (canAccess && res.file_url) {
+                        setViewingPdf({ file_url: res.file_url, title: res.title });
+                      } else {
+                        navigate(`/store/${res.id}`);
+                      }
                     }
                   };
 
@@ -894,7 +900,7 @@ export default function CourseDetail() {
                               </span>
                             </div>
                           )}
-                          <h4 className="font-bold text-sm text-gray-900 leading-snug line-clamp-1 group-hover:text-emerald-900 transition-colors">
+                          <h4 className="font-bold text-sm text-gray-900 leading-snug break-words group-hover:text-emerald-900 transition-colors">
                             {res.title}
                           </h4>
                           {res.description && (
@@ -1167,6 +1173,16 @@ export default function CourseDetail() {
           onClose={() => setShowAddPdfModal(false)}
           course={course}
           onPdfAdded={handlePdfAdded}
+        />
+      )}
+
+      {/* In-App Multi-Page PDF Viewer Modal */}
+      {viewingPdf && (
+        <PdfViewerModal
+          isOpen={!!viewingPdf}
+          onClose={() => setViewingPdf(null)}
+          fileUrl={viewingPdf.file_url}
+          title={viewingPdf.title}
         />
       )}
     </div>

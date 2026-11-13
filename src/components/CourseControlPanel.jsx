@@ -1076,7 +1076,7 @@ export default function CourseControlPanel() {
                                     )}
                                   </div>
                                   <div className="min-w-0 flex-1">
-                                    <h4 className="font-bold text-xs sm:text-sm text-gray-900 leading-snug line-clamp-1 group-hover:text-emerald-900 transition-colors">
+                                    <h4 className="font-bold text-xs sm:text-sm text-gray-900 leading-snug break-words group-hover:text-emerald-900 transition-colors">
                                       {pdf.title}
                                     </h4>
                                     {pdf.description && (
