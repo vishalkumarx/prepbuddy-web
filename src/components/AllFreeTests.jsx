@@ -127,7 +127,7 @@ export default function AllFreeTests() {
                     </span>
                   )}
                 </div>
-                <h3 className="font-bold text-gray-900 leading-tight mb-3">{test.subcategory}</h3>
+                <h3 className="font-bold text-gray-900 leading-tight mb-3">{test.display_name || test.subcategory}</h3>
 
                 {/* Stats */}
                 <div className="flex items-center gap-4 mb-3">

@@ -2276,21 +2276,6 @@ export default function CreateTestSeries() {
                           )}
                         </div>
                         <div className="flex items-center gap-1.5 shrink-0">
-                          {isLinked && linkedItem && (
-                            <button
-                              type="button"
-                              onClick={() => {
-                                const newName = window.prompt("Enter new display name for this course tile:", linkedItem.display_name || linkedItem.subcategory);
-                                if (newName !== null) {
-                                  handleUpdateLinkDisplayName(course, linkModalGroup, newName);
-                                }
-                              }}
-                              className="px-2.5 py-1.5 rounded-lg text-xs font-bold text-indigo-700 bg-white border border-indigo-200 hover:bg-indigo-50 transition-colors shadow-2xs"
-                              title="Edit Display Name in this course"
-                            >
-                              Edit Name
-                            </button>
-                          )}
                           <button
                             onClick={() => handleToggleLink(course, linkModalGroup, linkDisplayName)}
                             className={`px-3.5 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-colors shadow-2xs ${
@@ -2303,6 +2288,33 @@ export default function CreateTestSeries() {
                           </button>
                         </div>
                       </div>
+                      {isLinked && linkedItem && (
+                        <div className="mt-1 pt-2 border-t border-indigo-100 flex items-center gap-2">
+                          <div className="flex-1">
+                            <label className="text-[10px] font-bold text-indigo-800 uppercase tracking-wider block mb-0.5">
+                              Display Name in this Course:
+                            </label>
+                            <input
+                              type="text"
+                              defaultValue={linkedItem.display_name || ''}
+                              placeholder={`Default: ${linkedItem.subcategory}`}
+                              id={`inline-link-dn-${course.id}`}
+                              className="w-full px-2.5 py-1 text-xs border border-indigo-200 rounded-lg bg-white focus:outline-none focus:ring-1 focus:ring-indigo-500 font-semibold text-gray-900"
+                            />
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const val = document.getElementById(`inline-link-dn-${course.id}`)?.value || '';
+                              handleUpdateLinkDisplayName(course, linkModalGroup, val);
+                            }}
+                            className="self-end px-3 py-1 rounded-lg text-xs font-bold text-indigo-700 bg-white border border-indigo-300 hover:bg-indigo-100 transition-colors shadow-2xs whitespace-nowrap"
+                            title="Save display name in this course"
+                          >
+                            Save Name
+                          </button>
+                        </div>
+                      )}
                     </div>
                   );
                 })

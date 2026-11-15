@@ -283,10 +283,68 @@ export default function CourseControlPanel() {
 
   const [expandedSubgroups, setExpandedSubgroups] = useState({});
   const toggleSubgroup = (cat, subGroupName) => {
-    setExpandedSubgroups(prev => ({
-      ...prev,
-      [`${cat}::${subGroupName}`]: !prev[`${cat}::${subGroupName}`]
-    }));
+    setExpandedSubgroups(prev => {
+      const key = `${cat}::${subGroupName}`;
+      const isCurrentlyExpanded = prev[key] !== false; // expanded by default
+      return {
+        ...prev,
+        [key]: !isCurrentlyExpanded
+      };
+    });
+  };
+
+  // Manage Display Names for All Added Tests Modal State
+  const [showDisplayNamesModal, setShowDisplayNamesModal] = useState(false);
+  const [displayNamesSearch, setDisplayNamesSearch] = useState('');
+  const [displayNamesDrafts, setDisplayNamesDrafts] = useState({});
+  const [savedRowIds, setSavedRowIds] = useState({});
+
+  const openDisplayNamesModal = () => {
+    const drafts = {};
+    (selectedCourse?.linked_tests || []).forEach((t, idx) => {
+      drafts[idx] = t.display_name || '';
+    });
+    setDisplayNamesDrafts(drafts);
+    setDisplayNamesSearch('');
+    setShowDisplayNamesModal(true);
+  };
+
+  const handleSaveRowDisplayName = async (realIdx) => {
+    if (!selectedCourse) return;
+    const newName = displayNamesDrafts[realIdx]?.trim() || null;
+    await handleUpdateTile(realIdx, { display_name: newName });
+    setSavedRowIds(prev => ({ ...prev, [realIdx]: true }));
+    setTimeout(() => {
+      setSavedRowIds(prev => ({ ...prev, [realIdx]: false }));
+    }, 2000);
+  };
+
+  const handleSaveAllDisplayNames = async () => {
+    if (!selectedCourse) return;
+    setActionLoading(true);
+    try {
+      const updated = (selectedCourse.linked_tests || []).map((t, idx) => {
+        if (t.type === 'pdf') return t;
+        if (displayNamesDrafts[idx] !== undefined) {
+          return { ...t, display_name: displayNamesDrafts[idx]?.trim() || null };
+        }
+        return t;
+      });
+      const { data, error } = await supabase
+        .from('prepbuddy_test_series')
+        .update({ linked_tests: updated })
+        .eq('id', selectedCourse.id)
+        .select()
+        .single();
+      if (error) throw error;
+      setSelectedCourse(data);
+      setCourses(prev => prev.map(c => c.id === data.id ? data : c));
+      alert("Display names updated successfully!");
+    } catch (err) {
+      alert("Error updating display names: " + err.message);
+    } finally {
+      setActionLoading(false);
+    }
   };
 
   // Add Coming Soon Test Modal State
@@ -1170,6 +1228,13 @@ export default function CourseControlPanel() {
                         <h3 className="font-bold text-gray-800">Test Tiles</h3>
                         <div className="flex items-center gap-2">
                           <button
+                            onClick={openDisplayNamesModal}
+                            className="bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 font-bold px-3 py-1.5 rounded-lg text-xs flex items-center gap-1.5 transition-colors shadow-2xs"
+                            title="Manage display names of all tests currently added to this course"
+                          >
+                            <Tag size={14} className="text-blue-600" /> Manage Display Names ({linkedTests.length})
+                          </button>
+                          <button
                             onClick={() => {
                               fetchStoreResourcesForCourse();
                               setShowLinkStoreModal(true);
@@ -1264,7 +1329,7 @@ export default function CourseControlPanel() {
                                   <h3 className="font-bold text-gray-900 pl-1">{cat} Topics</h3>
                                   <div className="grid grid-cols-1 gap-3">
                                     {Object.entries(subGroups).sort((a, b) => getMonthWeight(a[0]) - getMonthWeight(b[0])).map(([subGroupName, groupTests]) => {
-                                      const isSubExpanded = expandedSubgroups[`${cat}::${subGroupName}`];
+                                      const isSubExpanded = expandedSubgroups[`${cat}::${subGroupName}`] !== false;
                                       const singleTest = groupTests.length === 1 ? groupTests[0] : null;
                                       const headerTitle = singleTest?.display_name || subGroupName;
                                       return (
@@ -1327,22 +1392,18 @@ export default function CourseControlPanel() {
                                         </div>
                                         <div className="flex-1 min-w-0">
                                           <div className="flex items-center gap-2 flex-wrap">
+                                            <span className="text-[10px] font-bold uppercase tracking-wider text-blue-600 bg-blue-50 border border-blue-100 px-1.5 py-0.5 rounded">
+                                              Display Name
+                                            </span>
                                             <p className={`font-bold text-sm text-gray-900 leading-snug ${t.is_hidden ? 'line-through text-gray-500' : ''}`}>
-                                              {t.display_name || t.subcategory}
+                                              {t.display_name ? (
+                                                <span>{t.display_name}</span>
+                                              ) : (
+                                                <span className="text-gray-400 font-normal italic">
+                                                  Not set (using "{t.subcategory}")
+                                                </span>
+                                              )}
                                             </p>
-                                            {t.display_name && t.display_name !== t.subcategory && (
-                                              <span className="text-[10px] text-gray-400 font-normal">({t.subcategory})</span>
-                                            )}
-                                            {!t.display_name && (
-                                              <button
-                                                type="button"
-                                                onClick={() => handleOpenEditTile(t)}
-                                                className="text-[10px] font-bold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 px-2 py-0.5 rounded-md transition-colors inline-flex items-center gap-1"
-                                                title="Set custom display name for this live test"
-                                              >
-                                                <Edit2 size={10} /> + Set Display Name
-                                              </button>
-                                            )}
                                             {t.is_free && (
                                               <span className="text-[9px] font-bold bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded-full uppercase tracking-wide flex-shrink-0">Free</span>
                                             )}
@@ -1356,17 +1417,23 @@ export default function CourseControlPanel() {
                                               <span className="text-[9px] font-bold bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded-full uppercase tracking-wide flex-shrink-0">Hidden</span>
                                             )}
                                           </div>
-                                          <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mt-0.5">{t.totalQuestions} Qs • {t.duration} min</p>
+                                          <div className="flex items-center gap-2 mt-1 text-[11px] text-gray-400 flex-wrap">
+                                            <span>Original: <strong className="text-gray-600 font-semibold">{t.subcategory}</strong></span>
+                                            <span>•</span>
+                                            <span>{t.totalQuestions ? `${t.totalQuestions} Qs` : 'Qs auto'}</span>
+                                            <span>•</span>
+                                            <span>{t.duration ? `${t.duration} min` : 'Duration auto'}</span>
+                                          </div>
                                         </div>
-                                        <div className="flex items-center gap-1">
+                                        <div className="flex items-center gap-1.5 shrink-0">
                                           <button
                                             type="button"
                                             onClick={() => handleOpenEditTile(t)}
                                             disabled={actionLoading}
-                                            title="Edit Display Name & Settings"
-                                            className="p-1.5 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+                                            title="Set or Edit Custom Display Name"
+                                            className="px-2.5 py-1.5 bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-colors shadow-2xs"
                                           >
-                                            <Edit2 size={13} />
+                                            <Edit2 size={12} /> {t.display_name ? 'Edit Name' : 'Set Display Name'}
                                           </button>
                                           <button
                                             onClick={() => handleUpdateTile(t._idx, { coming_soon: !t.coming_soon })}
@@ -1410,17 +1477,17 @@ export default function CourseControlPanel() {
                                           </button>
                                         </div>
                                       </div>
-                                              ))}
-                                            </div>
-                                          )}
-                                        </div>
-                                      );
-                                    })}
+                                    ))}
                                   </div>
-                                </div>
-                              );
-                            })}
-                          </div>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
                         </>
                       )}
                       {/* Add Test Tile Modal (Live Test or Coming Soon) */}
@@ -1658,6 +1725,124 @@ export default function CourseControlPanel() {
                                 </button>
                               </div>
                             </form>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Manage Display Names Modal for All Added Tests */}
+                      {showDisplayNamesModal && (
+                        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+                          <div className="bg-white rounded-3xl w-full max-w-2xl p-6 shadow-2xl relative animate-in fade-in zoom-in-95 max-h-[90vh] flex flex-col">
+                            <div className="flex items-center justify-between pb-4 border-b border-gray-100">
+                              <div className="flex items-center gap-2.5">
+                                <div className="p-2.5 bg-blue-50 text-blue-600 rounded-2xl">
+                                  <Tag size={22} />
+                                </div>
+                                <div>
+                                  <h3 className="font-bold text-lg text-gray-900 leading-tight">Display Names for Already Added Tests</h3>
+                                  <p className="text-xs text-gray-500">Edit the title students see for each test already in this course.</p>
+                                </div>
+                              </div>
+                              <button
+                                onClick={() => setShowDisplayNamesModal(false)}
+                                className="p-1.5 text-gray-400 hover:text-gray-700 rounded-full hover:bg-gray-100 transition-colors"
+                              >
+                                <X size={18} />
+                              </button>
+                            </div>
+
+                            {/* Filter / Search & Quick Save All */}
+                            <div className="py-3 flex items-center justify-between gap-3 border-b border-gray-100">
+                              <div className="relative flex-1">
+                                <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                                <input
+                                  type="text"
+                                  placeholder="Search added tests by name or category..."
+                                  value={displayNamesSearch}
+                                  onChange={(e) => setDisplayNamesSearch(e.target.value)}
+                                  className="w-full pl-9 pr-3 py-2 text-xs border border-gray-200 rounded-xl bg-gray-50/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                                />
+                              </div>
+                              <button
+                                type="button"
+                                onClick={handleSaveAllDisplayNames}
+                                disabled={actionLoading}
+                                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white font-bold rounded-xl text-xs shadow-xs transition-all flex items-center gap-1.5 shrink-0 disabled:opacity-50"
+                              >
+                                <Save size={14} /> Save All
+                              </button>
+                            </div>
+
+                            {/* Test List Table */}
+                            <div className="flex-1 overflow-y-auto py-2 divide-y divide-gray-100">
+                              {linkedTests.filter(t => {
+                                if (!displayNamesSearch.trim()) return true;
+                                const q = displayNamesSearch.toLowerCase();
+                                return (t.category || '').toLowerCase().includes(q) ||
+                                       (t.subcategory || '').toLowerCase().includes(q) ||
+                                       (t.display_name || '').toLowerCase().includes(q);
+                              }).length === 0 ? (
+                                <p className="text-center text-xs text-gray-400 py-8 italic">No tests found matching search.</p>
+                              ) : (
+                                linkedTests.filter(t => {
+                                  if (!displayNamesSearch.trim()) return true;
+                                  const q = displayNamesSearch.toLowerCase();
+                                  return (t.category || '').toLowerCase().includes(q) ||
+                                         (t.subcategory || '').toLowerCase().includes(q) ||
+                                         (t.display_name || '').toLowerCase().includes(q);
+                                }).map(t => {
+                                  const isSaved = savedRowIds[t._idx];
+                                  return (
+                                    <div key={t._idx} className="py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-gray-50/70 p-2 rounded-xl transition-colors">
+                                      <div className="flex-1 min-w-0">
+                                        <div className="flex items-center gap-2 mb-1 flex-wrap">
+                                          <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-gray-100 text-gray-600">
+                                            {t.category}
+                                          </span>
+                                          <span className="text-xs text-gray-500 font-medium">
+                                            Original: <strong className="text-gray-700">{t.subcategory}</strong>
+                                          </span>
+                                          {t.coming_soon && (
+                                            <span className="text-[9px] font-bold bg-amber-100 text-amber-700 px-1.5 py-0.2 rounded">Coming Soon</span>
+                                          )}
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                          <input
+                                            type="text"
+                                            value={displayNamesDrafts[t._idx] ?? (t.display_name || '')}
+                                            onChange={(e) => setDisplayNamesDrafts(prev => ({ ...prev, [t._idx]: e.target.value }))}
+                                            placeholder={`Default: ${t.subcategory}`}
+                                            className="flex-1 px-3 py-1.5 text-xs border border-blue-200 bg-blue-50/20 focus:bg-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 font-semibold text-gray-900"
+                                          />
+                                          <button
+                                            type="button"
+                                            onClick={() => handleSaveRowDisplayName(t._idx)}
+                                            disabled={actionLoading}
+                                            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1 shrink-0 ${
+                                              isSaved
+                                                ? 'bg-emerald-600 text-white'
+                                                : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-100'
+                                            }`}
+                                          >
+                                            {isSaved ? <Check size={13} /> : <Save size={13} />}
+                                            {isSaved ? 'Saved' : 'Save'}
+                                          </button>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  );
+                                })
+                              )}
+                            </div>
+                            <div className="pt-3 border-t border-gray-100 flex items-center justify-between text-xs text-gray-400">
+                              <span>Leave display name empty to use original subcategory name.</span>
+                              <button
+                                onClick={() => setShowDisplayNamesModal(false)}
+                                className="px-4 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-bold transition-colors"
+                              >
+                                Close
+                              </button>
+                            </div>
                           </div>
                         </div>
                       )}
