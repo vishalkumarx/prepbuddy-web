@@ -654,24 +654,6 @@ export default function CourseDetail() {
         </div>
         </div>
 
-        {/* Progress Bar (If Enrolled) */}
-        {isEnrolled && (
-          <div className="mb-6 bg-gray-50 rounded-2xl p-4 border border-gray-100 shadow-[inset_0_2px_4px_rgba(0,0,0,0.02)]">
-            <div className="flex items-center justify-between mb-2.5">
-              <span className="text-xs font-bold text-gray-500 uppercase tracking-widest">Your Progress</span>
-              <span className="text-sm font-black text-[#0B2457]">{completedCount} <span className="text-gray-400 font-bold text-xs">/ {totalTests} Completed</span></span>
-            </div>
-            <div className="h-2 w-full bg-gray-200 rounded-full overflow-hidden">
-              <div 
-                className="h-full bg-emerald-500 rounded-full transition-all duration-1000 ease-out relative"
-                style={{ width: `${progressPercent}%` }}
-              >
-                <div className="absolute inset-0 bg-white/20 w-full h-full" style={{ background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent)', transform: 'skewX(-20deg)', animation: 'progress-shimmer 2s infinite' }} />
-              </div>
-            </div>
-          </div>
-        )}
-
         {/* Description */}
         {course.description && (
           <div className="mb-6 p-4 rounded-2xl bg-slate-50 border border-slate-100/90 shadow-2xs">
