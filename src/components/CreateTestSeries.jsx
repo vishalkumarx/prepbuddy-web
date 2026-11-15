@@ -863,18 +863,48 @@ export default function CreateTestSeries() {
     if (!textToParse.trim()) return;
     try {
       let data = JSON.parse(textToParse);
+
+      // Normalize data into an array of question objects
+      let questionsList = [];
+      if (Array.isArray(data)) {
+        questionsList = data;
+      } else if (data && typeof data === 'object') {
+        if (Array.isArray(data.questions)) questionsList = data.questions;
+        else if (Array.isArray(data.data)) questionsList = data.data;
+        else if (Array.isArray(data.mcqs)) questionsList = data.mcqs;
+        else if (Array.isArray(data.items)) questionsList = data.items;
+        else if (Array.isArray(data.test_series)) questionsList = data.test_series;
+        else if (Array.isArray(data.tests)) questionsList = data.tests;
+        else if (Array.isArray(data.results)) questionsList = data.results;
+        else if (Array.isArray(data.quiz)) questionsList = data.quiz;
+        else if (data.question || data.q || data.title) questionsList = [data];
+        else {
+          const values = Object.values(data);
+          if (values.length > 0 && typeof values[0] === 'object' && (values[0]?.question || values[0]?.q)) {
+            questionsList = values;
+          }
+        }
+      }
+
+      if (!questionsList || questionsList.length === 0) {
+        throw new Error('No questions found in JSON. Please ensure it contains a list of questions or a question object.');
+      }
       
       let finalCategory = category;
       let finalSubcategory = subcategory;
+
+      if (data && typeof data === 'object' && !Array.isArray(data)) {
+        if (!finalCategory.trim() && (data.category || data.subject)) {
+          finalCategory = data.category || data.subject;
+        }
+        if (!finalSubcategory.trim() && (data.subcategory || data.topic || data.title || data.test_name)) {
+          finalSubcategory = data.subcategory || data.topic || data.title || data.test_name;
+        }
+      }
       
       if (!finalCategory.trim() || !finalSubcategory.trim()) {
-         if (Array.isArray(data) && data.length > 0) {
-            finalCategory = data[0].category || finalCategory;
-            finalSubcategory = data[0].subcategory || finalSubcategory;
-         } else if (data && !Array.isArray(data)) {
-            finalCategory = data.category || finalCategory;
-            finalSubcategory = data.subcategory || finalSubcategory;
-         }
+        finalCategory = finalCategory.trim() || questionsList[0]?.category || questionsList[0]?.subject || '';
+        finalSubcategory = finalSubcategory.trim() || questionsList[0]?.subcategory || questionsList[0]?.topic || '';
       }
       
       if (!finalCategory.trim() || !finalSubcategory.trim()) {
@@ -885,149 +915,142 @@ export default function CreateTestSeries() {
       if (finalCategory !== category) setCategory(finalCategory);
       if (finalSubcategory !== subcategory) setSubcategory(finalSubcategory);
       
-      if (Array.isArray(data)) {
-        const formatted = data.map(q => {
-          let opts = [];
-          if (Array.isArray(q.options)) {
-            opts = q.options;
-          } else if (q.options && typeof q.options === 'object') {
-            opts = [
-              q.options.a || q.options.A || q.options.optionA || q.options['1'] || q.optionA,
-              q.options.b || q.options.B || q.options.optionB || q.options['2'] || q.optionB,
-              q.options.c || q.options.C || q.options.optionC || q.options['3'] || q.optionC,
-              q.options.d || q.options.D || q.options.optionD || q.options['4'] || q.optionD,
-              q.options.e || q.options.E || q.options.optionE || q.options['5'] || q.optionE
-            ].filter(Boolean);
-          } else {
-            opts = [q.optionA, q.optionB, q.optionC, q.optionD, q.optionE].filter(Boolean);
-          }
-          
-          // Clean all options of leading markers, prefixes or trailing noise
-          opts = opts.map(o => cleanOptionText(o));
-          
-          // Determine answer: support correct_option_id (0-indexed), answer letter, or answer text
-          let answerText = '';
-          if (q.correct_option_id !== undefined && opts[q.correct_option_id]) {
-            answerText = opts[q.correct_option_id];
-          } else if (q.answer !== undefined || q.correct_answer !== undefined) {
-            const ansRaw = cleanOptionText(q.answer !== undefined ? q.answer : q.correct_answer);
-            const upperAns = String(ansRaw).replace(/<[^>]*>?/gm, '').trim().toUpperCase();
-            const cleanOpts = opts.map(o => String(o).replace(/<[^>]*>?/gm, '').trim().toUpperCase());
-            
-            if ((upperAns === 'A' || upperAns === '1' || upperAns === 'OPTION A' || upperAns === cleanOpts[0]) && opts[0]) answerText = opts[0];
-            else if ((upperAns === 'B' || upperAns === '2' || upperAns === 'OPTION B' || upperAns === cleanOpts[1]) && opts[1]) answerText = opts[1];
-            else if ((upperAns === 'C' || upperAns === '3' || upperAns === 'OPTION C' || upperAns === cleanOpts[2]) && opts[2]) answerText = opts[2];
-            else if ((upperAns === 'D' || upperAns === '4' || upperAns === 'OPTION D' || upperAns === cleanOpts[3]) && opts[3]) answerText = opts[3];
-            else if ((upperAns === 'E' || upperAns === '5' || upperAns === 'OPTION E' || upperAns === cleanOpts[4]) && opts[4]) answerText = opts[4];
-            else {
-              const matchIdx = opts.findIndex(o => o.toLowerCase() === String(ansRaw).toLowerCase());
-              answerText = matchIdx !== -1 ? opts[matchIdx] : ansRaw;
-            }
-          } else {
-            answerText = opts[0] || '';
-          }
-
-          const formattedQuestion = formatMatchTheFollowing(q.question || q.q || '');
-
-          return {
-            question: formattedQuestion,
-            options: opts,
-            answer: answerText,
-            explanation: q.explanation || q.solution || q.desc || '',
-            category: finalCategory,
-            subcategory: finalSubcategory
-          };
-        });
+      const formatted = questionsList.map(q => {
+        let opts = [];
+        if (Array.isArray(q.options)) {
+          opts = q.options;
+        } else if (q.options && typeof q.options === 'object') {
+          opts = [
+            q.options.a || q.options.A || q.options.optionA || q.options['1'] || q.optionA,
+            q.options.b || q.options.B || q.options.optionB || q.options['2'] || q.optionB,
+            q.options.c || q.options.C || q.options.optionC || q.options['3'] || q.optionC,
+            q.options.d || q.options.D || q.options.optionD || q.options['4'] || q.optionD,
+            q.options.e || q.options.E || q.options.optionE || q.options['5'] || q.optionE
+          ].filter(Boolean);
+        } else {
+          opts = [
+            q.optionA || q.option_a || q.a || q.A,
+            q.optionB || q.option_b || q.b || q.B,
+            q.optionC || q.option_c || q.c || q.C,
+            q.optionD || q.option_d || q.d || q.D,
+            q.optionE || q.option_e || q.e || q.E
+          ].filter(Boolean);
+        }
         
-        setIsUploading(true);
+        // Clean all options of leading markers, prefixes or trailing noise
+        opts = opts.map(o => cleanOptionText(o));
         
-        const { data: existingQs } = await supabase
-          .from('prepbuddy_questions')
-          .select('question, subcategory')
-          .eq('category', finalCategory);
+        // Determine answer: support correct_option_id, correct_option, answer letter, or answer text
+        let answerText = '';
+        if (q.correct_option_id !== undefined && opts[q.correct_option_id]) {
+          answerText = opts[q.correct_option_id];
+        } else if (q.correct_option !== undefined && opts[q.correct_option]) {
+          answerText = opts[q.correct_option];
+        } else if (q.answer !== undefined || q.correct_answer !== undefined || q.correctAnswer !== undefined) {
+          const ansRaw = cleanOptionText(q.answer !== undefined ? q.answer : (q.correct_answer !== undefined ? q.correct_answer : q.correctAnswer));
+          const upperAns = String(ansRaw).replace(/<[^>]*>?/gm, '').trim().toUpperCase();
+          const cleanOpts = opts.map(o => String(o).replace(/<[^>]*>?/gm, '').trim().toUpperCase());
           
-        const existingSet = new Map();
-        if (existingQs) {
-          existingQs.forEach(q => existingSet.set(q.question.trim().toLowerCase(), q.subcategory));
+          if ((upperAns === 'A' || upperAns === '1' || upperAns === 'OPTION A' || upperAns === cleanOpts[0]) && opts[0]) answerText = opts[0];
+          else if ((upperAns === 'B' || upperAns === '2' || upperAns === 'OPTION B' || upperAns === cleanOpts[1]) && opts[1]) answerText = opts[1];
+          else if ((upperAns === 'C' || upperAns === '3' || upperAns === 'OPTION C' || upperAns === cleanOpts[2]) && opts[2]) answerText = opts[2];
+          else if ((upperAns === 'D' || upperAns === '4' || upperAns === 'OPTION D' || upperAns === cleanOpts[3]) && opts[3]) answerText = opts[3];
+          else if ((upperAns === 'E' || upperAns === '5' || upperAns === 'OPTION E' || upperAns === cleanOpts[4]) && opts[4]) answerText = opts[4];
+          else {
+            const matchIdx = opts.findIndex(o => o.toLowerCase() === String(ansRaw).toLowerCase());
+            answerText = matchIdx !== -1 ? opts[matchIdx] : ansRaw;
+          }
+        } else {
+          answerText = opts[0] || '';
         }
 
-        // Deduplicate questions to omit exact duplicates
-        const uniqueFormatted = [];
-        const seenQuestions = new Set();
-        const omittedReport = [];
-        
-        formatted.forEach((q, idx) => {
-          const normQ = q.question.trim().toLowerCase();
-          if (existingSet.has(normQ)) {
-            omittedReport.push(`- Q${idx + 1}: Exists in "${existingSet.get(normQ)}"`);
-          } else if (seenQuestions.has(normQ)) {
-            omittedReport.push(`- Q${idx + 1}: Duplicate within imported file`);
-          } else {
-            seenQuestions.add(normQ);
-            uniqueFormatted.push(q);
-          }
-        });
+        const rawQ = q.question || q.q || q.title || '';
+        const formattedQuestion = formatMatchTheFollowing(rawQ);
 
-        const size = parseInt(chunkSize, 10);
-        if (saveInChunks && !isNaN(size) && size > 0) {
-          setStagedChunks(generateChunks(uniqueFormatted, size, finalCategory, finalSubcategory));
+        return {
+          question: formattedQuestion,
+          options: opts,
+          answer: answerText,
+          explanation: q.explanation || q.solution || q.desc || q.rationale || '',
+          category: q.category || finalCategory,
+          subcategory: q.subcategory || finalSubcategory
+        };
+      });
+      
+      setIsUploading(true);
+      
+      const { data: existingQs } = await supabase
+        .from('prepbuddy_questions')
+        .select('question, subcategory')
+        .eq('category', finalCategory);
+        
+      const existingSet = new Map();
+      if (existingQs) {
+        existingQs.forEach(q => existingSet.set(q.question.trim().toLowerCase(), q.subcategory));
+      }
+
+      // Check against already staged questions to avoid duplicate staging
+      const existingStagedQs = stagedChunks.flatMap(c => c.questions || []);
+      const stagedSet = new Set(existingStagedQs.map(q => q.question.trim().toLowerCase()));
+
+      // Deduplicate questions to omit exact duplicates
+      const uniqueFormatted = [];
+      const seenQuestions = new Set();
+      const omittedReport = [];
+      
+      formatted.forEach((q, idx) => {
+        const normQ = q.question.trim().toLowerCase();
+        if (existingSet.has(normQ)) {
+          omittedReport.push(`- Q${idx + 1}: Exists in database "${existingSet.get(normQ)}"`);
+        } else if (stagedSet.has(normQ)) {
+          omittedReport.push(`- Q${idx + 1}: Already in staged list`);
+        } else if (seenQuestions.has(normQ)) {
+          omittedReport.push(`- Q${idx + 1}: Duplicate within imported file`);
+        } else {
+          seenQuestions.add(normQ);
+          uniqueFormatted.push(q);
+        }
+      });
+
+      if (uniqueFormatted.length === 0) {
+        setJsonImportText('');
+        let msg = 'No new unique questions to add.';
+        if (omittedReport.length > 0) {
+          msg += `\n\nOmitted ${omittedReport.length} duplicates:\n` + omittedReport.slice(0, 10).join('\n');
+          if (omittedReport.length > 10) msg += `\n...and ${omittedReport.length - 10} more.`;
+        }
+        alert(msg);
+        return;
+      }
+
+      // Append new unique questions so they add up with previously staged questions
+      const combinedAllQs = [...existingStagedQs, ...uniqueFormatted];
+      const size = parseInt(chunkSize, 10);
+      if (saveInChunks && !isNaN(size) && size > 0) {
+        setStagedChunks(generateChunks(combinedAllQs, size, finalCategory, finalSubcategory));
+      } else {
+        if (stagedChunks.length > 0) {
+          const updated = stagedChunks.map((chunk, idx) => {
+            if (idx === 0) {
+              return { ...chunk, questions: [...chunk.questions, ...uniqueFormatted] };
+            }
+            return chunk;
+          });
+          setStagedChunks(updated);
         } else {
           setStagedChunks([{ name: finalSubcategory, questions: uniqueFormatted }]);
         }
-        
-        setJsonImportText('');
-        let msg = `Successfully parsed ${uniqueFormatted.length} unique questions.`;
-        if (omittedReport.length > 0) {
-          msg += `\n\nOmitted ${omittedReport.length} duplicates:\n` + omittedReport.slice(0, 10).join('\n');
-          if (omittedReport.length > 10) {
-            msg += `\n...and ${omittedReport.length - 10} more.`;
-          }
-        }
-        alert(msg);
-      } else {
-        // Single object populates the form (no immediate db insertion)
-        const formattedQuestion = formatMatchTheFollowing(data.question || data.q || '');
-        setQuestion(formattedQuestion);
-        let opts = [];
-        if (Array.isArray(data.options)) {
-          opts = data.options;
-        } else if (data.options && typeof data.options === 'object') {
-          opts = [
-            data.options.a || data.options.A || data.options.optionA || data.options['1'] || data.optionA,
-            data.options.b || data.options.B || data.options.optionB || data.options['2'] || data.optionB,
-            data.options.c || data.options.C || data.options.optionC || data.options['3'] || data.optionC,
-            data.options.d || data.options.D || data.options.optionD || data.options['4'] || data.optionD,
-            data.options.e || data.options.E || data.options.optionE || data.options['5'] || data.optionE
-          ].filter(Boolean);
-        } else {
-          opts = [data.optionA, data.optionB, data.optionC, data.optionD, data.optionE].filter(Boolean);
-        }
-        opts = opts.map(o => cleanOptionText(o));
-        if (opts[0]) setOptionA(opts[0]);
-        if (opts[1]) setOptionB(opts[1]);
-        if (opts[2]) setOptionC(opts[2]);
-        if (opts[3]) setOptionD(opts[3]);
-        
-        // Determine answer from correct_option_id or answer field
-        if (data.correct_option_id !== undefined && opts[data.correct_option_id]) {
-          setAnswer(String.fromCharCode(65 + data.correct_option_id));
-        } else {
-          let ansRaw = data.answer !== undefined ? data.answer : (data.correct_answer !== undefined ? data.correct_answer : opts[0]);
-          let upperAns = String(ansRaw).replace(/<[^>]*>?/gm, '').trim().toUpperCase();
-          let cleanOpts = opts.map(o => String(o).replace(/<[^>]*>?/gm, '').trim().toUpperCase());
-          
-          if (upperAns === cleanOpts[0] || upperAns === 'A' || upperAns === '1' || upperAns === 'OPTION A') setAnswer('A');
-          else if (upperAns === cleanOpts[1] || upperAns === 'B' || upperAns === '2' || upperAns === 'OPTION B') setAnswer('B');
-          else if (upperAns === cleanOpts[2] || upperAns === 'C' || upperAns === '3' || upperAns === 'OPTION C') setAnswer('C');
-          else if (upperAns === cleanOpts[3] || upperAns === 'D' || upperAns === '4' || upperAns === 'OPTION D') setAnswer('D');
-          else if (opts[4] && (upperAns === cleanOpts[4] || upperAns === 'E' || upperAns === '5' || upperAns === 'OPTION E')) setAnswer('E');
-          else setAnswer('A');
-        }
-        
-        setExplanation(data.explanation || data.solution || data.desc || '');
-        alert('Fields populated from JSON! Click Add Question to save.');
-        setJsonImportText('');
       }
+      
+      setJsonImportText('');
+      let msg = `Successfully added ${uniqueFormatted.length} question(s) to staged test series! (Total ready to upload: ${combinedAllQs.length})`;
+      if (omittedReport.length > 0) {
+        msg += `\n\nOmitted ${omittedReport.length} duplicates:\n` + omittedReport.slice(0, 10).join('\n');
+        if (omittedReport.length > 10) {
+          msg += `\n...and ${omittedReport.length - 10} more.`;
+        }
+      }
+      alert(msg);
     } catch (err) {
       alert('Failed to import JSON: ' + (err.message || 'Invalid format'));
     } finally {
