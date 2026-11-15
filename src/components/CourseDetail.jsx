@@ -748,6 +748,8 @@ export default function CourseDetail() {
                     <div className="grid grid-cols-1 gap-3">
                       {Object.entries(subGroups).sort((a, b) => getMonthWeight(a[0]) - getMonthWeight(b[0])).map(([subGroupName, groupTests]) => {
                         const isSubExpanded = expandedSubgroups[`${cat}::${subGroupName}`];
+                        const singleTest = groupTests.length === 1 ? groupTests[0] : null;
+                        const headerTitle = singleTest?.display_name || subGroupName;
                         return (
                           <div key={subGroupName} id={`subgroup-${cat}-${subGroupName}`} style={{ scrollMarginTop: '80px' }} className="border border-gray-200 rounded-2xl bg-white overflow-hidden shadow-sm transition-all">
                             <div 
@@ -759,7 +761,7 @@ export default function CourseDetail() {
                                   <Layers size={18} />
                                 </div>
                                 <div>
-                                  <h4 className="font-bold text-gray-900">{subGroupName}</h4>
+                                  <h4 className="font-bold text-gray-900">{headerTitle}</h4>
                                   <p className="text-xs font-medium text-gray-500">{groupTests.length} {groupTests.length === 1 ? 'Test' : 'Tests'}</p>
                                 </div>
                               </div>

@@ -289,19 +289,49 @@ export default function CourseControlPanel() {
     }));
   };
 
-  // Add Coming Soon Test Modal State
+  // Add Test Tile Modal State (Live Test & Coming Soon)
   const [showAddComingSoonModal, setShowAddComingSoonModal] = useState(false);
   const [comingSoonCat, setComingSoonCat] = useState('');
   const [comingSoonSubcat, setComingSoonSubcat] = useState('');
   const [comingSoonDisplayName, setComingSoonDisplayName] = useState('');
   const [comingSoonQuestions, setComingSoonQuestions] = useState('');
   const [comingSoonDuration, setComingSoonDuration] = useState('');
+  const [tileStatus, setTileStatus] = useState('live'); // 'live' | 'coming_soon'
+  const [isFreeTile, setIsFreeTile] = useState(false);
+  const [liveQuestionBanks, setLiveQuestionBanks] = useState([]);
+  const [loadingQuestionBanks, setLoadingQuestionBanks] = useState(false);
 
   // Edit Test Tile Modal State
   const [editingTile, setEditingTile] = useState(null);
   const [editDisplayName, setEditDisplayName] = useState('');
   const [editQuestions, setEditQuestions] = useState('');
   const [editDuration, setEditDuration] = useState('');
+  const [editComingSoon, setEditComingSoon] = useState(false);
+
+  const fetchLiveQuestionBanks = async () => {
+    setLoadingQuestionBanks(true);
+    try {
+      const { data, error } = await supabase
+        .from('prepbuddy_questions')
+        .select('category, subcategory');
+      if (error) throw error;
+      const map = new Map();
+      (data || []).forEach(q => {
+        if (!q.category || !q.subcategory) return;
+        const key = `${q.category}:::${q.subcategory}`;
+        map.set(key, (map.get(key) || 0) + 1);
+      });
+      const list = Array.from(map.entries()).map(([key, count]) => {
+        const [cat, subcat] = key.split(':::');
+        return { category: cat, subcategory: subcat, count };
+      }).sort((a, b) => a.category.localeCompare(b.category) || a.subcategory.localeCompare(b.subcategory));
+      setLiveQuestionBanks(list);
+    } catch (err) {
+      console.error('Error fetching live question banks:', err);
+    } finally {
+      setLoadingQuestionBanks(false);
+    }
+  };
 
   // Link Store Items Modal State
   const [showLinkStoreModal, setShowLinkStoreModal] = useState(false);
@@ -441,8 +471,8 @@ export default function CourseControlPanel() {
         totalQuestions: parsedQuestions,
         duration: parsedDuration,
         time_limit: parsedDuration,
-        coming_soon: true,
-        is_free: false,
+        coming_soon: tileStatus === 'coming_soon',
+        is_free: isFreeTile,
         is_unavailable: false,
         is_hidden: false
       };
@@ -461,8 +491,11 @@ export default function CourseControlPanel() {
       setShowAddComingSoonModal(false);
       setComingSoonSubcat('');
       setComingSoonDisplayName('');
+      setComingSoonQuestions('');
+      setComingSoonDuration('');
+      setIsFreeTile(false);
     } catch (err) {
-      alert('Error adding coming soon test: ' + err.message);
+      alert('Error adding test tile: ' + err.message);
     } finally {
       setActionLoading(false);
     }
@@ -473,6 +506,7 @@ export default function CourseControlPanel() {
     setEditDisplayName(tile.display_name || '');
     setEditQuestions(tile.totalQuestions ? String(tile.totalQuestions) : '');
     setEditDuration(tile.duration ? String(tile.duration) : '');
+    setEditComingSoon(!!tile.coming_soon);
   };
 
   const handleSaveTileEdit = async (e) => {
@@ -488,7 +522,8 @@ export default function CourseControlPanel() {
         display_name: editDisplayName.trim() || null,
         totalQuestions: parsedQuestions,
         duration: parsedDuration,
-        time_limit: parsedDuration
+        time_limit: parsedDuration,
+        coming_soon: editComingSoon
       };
 
       await handleUpdateTile(editingTile._idx, updates);
@@ -1035,10 +1070,12 @@ export default function CourseControlPanel() {
 
                 {/* CONTENTS TAB */}
                 {activeTab === 'contents' && (() => {
-                  const linkedTests = (selectedCourse.linked_tests || []).filter(t => t && t.type !== 'pdf');
-                  const grouped = linkedTests.reduce((acc, t, i) => {
+                  const linkedTests = (selectedCourse.linked_tests || [])
+                    .map((t, realIdx) => ({ ...t, _realIdx: realIdx }))
+                    .filter(t => t && t.type !== 'pdf');
+                  const grouped = linkedTests.reduce((acc, t) => {
                     if (!acc[t.category]) acc[t.category] = [];
-                    acc[t.category].push({ ...t, _idx: i });
+                    acc[t.category].push({ ...t, _idx: t._realIdx });
                     return acc;
                   }, {});
                   const colors = [
@@ -1173,16 +1210,30 @@ export default function CourseControlPanel() {
                           </button>
                           <button
                             onClick={() => {
-                              // Pre-fill first category if available
                               const existingCategories = Object.keys(grouped);
                               if (existingCategories.length > 0 && !comingSoonCat) {
                                 setComingSoonCat(existingCategories[0]);
                               }
+                              setTileStatus('live');
+                              if (liveQuestionBanks.length === 0) fetchLiveQuestionBanks();
+                              setShowAddComingSoonModal(true);
+                            }}
+                            className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-3 py-1.5 rounded-lg text-xs flex items-center gap-1.5 transition-colors shadow-2xs active:scale-95"
+                          >
+                            <Plus size={14} /> + Add Live Test
+                          </button>
+                          <button
+                            onClick={() => {
+                              const existingCategories = Object.keys(grouped);
+                              if (existingCategories.length > 0 && !comingSoonCat) {
+                                setComingSoonCat(existingCategories[0]);
+                              }
+                              setTileStatus('coming_soon');
                               setShowAddComingSoonModal(true);
                             }}
                             className="bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100 font-bold px-3 py-1.5 rounded-lg text-xs flex items-center gap-1.5 transition-colors shadow-2xs"
                           >
-                            <Clock size={14} className="text-amber-600" /> + Add Coming Soon Test
+                            <Clock size={14} className="text-amber-600" /> + Add Coming Soon
                           </button>
                           {linkedTests.length > 0 && (
                             <button
@@ -1259,6 +1310,8 @@ export default function CourseControlPanel() {
                                   <div className="grid grid-cols-1 gap-3">
                                     {Object.entries(subGroups).sort((a, b) => getMonthWeight(a[0]) - getMonthWeight(b[0])).map(([subGroupName, groupTests]) => {
                                       const isSubExpanded = expandedSubgroups[`${cat}::${subGroupName}`];
+                                      const singleTest = groupTests.length === 1 ? groupTests[0] : null;
+                                      const headerTitle = singleTest?.display_name || subGroupName;
                                       return (
                                         <div key={subGroupName} className="border border-gray-200 rounded-2xl bg-white overflow-hidden shadow-sm transition-all">
                                           <div 
@@ -1270,11 +1323,29 @@ export default function CourseControlPanel() {
                                                 <Layers size={18} />
                                               </div>
                                               <div>
-                                                <h4 className="font-bold text-gray-900">{subGroupName}</h4>
+                                                <div className="flex items-center gap-2 flex-wrap">
+                                                  <h4 className="font-bold text-gray-900">{headerTitle}</h4>
+                                                  {singleTest?.display_name && singleTest.display_name !== subGroupName && (
+                                                    <span className="text-[10px] text-gray-400 font-normal">({subGroupName})</span>
+                                                  )}
+                                                </div>
                                                 <p className="text-xs font-medium text-gray-500">{groupTests.length} {groupTests.length === 1 ? 'Test' : 'Tests'}</p>
                                               </div>
                                             </div>
                                             <div className="flex items-center gap-2">
+                                              {singleTest && (
+                                                <button
+                                                  onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    handleOpenEditTile(singleTest);
+                                                  }}
+                                                  disabled={actionLoading}
+                                                  className="p-1.5 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg text-xs font-bold flex items-center gap-1 transition-colors"
+                                                  title="Edit Display Name & Settings"
+                                                >
+                                                  <Edit2 size={12} /> {singleTest.display_name ? 'Edit Name' : 'Set Name'}
+                                                </button>
+                                              )}
                                               <button
                                                 onClick={(e) => {
                                                   e.stopPropagation();
@@ -1306,6 +1377,16 @@ export default function CourseControlPanel() {
                                             </p>
                                             {t.display_name && t.display_name !== t.subcategory && (
                                               <span className="text-[10px] text-gray-400 font-normal">({t.subcategory})</span>
+                                            )}
+                                            {!t.display_name && (
+                                              <button
+                                                type="button"
+                                                onClick={() => handleOpenEditTile(t)}
+                                                className="text-[10px] font-bold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 px-2 py-0.5 rounded-md transition-colors inline-flex items-center gap-1"
+                                                title="Set custom display name for this live test"
+                                              >
+                                                <Edit2 size={10} /> + Set Display Name
+                                              </button>
                                             )}
                                             {t.is_free && (
                                               <span className="text-[9px] font-bold bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded-full uppercase tracking-wide flex-shrink-0">Free</span>
@@ -1387,10 +1468,10 @@ export default function CourseControlPanel() {
                           </div>
                         </>
                       )}
-                      {/* Add Coming Soon Test Modal */}
+                      {/* Add Test Tile Modal (Live Test or Coming Soon) */}
                       {showAddComingSoonModal && (
                         <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
-                          <div className="bg-white rounded-3xl w-full max-w-md p-6 shadow-2xl relative animate-in fade-in zoom-in-95">
+                          <div className="bg-white rounded-3xl w-full max-w-md p-6 shadow-2xl relative animate-in fade-in zoom-in-95 max-h-[90vh] flex flex-col">
                             <button
                               onClick={() => setShowAddComingSoonModal(false)}
                               className="p-2 text-gray-400 hover:text-gray-700 rounded-full hover:bg-gray-100 absolute top-4 right-4 transition-colors"
@@ -1398,17 +1479,79 @@ export default function CourseControlPanel() {
                               <X size={20} />
                             </button>
 
-                            <div className="flex items-center gap-2.5 mb-4">
-                              <div className="p-2.5 bg-amber-100 text-amber-700 rounded-2xl">
-                                <Clock size={22} />
+                            <div className="flex items-center gap-2.5 mb-3">
+                              <div className={`p-2.5 rounded-2xl ${tileStatus === 'live' ? 'bg-indigo-100 text-indigo-700' : 'bg-amber-100 text-amber-700'}`}>
+                                {tileStatus === 'live' ? <Plus size={22} /> : <Clock size={22} />}
                               </div>
                               <div>
-                                <h3 className="font-bold text-lg text-gray-900 leading-tight">Add Coming Soon Test</h3>
-                                <p className="text-xs text-gray-500">Add an upcoming test tile to this course.</p>
+                                <h3 className="font-bold text-lg text-gray-900 leading-tight">
+                                  {tileStatus === 'live' ? 'Add Live Test Tile' : 'Add Coming Soon Test Tile'}
+                                </h3>
+                                <p className="text-xs text-gray-500">
+                                  {tileStatus === 'live' ? 'Add an active test with questions ready for students.' : 'Add an upcoming test tile to this course.'}
+                                </p>
                               </div>
                             </div>
 
-                            <form onSubmit={handleAddComingSoonTile} className="space-y-4">
+                            {/* Status Selector Pills */}
+                            <div className="flex items-center gap-1.5 p-1 bg-gray-100 rounded-xl mb-3">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setTileStatus('live');
+                                  if (liveQuestionBanks.length === 0) fetchLiveQuestionBanks();
+                                }}
+                                className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
+                                  tileStatus === 'live'
+                                    ? 'bg-white text-indigo-700 shadow-xs'
+                                    : 'text-gray-500 hover:text-gray-900'
+                                }`}
+                              >
+                                <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                                Live Test (Active)
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setTileStatus('coming_soon')}
+                                className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
+                                  tileStatus === 'coming_soon'
+                                    ? 'bg-white text-amber-700 shadow-xs'
+                                    : 'text-gray-500 hover:text-gray-900'
+                                }`}
+                              >
+                                <Clock size={12} className="text-amber-500" />
+                                Coming Soon
+                              </button>
+                            </div>
+
+                            <form onSubmit={handleAddComingSoonTile} className="space-y-3.5 flex-1 overflow-y-auto pr-1 custom-scrollbar">
+                              {tileStatus === 'live' && liveQuestionBanks.length > 0 && (
+                                <div className="p-3 bg-indigo-50/60 rounded-xl border border-indigo-100/70">
+                                  <label className="block text-[10px] font-bold text-indigo-900 uppercase tracking-wider mb-1">
+                                    Quick Pick from Live Questions Database
+                                  </label>
+                                  <select
+                                    onChange={(e) => {
+                                      if (!e.target.value) return;
+                                      const [pickedCat, pickedSub] = e.target.value.split(':::');
+                                      setComingSoonCat(pickedCat);
+                                      setComingSoonSubcat(pickedSub);
+                                      const found = liveQuestionBanks.find(q => q.category === pickedCat && q.subcategory === pickedSub);
+                                      if (found && found.count) setComingSoonQuestions(String(found.count));
+                                    }}
+                                    className="w-full px-2.5 py-1.5 text-xs border border-indigo-200 rounded-lg bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                    defaultValue=""
+                                  >
+                                    <option value="">-- Choose an existing question bank --</option>
+                                    {liveQuestionBanks.map(qb => (
+                                      <option key={`${qb.category}:::${qb.subcategory}`} value={`${qb.category}:::${qb.subcategory}`}>
+                                        {qb.category} &gt; {qb.subcategory} ({qb.count} Qs)
+                                      </option>
+                                    ))}
+                                  </select>
+                                </div>
+                              )}
+
                               <div>
                                 <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
                                   Category / Subject
@@ -1419,10 +1562,10 @@ export default function CourseControlPanel() {
                                   value={comingSoonCat}
                                   onChange={e => setComingSoonCat(e.target.value)}
                                   placeholder="e.g. Mock Tests, Punjab GK, English"
-                                  className="w-full px-3.5 py-2.5 text-sm border border-gray-200 rounded-xl focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500 focus:outline-none"
+                                  className="w-full px-3.5 py-2 text-sm border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 focus:outline-none"
                                 />
                                 {Object.keys(grouped).length > 0 && (
-                                  <div className="flex items-center gap-1.5 mt-2 flex-wrap">
+                                  <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
                                     <span className="text-[11px] text-gray-400">Existing:</span>
                                     {Object.keys(grouped).map(cat => (
                                       <button
@@ -1439,32 +1582,19 @@ export default function CourseControlPanel() {
                               </div>
 
                               <div>
-                                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
-                                  Test Name / Subcategory
-                                </label>
-                                <input
-                                  type="text"
-                                  required
-                                  value={comingSoonSubcat}
-                                  onChange={e => setComingSoonSubcat(e.target.value)}
-                                  placeholder="e.g. Full Length Mock Test 05"
-                                  className="w-full px-3.5 py-2.5 text-sm border border-gray-200 rounded-xl focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500 focus:outline-none"
-                                />
-                              </div>
-
-                              <div>
-                                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
-                                  Display Name on Tile <span className="text-gray-400 font-normal lowercase">(optional)</span>
+                                <label className="block text-xs font-bold text-indigo-900 uppercase tracking-wider mb-1 flex items-center justify-between">
+                                  <span>Display Name on Tile <span className="text-gray-400 font-normal lowercase">(optional)</span></span>
+                                  <span className="text-[10px] text-indigo-600 font-semibold lowercase">shown to students</span>
                                 </label>
                                 <input
                                   type="text"
                                   value={comingSoonDisplayName}
                                   onChange={e => setComingSoonDisplayName(e.target.value)}
                                   placeholder="e.g. Mock Test 05 (Full Syllabus)"
-                                  className="w-full px-3.5 py-2.5 text-sm border border-gray-200 rounded-xl focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500 focus:outline-none"
+                                  className="w-full px-3.5 py-2 text-sm border border-indigo-200 bg-indigo-50/20 rounded-xl focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 focus:outline-none"
                                 />
                                 <p className="text-[11px] text-gray-400 mt-1">
-                                  Custom name shown on test series content tiles. Defaults to Test Name if empty.
+                                  Custom name shown on the test series content tile. Defaults to Test Name if empty.
                                 </p>
                               </div>
 
@@ -1479,7 +1609,7 @@ export default function CourseControlPanel() {
                                     value={comingSoonQuestions}
                                     onChange={e => setComingSoonQuestions(e.target.value)}
                                     placeholder="e.g. 100"
-                                    className="w-full px-3.5 py-2 text-sm border border-gray-200 rounded-xl focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500 focus:outline-none"
+                                    className="w-full px-3.5 py-2 text-sm border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 focus:outline-none"
                                   />
                                 </div>
                                 <div>
@@ -1492,12 +1622,22 @@ export default function CourseControlPanel() {
                                     value={comingSoonDuration}
                                     onChange={e => setComingSoonDuration(e.target.value)}
                                     placeholder="e.g. 120"
-                                    className="w-full px-3.5 py-2 text-sm border border-gray-200 rounded-xl focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500 focus:outline-none"
+                                    className="w-full px-3.5 py-2 text-sm border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 focus:outline-none"
                                   />
                                 </div>
                               </div>
 
-                              <div className="pt-2 flex items-center justify-end gap-2">
+                              <label className="flex items-center gap-2 cursor-pointer pt-1">
+                                <input
+                                  type="checkbox"
+                                  checked={isFreeTile}
+                                  onChange={e => setIsFreeTile(e.target.checked)}
+                                  className="rounded text-indigo-600 focus:ring-indigo-500 w-4 h-4"
+                                />
+                                <span className="text-xs font-bold text-gray-700">Make this a Free Test (accessible without enrolling)</span>
+                              </label>
+
+                              <div className="pt-2 flex items-center justify-end gap-2 border-t border-gray-100">
                                 <button
                                   type="button"
                                   onClick={() => setShowAddComingSoonModal(false)}
@@ -1508,9 +1648,12 @@ export default function CourseControlPanel() {
                                 <button
                                   type="submit"
                                   disabled={actionLoading}
-                                  className="px-5 py-2.5 bg-amber-500 hover:bg-amber-600 active:scale-95 text-white font-bold rounded-xl text-xs shadow-md transition-all flex items-center gap-1.5 disabled:opacity-50"
+                                  className={`px-5 py-2.5 active:scale-95 text-white font-bold rounded-xl text-xs shadow-md transition-all flex items-center gap-1.5 disabled:opacity-50 ${
+                                    tileStatus === 'live' ? 'bg-indigo-600 hover:bg-indigo-700' : 'bg-amber-500 hover:bg-amber-600'
+                                  }`}
                                 >
-                                  <Clock size={15} /> Add Coming Soon Test
+                                  {tileStatus === 'live' ? <Plus size={15} /> : <Clock size={15} />}
+                                  {tileStatus === 'live' ? 'Add Live Test' : 'Add Coming Soon Test'}
                                 </button>
                               </div>
                             </form>
@@ -1518,7 +1661,7 @@ export default function CourseControlPanel() {
                         </div>
                       )}
 
-                      {/* Edit Tile Modal (Display Name, Duration, Questions) */}
+                      {/* Edit Tile Modal (Display Name, Duration, Questions, Status) */}
                       {editingTile && (
                         <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
                           <div className="bg-white rounded-3xl w-full max-w-md p-6 shadow-2xl relative animate-in fade-in zoom-in-95">
@@ -1541,19 +1684,38 @@ export default function CourseControlPanel() {
                             </div>
 
                             <form onSubmit={handleSaveTileEdit} className="space-y-4">
+                              {/* Status Badge & Toggle */}
+                              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-xl border border-gray-100">
+                                <div>
+                                  <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wider block">Current Status</span>
+                                  <span className={`text-xs font-bold flex items-center gap-1 mt-0.5 ${editComingSoon ? 'text-amber-600' : 'text-emerald-600'}`}>
+                                    <span className={`w-2 h-2 rounded-full ${editComingSoon ? 'bg-amber-500' : 'bg-emerald-500'}`}></span>
+                                    {editComingSoon ? 'Coming Soon' : 'Live Test (Active)'}
+                                  </span>
+                                </div>
+                                <button
+                                  type="button"
+                                  onClick={() => setEditComingSoon(prev => !prev)}
+                                  className="text-xs font-bold text-indigo-700 hover:text-indigo-900 bg-white border border-gray-200 px-3 py-1.5 rounded-lg shadow-2xs hover:bg-gray-50 transition-colors"
+                                >
+                                  Switch to {editComingSoon ? 'Live Test' : 'Coming Soon'}
+                                </button>
+                              </div>
+
                               <div>
-                                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
-                                  Display Name on Tile
+                                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1 flex items-center justify-between">
+                                  <span>Display Name on Tile</span>
+                                  <span className="text-[10px] text-blue-600 font-semibold lowercase">shown on tile</span>
                                 </label>
                                 <input
                                   type="text"
                                   value={editDisplayName}
                                   onChange={e => setEditDisplayName(e.target.value)}
                                   placeholder={editingTile.subcategory || editingTile.title || 'Enter display name'}
-                                  className="w-full px-3.5 py-2.5 text-sm border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 focus:outline-none"
+                                  className="w-full px-3.5 py-2.5 text-sm border border-blue-200 bg-blue-50/20 rounded-xl focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 focus:outline-none"
                                 />
                                 <p className="text-[11px] text-gray-400 mt-1">
-                                  Custom name shown on test series content tiles. Leave empty to use default name.
+                                  Students will see this name on the test tile. Leave empty to use default name ({editingTile.subcategory}).
                                 </p>
                               </div>
 

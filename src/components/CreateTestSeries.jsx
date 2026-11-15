@@ -338,6 +338,7 @@ export default function CreateTestSeries() {
   const [saveInChunks, setSaveInChunks] = useState(false);
   const [courses, setCourses] = useState([]);
   const [linkModalGroup, setLinkModalGroup] = useState(null);
+  const [linkDisplayName, setLinkDisplayName] = useState('');
   const [expandedSidebarCategories, setExpandedSidebarCategories] = useState({});
   const [expandedSidebarSubgroups, setExpandedSidebarSubgroups] = useState({});
   const [selectedSidebarItems, setSelectedSidebarItems] = useState([]);
@@ -1382,7 +1383,7 @@ export default function CreateTestSeries() {
     }
   };
 
-  const handleToggleLink = async (course, group) => {
+  const handleToggleLink = async (course, group, customDisplayName = null) => {
     try {
       const currentLinks = course.linked_tests || [];
       let newLinks;
@@ -1401,7 +1402,11 @@ export default function CreateTestSeries() {
         if (isLinked) {
           newLinks = currentLinks.filter(l => !(l.category === group.category && l.subcategory === group.subcategory));
         } else {
-          newLinks = [...currentLinks, { category: group.category, subcategory: group.subcategory }];
+          newLinks = [...currentLinks, { 
+            category: group.category, 
+            subcategory: group.subcategory,
+            display_name: customDisplayName ? customDisplayName.trim() : null
+          }];
         }
       }
       
@@ -1419,6 +1424,27 @@ export default function CreateTestSeries() {
       }
     } catch (err) {
       alert("Failed to link course: " + err.message);
+    }
+  };
+
+  const handleUpdateLinkDisplayName = async (course, group, newName) => {
+    try {
+      const currentLinks = course.linked_tests || [];
+      const updated = currentLinks.map(l => {
+        if (l.category === group.category && l.subcategory === group.subcategory) {
+          return { ...l, display_name: newName.trim() || null };
+        }
+        return l;
+      });
+      setCourses(courses.map(c => c.id === course.id ? { ...c, linked_tests: updated } : c));
+      const { error } = await supabase
+        .from('prepbuddy_test_series')
+        .update({ linked_tests: updated })
+        .eq('id', course.id);
+      if (error) throw error;
+      showToast("Display name updated!");
+    } catch (err) {
+      alert("Failed to update display name: " + err.message);
     }
   };
 
@@ -2213,6 +2239,20 @@ export default function CreateTestSeries() {
                   : `${linkModalGroup.category} > ${linkModalGroup.subcategory}`}
               </p>
             </div>
+            {!linkModalGroup.isCategoryLink && (
+              <div className="p-3.5 bg-gray-50 border-b border-gray-100">
+                <label className="block text-[11px] font-bold text-gray-700 uppercase tracking-wider mb-1">
+                  Display Name on Tile <span className="text-gray-400 font-normal lowercase">(optional override)</span>
+                </label>
+                <input
+                  type="text"
+                  value={linkDisplayName}
+                  onChange={(e) => setLinkDisplayName(e.target.value)}
+                  placeholder={`Default: ${linkModalGroup.subcategory}`}
+                  className="w-full px-3 py-1.5 text-xs border border-gray-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+              </div>
+            )}
             <div className="flex-1 overflow-y-auto p-4 space-y-3">
               {courses.length === 0 ? (
                 <p className="text-center text-sm text-gray-500 py-8 italic">No test series found. Create one in the app first.</p>
@@ -2221,22 +2261,48 @@ export default function CreateTestSeries() {
                   const isLinked = linkModalGroup.isCategoryLink
                     ? linkModalGroup.groups.every(g => (course.linked_tests || []).some(l => l.category === g.category && l.subcategory === g.subcategory))
                     : (course.linked_tests || []).some(l => l.category === linkModalGroup.category && l.subcategory === linkModalGroup.subcategory);
+                  const linkedItem = !linkModalGroup.isCategoryLink
+                    ? (course.linked_tests || []).find(l => l.category === linkModalGroup.category && l.subcategory === linkModalGroup.subcategory)
+                    : null;
                   return (
-                    <div key={course.id} className={`p-4 rounded-xl border flex items-center justify-between gap-4 ${isLinked ? 'bg-indigo-50 border-indigo-200' : 'bg-white border-gray-200'}`}>
-                      <div className="flex-1 min-w-0">
-                        <h4 className="font-bold text-sm text-gray-900 truncate">{course.title}</h4>
-                        <p className="text-xs text-gray-500 truncate">{course.description || "No description"}</p>
+                    <div key={course.id} className={`p-4 rounded-xl border flex flex-col gap-2 ${isLinked ? 'bg-indigo-50/70 border-indigo-200' : 'bg-white border-gray-200'}`}>
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-bold text-sm text-gray-900 truncate">{course.title}</h4>
+                          {linkedItem && (
+                            <p className="text-[11px] text-indigo-700 font-medium mt-0.5 truncate">
+                              Tile Name: <span className="font-bold">{linkedItem.display_name || linkedItem.subcategory}</span>
+                            </p>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          {isLinked && linkedItem && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const newName = window.prompt("Enter new display name for this course tile:", linkedItem.display_name || linkedItem.subcategory);
+                                if (newName !== null) {
+                                  handleUpdateLinkDisplayName(course, linkModalGroup, newName);
+                                }
+                              }}
+                              className="px-2.5 py-1.5 rounded-lg text-xs font-bold text-indigo-700 bg-white border border-indigo-200 hover:bg-indigo-50 transition-colors shadow-2xs"
+                              title="Edit Display Name in this course"
+                            >
+                              Edit Name
+                            </button>
+                          )}
+                          <button
+                            onClick={() => handleToggleLink(course, linkModalGroup, linkDisplayName)}
+                            className={`px-3.5 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-colors shadow-2xs ${
+                              isLinked 
+                                ? 'bg-red-50 text-red-600 hover:bg-red-100 border border-red-200'
+                                : 'bg-indigo-600 text-white hover:bg-indigo-700'
+                            }`}
+                          >
+                            {isLinked ? (linkModalGroup.isCategoryLink ? 'Remove All' : 'Remove') : (linkModalGroup.isCategoryLink ? 'Add All to Course' : 'Add to Course')}
+                          </button>
+                        </div>
                       </div>
-                      <button
-                        onClick={() => handleToggleLink(course, linkModalGroup)}
-                        className={`px-4 py-2 rounded-lg text-xs font-bold whitespace-nowrap transition-colors ${
-                          isLinked 
-                            ? 'bg-red-50 text-red-600 hover:bg-red-100 border border-red-200'
-                            : 'bg-indigo-600 text-white hover:bg-indigo-700'
-                        }`}
-                      >
-                        {isLinked ? (linkModalGroup.isCategoryLink ? 'Remove All' : 'Remove') : (linkModalGroup.isCategoryLink ? 'Add All to Course' : 'Add to Course')}
-                      </button>
                     </div>
                   );
                 })
