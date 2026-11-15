@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '../supabase';
-import { ArrowLeft, IndianRupee, Layers, FileText, CheckCircle2, Lock, Unlock, ChevronDown, ChevronUp, Tag, CheckCircle, XCircle, Languages, Newspaper, Award, Clock, Star, ShoppingCart, Share2, Sparkles, PartyPopper, ArrowRight, ShoppingBag, Eye, Download, Plus, Trash2 } from 'lucide-react';
+import { ArrowLeft, IndianRupee, Layers, FileText, CheckCircle2, Lock, Unlock, ChevronDown, ChevronUp, Tag, CheckCircle, XCircle, Languages, Newspaper, Award, Clock, Star, ShoppingCart, Share2, Sparkles, PartyPopper, ArrowRight, ShoppingBag, Eye, Download, Plus, Trash2, ExternalLink } from 'lucide-react';
 import { UserManager } from '../utils/UserManager';
 import { useAuthModal } from '../context/AuthModalContext';
 import { processHtml } from '../utils/htmlUtils';
