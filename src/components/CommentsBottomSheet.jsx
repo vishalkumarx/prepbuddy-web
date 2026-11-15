@@ -3,6 +3,7 @@ import { X, Send, Paperclip, FileText } from 'lucide-react';
 import { supabase } from '../supabase';
 import { UserManager } from '../utils/UserManager';
 import { formatTimeAgo } from '../utils/dateFormatter';
+import { openPdfInNewTab } from '../utils/pdfHelper';
 
 export default function CommentsBottomSheet({ post, onClose }) {
   const inputRef = useRef(null);
@@ -214,10 +215,15 @@ export default function CommentsBottomSheet({ post, onClose }) {
                   if (!url.trim()) return null;
                   if (url.endsWith('.pdf')) {
                     return (
-                      <a key={idx} href={url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 px-3 py-1.5 bg-red-50 text-red-600 border border-red-100 rounded-lg hover:bg-red-100 transition-colors w-fit text-sm font-medium">
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => openPdfInNewTab(url, 'Attached Document')}
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-red-50 text-red-600 border border-red-100 rounded-lg hover:bg-red-100 transition-colors w-fit text-sm font-medium"
+                      >
                         <FileText size={16} />
                         View PDF
-                      </a>
+                      </button>
                     );
                   }
                   return (

@@ -6,6 +6,7 @@ import {
   Trash2, Sparkles, Check, Search, ShoppingBag, Eye, ExternalLink, Plus, Layers
 } from 'lucide-react';
 import * as pdfjsLib from 'pdfjs-dist';
+import { openPdfInNewTab } from '../utils/pdfHelper';
 
 // Configure pdfjs worker with fallback
 try {
@@ -731,15 +732,14 @@ export default function AddCoursePdfModal({ isOpen, onClose, course, onPdfAdded 
 
                         <div className="flex items-center gap-1.5 shrink-0">
                           {res.file_url && (
-                            <a
-                              href={res.file_url}
-                              target="_blank"
-                              rel="noopener noreferrer"
+                            <button
+                              type="button"
+                              onClick={() => openPdfInNewTab(res.file_url, res.title)}
                               className="p-2 text-gray-400 hover:text-emerald-700 hover:bg-emerald-50 rounded-xl transition-colors"
                               title="Preview PDF"
                             >
                               <ExternalLink size={15} />
-                            </a>
+                            </button>
                           )}
                           <button
                             type="button"

@@ -5,6 +5,7 @@ import { Shield, Search, UserPlus, Trash2, ArrowLeft, RefreshCw, Layers, Tag, Se
 import { useNavigate } from 'react-router-dom';
 import CouponManager from './CouponManager';
 import AddCoursePdfModal from './AddCoursePdfModal';
+import { openPdfInNewTab } from '../utils/pdfHelper';
 
 const getMonthWeight = (name) => {
   const lowerName = name.toLowerCase();
@@ -1092,15 +1093,14 @@ export default function CourseControlPanel() {
 
                                 <div className="flex items-center gap-1 shrink-0">
                                   {pdf.file_url && (
-                                    <a
-                                      href={pdf.file_url}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
+                                    <button
+                                      type="button"
+                                      onClick={() => openPdfInNewTab(pdf.file_url, pdf.title)}
                                       className="p-2 text-gray-400 hover:text-emerald-700 hover:bg-emerald-50 rounded-xl transition-colors"
                                       title="View PDF"
                                     >
                                       <ExternalLink size={15} />
-                                    </a>
+                                    </button>
                                   )}
                                   <button
                                     type="button"

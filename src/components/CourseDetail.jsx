@@ -8,6 +8,7 @@ import { processHtml } from '../utils/htmlUtils';
 import CouponManager from './CouponManager';
 import AddCoursePdfModal from './AddCoursePdfModal';
 import PdfViewerModal from './PdfViewerModal';
+import { openPdfInNewTab } from '../utils/pdfHelper';
 
 const getMonthWeight = (name) => {
   const lowerName = name.toLowerCase();
@@ -849,21 +850,15 @@ export default function CourseDetail() {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {allCoursePdfs.map((res) => {
-                  const canAccess = isEnrolled || Number(res.price) === 0 || res.is_free;
+                  const canAccess = UserManager.isAdmin() || isEnrolled || Number(res.price) === 0 || res.is_free || Number(course?.price) === 0;
                   const isDirectPdf = res.type === 'pdf';
                   const handleItemClick = () => {
-                    if (isDirectPdf) {
-                      if (canAccess && res.file_url) {
-                        setViewingPdf({ file_url: res.file_url, title: res.title });
-                      } else {
-                        handleBuyClick();
-                      }
+                    if (canAccess && res.file_url) {
+                      setViewingPdf({ file_url: res.file_url, title: res.title });
+                    } else if (isDirectPdf) {
+                      handleBuyClick();
                     } else {
-                      if (canAccess && res.file_url) {
-                        setViewingPdf({ file_url: res.file_url, title: res.title });
-                      } else {
-                        navigate(`/store/${res.id}`);
-                      }
+                      navigate(`/store/${res.id}`);
                     }
                   };
 
@@ -934,19 +929,20 @@ export default function CourseDetail() {
                           className="px-3 py-1.5 rounded-xl text-xs font-bold bg-gray-100 hover:bg-emerald-100 text-gray-700 hover:text-emerald-800 transition-colors flex items-center gap-1"
                         >
                           <Eye size={13} />
-                          <span>{isDirectPdf ? 'Open PDF' : 'View'}</span>
+                          <span>{canAccess ? 'View PDF' : (isDirectPdf ? 'Unlock' : 'View in Store')}</span>
                         </button>
                         {canAccess && res.file_url && (
-                          <a
-                            href={res.file_url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            onClick={(e) => e.stopPropagation()}
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              openPdfInNewTab(res.file_url, res.title);
+                            }}
                             className="p-1.5 rounded-xl text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 transition-colors"
-                            title="Download PDF"
+                            title="Open in new tab"
                           >
-                            <Download size={14} />
-                          </a>
+                            <ExternalLink size={14} />
+                          </button>
                         )}
                       </div>
                     </div>

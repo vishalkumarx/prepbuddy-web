@@ -6,6 +6,7 @@ import {
   ExternalLink, FileText, Search, RefreshCw, Eye, Tag, AlertCircle, Link2, Layers, Check, X 
 } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
+import { openPdfInNewTab } from '../utils/pdfHelper';
 
 export default function StoreManager() {
   const navigate = useNavigate();
@@ -305,16 +306,15 @@ export default function StoreManager() {
                       </button>
 
                       {resource.file_url && (
-                        <a
-                          href={resource.file_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
+                        <button
+                          type="button"
+                          onClick={() => openPdfInNewTab(resource.file_url, resource.title)}
                           className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg text-xs font-semibold flex items-center gap-1 transition-colors"
                           title="Open PDF File"
                         >
                           <ExternalLink size={14} />
                           <span>PDF</span>
-                        </a>
+                        </button>
                       )}
                     </div>
 

@@ -10,6 +10,7 @@ import {
 import * as pdfjsLib from 'pdfjs-dist';
 import '../utils/pdfPolyfill';
 import CouponManager from './CouponManager';
+import { resolvePdfBlob, openPdfInNewTab } from '../utils/pdfHelper';
 
 // Configure pdfjs worker with fallback
 try {
@@ -52,10 +53,9 @@ export default function ResourceDetail() {
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://unpkg.com/pdfjs-dist@6.3.289/build/pdf.worker.min.mjs';
       }
 
-      // Fetch the PDF file
-      const response = await fetch(fileUrl);
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      const arrayBuffer = await response.arrayBuffer();
+      // Fetch the PDF file securely
+      const { blob } = await resolvePdfBlob(fileUrl);
+      const arrayBuffer = await blob.arrayBuffer();
       
       const loadingTask = pdfjsLib.getDocument({
         data: new Uint8Array(arrayBuffer),
@@ -154,7 +154,7 @@ export default function ResourceDetail() {
     setShowPromoDialog(false);
     
     if (finalPrice === 0) {
-      window.open(resource.file_url, '_blank');
+      openPdfInNewTab(resource.file_url, resource.title);
     } else {
       const couponQuery = couponData?.id ? `&coupon=${encodeURIComponent(couponData.code)}&couponId=${encodeURIComponent(couponData.id)}` : '';
       navigate(`/payment/resource/${id}?price=${finalPrice}${couponQuery}`);

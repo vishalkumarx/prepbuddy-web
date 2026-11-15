@@ -4,6 +4,7 @@ import { ShoppingBag, FileText, Download, ExternalLink, Edit2, Loader2, Share2 }
 import { supabase } from '../supabase';
 import { UserManager } from '../utils/UserManager';
 import { SearchContext } from '../App';
+import { openPdfInNewTab } from '../utils/pdfHelper';
 
 const PAGE_SIZE = 8;
 
@@ -133,7 +134,7 @@ export default function Store() {
 
   const handleAction = (resource) => {
     if (resource.price === 0) {
-      window.open(resource.file_url, '_blank');
+      openPdfInNewTab(resource.file_url, resource.title);
     } else {
       navigate(`/payment/resource/${resource.id}?price=${resource.price}`);
     }
