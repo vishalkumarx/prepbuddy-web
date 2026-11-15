@@ -700,6 +700,7 @@ export default function CourseDetail() {
                 const color = colors[idx % colors.length];
                 const Icon = color.icon;
                 const isExpanded = expandedCategories[category];
+                const catDisplayName = tests.find(t => t.category_display_name)?.category_display_name || category;
                 
                 return (
                   <div 
@@ -715,7 +716,10 @@ export default function CourseDetail() {
                       <Icon size={18} />
                     </div>
                     <div className="flex flex-col gap-1 items-center justify-center h-full">
-                      <div className={`font-bold text-sm leading-tight line-clamp-2 ${isExpanded ? 'text-gray-900' : 'text-gray-700'}`}>{category}</div>
+                      <div className={`font-bold text-sm leading-tight line-clamp-2 ${isExpanded ? 'text-gray-900' : 'text-gray-700'}`}>{catDisplayName}</div>
+                      {catDisplayName !== category && (
+                        <div className="text-[10px] text-gray-400 font-normal">({category})</div>
+                      )}
                       <div className={`text-xs font-medium ${isExpanded ? 'text-gray-500' : 'text-gray-400'}`}>{tests.length} {tests.length === 1 ? 'Test' : 'Tests'}</div>
                     </div>
                   </div>
@@ -742,9 +746,11 @@ export default function CourseDetail() {
                   return acc;
                 }, {});
 
+                const catDisplayName = tests.find(t => t.category_display_name)?.category_display_name || cat;
+
                 return (
                   <div key={cat} id={`category-content-${cat}`} style={{ scrollMarginTop: '80px' }} className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
-                    <h3 className="font-bold text-gray-900 pl-1">{cat} Topics</h3>
+                    <h3 className="font-bold text-gray-900 pl-1">{catDisplayName} Topics</h3>
                     <div className="grid grid-cols-1 gap-3">
                       {Object.entries(subGroups).sort((a, b) => getMonthWeight(a[0]) - getMonthWeight(b[0])).map(([subGroupName, groupTests]) => {
                         const isSubExpanded = expandedSubgroups[`${cat}::${subGroupName}`];

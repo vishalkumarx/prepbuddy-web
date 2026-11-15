@@ -293,6 +293,49 @@ export default function CourseControlPanel() {
     });
   };
 
+  // Edit Category Tile Modal State
+  const [editingCategoryTile, setEditingCategoryTile] = useState(null); // { category, tests }
+  const [editCategoryDisplayName, setEditCategoryDisplayName] = useState('');
+
+  const handleOpenEditCategoryTile = (category, tests, currentName) => {
+    setEditingCategoryTile({ category, tests });
+    setEditCategoryDisplayName(currentName || '');
+  };
+
+  const handleSaveCategoryTileEdit = async (e) => {
+    if (e) e.preventDefault();
+    if (!editingCategoryTile || !selectedCourse) return;
+    setActionLoading(true);
+    try {
+      const finalName = editCategoryDisplayName.trim() || null;
+      const updated = (selectedCourse.linked_tests || []).map(t => {
+        if (t.category === editingCategoryTile.category) {
+          return {
+            ...t,
+            category_display_name: finalName
+          };
+        }
+        return t;
+      });
+
+      const { data, error } = await supabase
+        .from('prepbuddy_test_series')
+        .update({ linked_tests: updated })
+        .eq('id', selectedCourse.id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      setSelectedCourse(data);
+      setCourses(prev => prev.map(c => c.id === data.id ? data : c));
+      setEditingCategoryTile(null);
+    } catch (err) {
+      alert("Error updating category display name: " + err.message);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   // Edit Grouping Tile Modal State
   const [editingGroupTile, setEditingGroupTile] = useState(null); // { cat, subGroupName, groupTests }
   const [editGroupDisplayName, setEditGroupDisplayName] = useState('');
@@ -314,8 +357,7 @@ export default function CourseControlPanel() {
         if (targetIndices.has(idx)) {
           return {
             ...t,
-            group_display_name: newName,
-            display_name: newName
+            group_display_name: newName
           };
         }
         return t;
@@ -355,23 +397,28 @@ export default function CourseControlPanel() {
     setShowDisplayNamesModal(true);
   };
 
-  const handleSaveGroupDisplayNameRow = async (tileKey, groupTests) => {
+  const handleSaveGroupDisplayNameRow = async (tileKey, groupTests, isCategoryTile, categoryName) => {
     if (!selectedCourse) return;
     const newName = displayNamesDrafts[tileKey]?.trim() || null;
-    const targetIndices = new Set(groupTests.map(t => t._idx));
-
     setActionLoading(true);
     try {
-      const updated = (selectedCourse.linked_tests || []).map((t, idx) => {
-        if (targetIndices.has(idx)) {
-          return {
-            ...t,
-            group_display_name: newName,
-            display_name: newName
-          };
-        }
-        return t;
-      });
+      let updated;
+      if (isCategoryTile) {
+        updated = (selectedCourse.linked_tests || []).map(t => {
+          if (t.category === categoryName) {
+            return { ...t, category_display_name: newName };
+          }
+          return t;
+        });
+      } else {
+        const targetIndices = new Set(groupTests.map(t => t._idx));
+        updated = (selectedCourse.linked_tests || []).map((t, idx) => {
+          if (targetIndices.has(idx)) {
+            return { ...t, group_display_name: newName };
+          }
+          return t;
+        });
+      }
 
       const { data, error } = await supabase
         .from('prepbuddy_test_series')
@@ -388,7 +435,7 @@ export default function CourseControlPanel() {
         setSavedRowIds(prev => ({ ...prev, [tileKey]: false }));
       }, 2000);
     } catch (err) {
-      alert('Error saving grouping tile name: ' + err.message);
+      alert('Error saving tile name: ' + err.message);
     } finally {
       setActionLoading(false);
     }
@@ -407,16 +454,19 @@ export default function CourseControlPanel() {
 
       const updated = (selectedCourse.linked_tests || []).map((t, idx) => {
         if (t.type === 'pdf') return t;
-        const subGroupName = t.subcategory.includes('-') ? t.subcategory.split('-')[0].trim() : t.subcategory;
-        const key = `${t.category}::${subGroupName}`;
-        if (nameMap[key] !== undefined) {
-          return {
-            ...t,
-            group_display_name: nameMap[key],
-            display_name: nameMap[key]
-          };
+        let item = { ...t };
+        // Check category tile rename
+        const catKey = `cat::${t.category}`;
+        if (nameMap[catKey] !== undefined) {
+          item.category_display_name = nameMap[catKey];
         }
-        return t;
+        // Check subgroup tile rename
+        const subGroupName = t.subcategory.includes('-') ? t.subcategory.split('-')[0].trim() : t.subcategory;
+        const subKey = `sub::${t.category}::${subGroupName}`;
+        if (nameMap[subKey] !== undefined) {
+          item.group_display_name = nameMap[subKey];
+        }
+        return item;
       });
 
       const { data, error } = await supabase
@@ -429,7 +479,7 @@ export default function CourseControlPanel() {
       if (error) throw error;
       setSelectedCourse(data);
       setCourses(prev => prev.map(c => c.id === data.id ? data : c));
-      alert("Grouping tile display names updated successfully!");
+      alert("Tile display names updated successfully!");
     } catch (err) {
       alert("Error updating tile display names: " + err.message);
     } finally {
@@ -1198,6 +1248,17 @@ export default function CourseControlPanel() {
                   }, {});
                   const allGroupingTiles = [];
                   Object.entries(grouped).forEach(([cat, tests]) => {
+                    const catDisplayName = tests.find(t => t.category_display_name)?.category_display_name || '';
+                    allGroupingTiles.push({
+                      key: `cat::${cat}`,
+                      isCategoryTile: true,
+                      cat,
+                      categoryName: cat,
+                      groupTests: tests,
+                      tileLabel: `Category: ${cat}`,
+                      currentName: catDisplayName || ''
+                    });
+
                     const subGroups = tests.reduce((acc, test) => {
                       const subGroupName = test.subcategory.includes('-') 
                         ? test.subcategory.split('-')[0].trim() 
@@ -1208,15 +1269,17 @@ export default function CourseControlPanel() {
                     }, {});
 
                     Object.entries(subGroups).forEach(([subGroupName, groupTests]) => {
-                      const groupKey = `${cat}::${subGroupName}`;
+                      const groupKey = `sub::${cat}::${subGroupName}`;
                       const groupDisplayName = groupTests.find(t => t.group_display_name)?.group_display_name || 
                                                groupTests.find(t => t.display_name)?.display_name || '';
                       allGroupingTiles.push({
                         key: groupKey,
+                        isCategoryTile: false,
                         cat,
                         subGroupName,
                         groupTests,
-                        currentName: groupDisplayName
+                        tileLabel: `${cat} → ${subGroupName}`,
+                        currentName: groupDisplayName || ''
                       });
                     });
                   });
@@ -1391,6 +1454,7 @@ export default function CourseControlPanel() {
                               const color = colors[idx % colors.length];
                               const Icon = color.icon;
                               const isExpanded = expandedCategories[category];
+                              const catDisplayName = tests.find(t => t.category_display_name)?.category_display_name || category;
                               return (
                                 <div
                                   key={category}
@@ -1401,22 +1465,38 @@ export default function CourseControlPanel() {
                                       : 'bg-white border-gray-200 hover:bg-gray-50'
                                   }`}
                                 >
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      handleDeleteCategory(category);
-                                    }}
-                                    disabled={actionLoading}
-                                    className="absolute top-2 right-2 p-1.5 bg-red-50 text-red-500 hover:text-red-700 hover:bg-red-100 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity z-10"
-                                    title="Remove this category and all its tests"
-                                  >
-                                    <Trash2 size={14} />
-                                  </button>
+                                  <div className="absolute top-2 right-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleOpenEditCategoryTile(category, tests, tests.find(t => t.category_display_name)?.category_display_name);
+                                      }}
+                                      disabled={actionLoading}
+                                      className="p-1.5 bg-blue-50 text-blue-600 hover:text-blue-800 hover:bg-blue-100 rounded-lg transition-colors"
+                                      title="Edit Category display name"
+                                    >
+                                      <Edit2 size={13} />
+                                    </button>
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleDeleteCategory(category);
+                                      }}
+                                      disabled={actionLoading}
+                                      className="p-1.5 bg-red-50 text-red-500 hover:text-red-700 hover:bg-red-100 rounded-lg transition-colors"
+                                      title="Remove this category and all its tests"
+                                    >
+                                      <Trash2 size={13} />
+                                    </button>
+                                  </div>
                                   <div className={`p-2 rounded-xl ${isExpanded ? color.iconBg : 'bg-gray-200'} ${isExpanded ? 'text-white' : 'text-gray-400'} shadow-sm transition-colors`}>
                                     <Icon size={18} />
                                   </div>
                                   <div className="flex flex-col gap-1 items-center justify-center h-full">
-                                    <div className={`font-bold text-sm leading-tight line-clamp-2 ${isExpanded ? 'text-gray-900' : 'text-gray-700'}`}>{category}</div>
+                                    <div className={`font-bold text-sm leading-tight line-clamp-2 ${isExpanded ? 'text-gray-900' : 'text-gray-700'}`}>{catDisplayName}</div>
+                                    {catDisplayName !== category && (
+                                      <div className="text-[10px] text-gray-400 font-normal">({category})</div>
+                                    )}
                                     <div className={`text-xs font-medium ${isExpanded ? 'text-gray-500' : 'text-gray-400'}`}>{tests.length} {tests.length === 1 ? 'Test' : 'Tests'}</div>
                                   </div>
                                 </div>
@@ -1429,6 +1509,7 @@ export default function CourseControlPanel() {
                             {Object.entries(grouped).map(([cat, tests]) => {
                               if (!expandedCategories[cat]) return null;
                               
+                              const catDisplayName = tests.find(t => t.category_display_name)?.category_display_name || cat;
                               const subGroups = tests.reduce((acc, test) => {
                                 const subGroupName = test.subcategory.includes('-') 
                                   ? test.subcategory.split('-')[0].trim() 
@@ -1440,7 +1521,7 @@ export default function CourseControlPanel() {
 
                               return (
                                 <div key={cat} className="space-y-4">
-                                  <h3 className="font-bold text-gray-900 pl-1">{cat} Topics</h3>
+                                  <h3 className="font-bold text-gray-900 pl-1">{catDisplayName} Topics</h3>
                                   <div className="grid grid-cols-1 gap-3">
                                     {Object.entries(subGroups).sort((a, b) => getMonthWeight(a[0]) - getMonthWeight(b[0])).map(([subGroupName, groupTests]) => {
                                       const isSubExpanded = expandedSubgroups[`${cat}::${subGroupName}`] !== false;
@@ -1818,6 +1899,69 @@ export default function CourseControlPanel() {
                         </div>
                       )}
 
+                      {/* Edit Category Tile Modal */}
+                      {editingCategoryTile && (
+                        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+                          <div className="bg-white rounded-3xl w-full max-w-md p-6 shadow-2xl relative animate-in fade-in zoom-in-95">
+                            <div className="flex items-center justify-between pb-3 border-b border-gray-100 mb-4">
+                              <div className="flex items-center gap-2">
+                                <div className="p-2 bg-blue-50 text-blue-600 rounded-xl">
+                                  <Layers size={18} />
+                                </div>
+                                <div>
+                                  <h3 className="font-bold text-base text-gray-900 leading-tight">Edit Category Tile Name</h3>
+                                  <p className="text-xs text-gray-500">
+                                    Category: <strong className="text-gray-700">{editingCategoryTile.category}</strong> ({editingCategoryTile.tests.length} {editingCategoryTile.tests.length === 1 ? 'test' : 'tests'})
+                                  </p>
+                                </div>
+                              </div>
+                              <button
+                                onClick={() => setEditingCategoryTile(null)}
+                                className="p-1.5 text-gray-400 hover:text-gray-700 rounded-full hover:bg-gray-100 transition-colors"
+                              >
+                                <X size={18} />
+                              </button>
+                            </div>
+
+                            <form onSubmit={handleSaveCategoryTileEdit} className="space-y-4">
+                              <div>
+                                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
+                                  Category Tile Display Name
+                                </label>
+                                <input
+                                  type="text"
+                                  value={editCategoryDisplayName}
+                                  onChange={e => setEditCategoryDisplayName(e.target.value)}
+                                  placeholder={editingCategoryTile.category || 'Enter category display name'}
+                                  className="w-full px-3.5 py-2.5 text-sm border border-blue-200 bg-blue-50/20 rounded-xl focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 focus:outline-none font-semibold text-gray-900"
+                                  autoFocus
+                                />
+                                <p className="text-[11px] text-gray-400 mt-1">
+                                  Changes the name on the top category tile grid. Leave empty to use default ({editingCategoryTile.category}).
+                                </p>
+                              </div>
+
+                              <div className="pt-2 flex items-center justify-end gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => setEditingCategoryTile(null)}
+                                  className="px-4 py-2.5 rounded-xl text-xs font-bold text-gray-600 hover:bg-gray-100 transition-colors"
+                                >
+                                  Cancel
+                                </button>
+                                <button
+                                  type="submit"
+                                  disabled={actionLoading}
+                                  className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white font-bold rounded-xl text-xs shadow-md transition-all flex items-center gap-1.5 disabled:opacity-50"
+                                >
+                                  <Save size={15} /> Save Tile Name
+                                </button>
+                              </div>
+                            </form>
+                          </div>
+                        </div>
+                      )}
+
                       {/* Edit Grouping Tile Modal */}
                       {editingGroupTile && (
                         <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
@@ -1948,11 +2092,22 @@ export default function CourseControlPanel() {
                                     <div key={tile.key} className="py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-gray-50/70 p-2.5 rounded-xl transition-colors">
                                       <div className="flex-1 min-w-0">
                                         <div className="flex items-center gap-2 mb-1 flex-wrap">
-                                          <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-gray-100 text-gray-600">
-                                            {tile.cat}
-                                          </span>
+                                          {tile.isCategoryTile ? (
+                                            <span className="text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-md bg-purple-100 text-purple-700">
+                                              Category Tile
+                                            </span>
+                                          ) : (
+                                            <>
+                                              <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-gray-100 text-gray-600">
+                                                {tile.cat}
+                                              </span>
+                                              <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-blue-100 text-blue-700">
+                                                Topic Tile
+                                              </span>
+                                            </>
+                                          )}
                                           <span className="text-xs text-gray-500 font-medium">
-                                            Original: <strong className="text-gray-700">{tile.subGroupName}</strong> ({tile.groupTests.length} {tile.groupTests.length === 1 ? 'test' : 'tests'})
+                                            Original: <strong className="text-gray-700">{tile.isCategoryTile ? tile.cat : tile.subGroupName}</strong> ({tile.groupTests.length} {tile.groupTests.length === 1 ? 'test' : 'tests'})
                                           </span>
                                         </div>
                                         <div className="flex items-center gap-2">
@@ -1960,12 +2115,12 @@ export default function CourseControlPanel() {
                                             type="text"
                                             value={displayNamesDrafts[tile.key] ?? (tile.currentName || '')}
                                             onChange={(e) => setDisplayNamesDrafts(prev => ({ ...prev, [tile.key]: e.target.value }))}
-                                            placeholder={`Default: ${tile.subGroupName}`}
+                                            placeholder={`Default: ${tile.isCategoryTile ? tile.cat : tile.subGroupName}`}
                                             className="flex-1 px-3 py-1.5 text-xs border border-blue-200 bg-blue-50/20 focus:bg-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 font-semibold text-gray-900"
                                           />
                                           <button
                                             type="button"
-                                            onClick={() => handleSaveGroupDisplayNameRow(tile.key, tile.groupTests)}
+                                            onClick={() => handleSaveGroupDisplayNameRow(tile.key, tile.groupTests, tile.isCategoryTile, tile.categoryName || tile.cat)}
                                             disabled={actionLoading}
                                             className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1 shrink-0 ${
                                               isSaved
