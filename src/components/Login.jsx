@@ -39,16 +39,17 @@ export default function Login({ onLogin }) {
     >
       
       <div 
-        className="w-full max-w-sm p-8 rounded-[24px] shadow-2xl border border-white/20 flex flex-col items-center backdrop-blur-md bg-white/70" 
+        className="w-full max-w-sm rounded-[24px] shadow-2xl border border-white/20 flex flex-col items-center backdrop-blur-md bg-white/90 overflow-hidden" 
       >
-        {/* Logo Image */}
-        <div className="w-full max-w-[220px] h-16 mb-6 flex items-center justify-center bg-[#0B2457] rounded-2xl p-3 shadow-lg">
-          <img src="/logo.png" alt="GoalPrep Logo" className="w-full h-full object-contain" />
+        {/* Top Brand Banner */}
+        <div className="w-full bg-[#0B2457] py-6 px-4 flex items-center justify-center">
+          <img src="/logo.png" alt="GoalPrep Logo" className="h-10 w-auto object-contain pointer-events-none select-none" />
         </div>
         
-        <p className="text-center text-sm font-medium mb-10 px-4" style={{ color: '#526A91' }}>
-          Your ultimate companion for competitive exam preparation.
-        </p>
+        <div className="p-8 w-full flex flex-col items-center">
+          <p className="text-center text-sm font-medium mb-10 px-4" style={{ color: '#526A91' }}>
+            Your ultimate companion for competitive exam preparation.
+          </p>
 
         {/* Google Login Button */}
         <button 
@@ -78,8 +79,7 @@ export default function Login({ onLogin }) {
           By continuing, you agree to our <br/>
           <a href="#" className="underline font-medium hover:text-[#0B2457]">Terms of Service</a> and <a href="#" className="underline font-medium hover:text-[#0B2457]">Privacy Policy</a>
         </p>
-
-
+        </div>
       </div>
       
     </div>
