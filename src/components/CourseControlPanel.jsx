@@ -289,17 +289,13 @@ export default function CourseControlPanel() {
     }));
   };
 
-  // Add Test Tile Modal State (Live Test & Coming Soon)
+  // Add Coming Soon Test Modal State
   const [showAddComingSoonModal, setShowAddComingSoonModal] = useState(false);
   const [comingSoonCat, setComingSoonCat] = useState('');
   const [comingSoonSubcat, setComingSoonSubcat] = useState('');
   const [comingSoonDisplayName, setComingSoonDisplayName] = useState('');
   const [comingSoonQuestions, setComingSoonQuestions] = useState('');
   const [comingSoonDuration, setComingSoonDuration] = useState('');
-  const [tileStatus, setTileStatus] = useState('live'); // 'live' | 'coming_soon'
-  const [isFreeTile, setIsFreeTile] = useState(false);
-  const [liveQuestionBanks, setLiveQuestionBanks] = useState([]);
-  const [loadingQuestionBanks, setLoadingQuestionBanks] = useState(false);
 
   // Edit Test Tile Modal State
   const [editingTile, setEditingTile] = useState(null);
@@ -307,31 +303,6 @@ export default function CourseControlPanel() {
   const [editQuestions, setEditQuestions] = useState('');
   const [editDuration, setEditDuration] = useState('');
   const [editComingSoon, setEditComingSoon] = useState(false);
-
-  const fetchLiveQuestionBanks = async () => {
-    setLoadingQuestionBanks(true);
-    try {
-      const { data, error } = await supabase
-        .from('prepbuddy_questions')
-        .select('category, subcategory');
-      if (error) throw error;
-      const map = new Map();
-      (data || []).forEach(q => {
-        if (!q.category || !q.subcategory) return;
-        const key = `${q.category}:::${q.subcategory}`;
-        map.set(key, (map.get(key) || 0) + 1);
-      });
-      const list = Array.from(map.entries()).map(([key, count]) => {
-        const [cat, subcat] = key.split(':::');
-        return { category: cat, subcategory: subcat, count };
-      }).sort((a, b) => a.category.localeCompare(b.category) || a.subcategory.localeCompare(b.subcategory));
-      setLiveQuestionBanks(list);
-    } catch (err) {
-      console.error('Error fetching live question banks:', err);
-    } finally {
-      setLoadingQuestionBanks(false);
-    }
-  };
 
   // Link Store Items Modal State
   const [showLinkStoreModal, setShowLinkStoreModal] = useState(false);
@@ -471,8 +442,8 @@ export default function CourseControlPanel() {
         totalQuestions: parsedQuestions,
         duration: parsedDuration,
         time_limit: parsedDuration,
-        coming_soon: tileStatus === 'coming_soon',
-        is_free: isFreeTile,
+        coming_soon: true,
+        is_free: false,
         is_unavailable: false,
         is_hidden: false
       };
@@ -493,9 +464,8 @@ export default function CourseControlPanel() {
       setComingSoonDisplayName('');
       setComingSoonQuestions('');
       setComingSoonDuration('');
-      setIsFreeTile(false);
     } catch (err) {
-      alert('Error adding test tile: ' + err.message);
+      alert('Error adding coming soon test: ' + err.message);
     } finally {
       setActionLoading(false);
     }
@@ -1214,26 +1184,11 @@ export default function CourseControlPanel() {
                               if (existingCategories.length > 0 && !comingSoonCat) {
                                 setComingSoonCat(existingCategories[0]);
                               }
-                              setTileStatus('live');
-                              if (liveQuestionBanks.length === 0) fetchLiveQuestionBanks();
-                              setShowAddComingSoonModal(true);
-                            }}
-                            className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-3 py-1.5 rounded-lg text-xs flex items-center gap-1.5 transition-colors shadow-2xs active:scale-95"
-                          >
-                            <Plus size={14} /> + Add Live Test
-                          </button>
-                          <button
-                            onClick={() => {
-                              const existingCategories = Object.keys(grouped);
-                              if (existingCategories.length > 0 && !comingSoonCat) {
-                                setComingSoonCat(existingCategories[0]);
-                              }
-                              setTileStatus('coming_soon');
                               setShowAddComingSoonModal(true);
                             }}
                             className="bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100 font-bold px-3 py-1.5 rounded-lg text-xs flex items-center gap-1.5 transition-colors shadow-2xs"
                           >
-                            <Clock size={14} className="text-amber-600" /> + Add Coming Soon
+                            <Clock size={14} className="text-amber-600" /> + Add Coming Soon Test
                           </button>
                           {linkedTests.length > 0 && (
                             <button
@@ -1479,79 +1434,17 @@ export default function CourseControlPanel() {
                               <X size={20} />
                             </button>
 
-                            <div className="flex items-center gap-2.5 mb-3">
-                              <div className={`p-2.5 rounded-2xl ${tileStatus === 'live' ? 'bg-indigo-100 text-indigo-700' : 'bg-amber-100 text-amber-700'}`}>
-                                {tileStatus === 'live' ? <Plus size={22} /> : <Clock size={22} />}
+                            <div className="flex items-center gap-2.5 mb-4">
+                              <div className="p-2.5 bg-amber-100 text-amber-700 rounded-2xl">
+                                <Clock size={22} />
                               </div>
                               <div>
-                                <h3 className="font-bold text-lg text-gray-900 leading-tight">
-                                  {tileStatus === 'live' ? 'Add Live Test Tile' : 'Add Coming Soon Test Tile'}
-                                </h3>
-                                <p className="text-xs text-gray-500">
-                                  {tileStatus === 'live' ? 'Add an active test with questions ready for students.' : 'Add an upcoming test tile to this course.'}
-                                </p>
+                                <h3 className="font-bold text-lg text-gray-900 leading-tight">Add Coming Soon Test</h3>
+                                <p className="text-xs text-gray-500">Add an upcoming test tile to this course.</p>
                               </div>
                             </div>
 
-                            {/* Status Selector Pills */}
-                            <div className="flex items-center gap-1.5 p-1 bg-gray-100 rounded-xl mb-3">
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setTileStatus('live');
-                                  if (liveQuestionBanks.length === 0) fetchLiveQuestionBanks();
-                                }}
-                                className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
-                                  tileStatus === 'live'
-                                    ? 'bg-white text-indigo-700 shadow-xs'
-                                    : 'text-gray-500 hover:text-gray-900'
-                                }`}
-                              >
-                                <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-                                Live Test (Active)
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => setTileStatus('coming_soon')}
-                                className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
-                                  tileStatus === 'coming_soon'
-                                    ? 'bg-white text-amber-700 shadow-xs'
-                                    : 'text-gray-500 hover:text-gray-900'
-                                }`}
-                              >
-                                <Clock size={12} className="text-amber-500" />
-                                Coming Soon
-                              </button>
-                            </div>
-
-                            <form onSubmit={handleAddComingSoonTile} className="space-y-3.5 flex-1 overflow-y-auto pr-1 custom-scrollbar">
-                              {tileStatus === 'live' && liveQuestionBanks.length > 0 && (
-                                <div className="p-3 bg-indigo-50/60 rounded-xl border border-indigo-100/70">
-                                  <label className="block text-[10px] font-bold text-indigo-900 uppercase tracking-wider mb-1">
-                                    Quick Pick from Live Questions Database
-                                  </label>
-                                  <select
-                                    onChange={(e) => {
-                                      if (!e.target.value) return;
-                                      const [pickedCat, pickedSub] = e.target.value.split(':::');
-                                      setComingSoonCat(pickedCat);
-                                      setComingSoonSubcat(pickedSub);
-                                      const found = liveQuestionBanks.find(q => q.category === pickedCat && q.subcategory === pickedSub);
-                                      if (found && found.count) setComingSoonQuestions(String(found.count));
-                                    }}
-                                    className="w-full px-2.5 py-1.5 text-xs border border-indigo-200 rounded-lg bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                                    defaultValue=""
-                                  >
-                                    <option value="">-- Choose an existing question bank --</option>
-                                    {liveQuestionBanks.map(qb => (
-                                      <option key={`${qb.category}:::${qb.subcategory}`} value={`${qb.category}:::${qb.subcategory}`}>
-                                        {qb.category} &gt; {qb.subcategory} ({qb.count} Qs)
-                                      </option>
-                                    ))}
-                                  </select>
-                                </div>
-                              )}
-
+                            <form onSubmit={handleAddComingSoonTile} className="space-y-4">
                               <div>
                                 <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
                                   Category / Subject
@@ -1562,10 +1455,10 @@ export default function CourseControlPanel() {
                                   value={comingSoonCat}
                                   onChange={e => setComingSoonCat(e.target.value)}
                                   placeholder="e.g. Mock Tests, Punjab GK, English"
-                                  className="w-full px-3.5 py-2 text-sm border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 focus:outline-none"
+                                  className="w-full px-3.5 py-2.5 text-sm border border-gray-200 rounded-xl focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500 focus:outline-none"
                                 />
                                 {Object.keys(grouped).length > 0 && (
-                                  <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
+                                  <div className="flex items-center gap-1.5 mt-2 flex-wrap">
                                     <span className="text-[11px] text-gray-400">Existing:</span>
                                     {Object.keys(grouped).map(cat => (
                                       <button
@@ -1582,19 +1475,32 @@ export default function CourseControlPanel() {
                               </div>
 
                               <div>
-                                <label className="block text-xs font-bold text-indigo-900 uppercase tracking-wider mb-1 flex items-center justify-between">
-                                  <span>Display Name on Tile <span className="text-gray-400 font-normal lowercase">(optional)</span></span>
-                                  <span className="text-[10px] text-indigo-600 font-semibold lowercase">shown to students</span>
+                                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
+                                  Test Name / Subcategory
+                                </label>
+                                <input
+                                  type="text"
+                                  required
+                                  value={comingSoonSubcat}
+                                  onChange={e => setComingSoonSubcat(e.target.value)}
+                                  placeholder="e.g. Full Length Mock Test 05"
+                                  className="w-full px-3.5 py-2.5 text-sm border border-gray-200 rounded-xl focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500 focus:outline-none"
+                                />
+                              </div>
+
+                              <div>
+                                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
+                                  Display Name on Tile <span className="text-gray-400 font-normal lowercase">(optional)</span>
                                 </label>
                                 <input
                                   type="text"
                                   value={comingSoonDisplayName}
                                   onChange={e => setComingSoonDisplayName(e.target.value)}
                                   placeholder="e.g. Mock Test 05 (Full Syllabus)"
-                                  className="w-full px-3.5 py-2 text-sm border border-indigo-200 bg-indigo-50/20 rounded-xl focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 focus:outline-none"
+                                  className="w-full px-3.5 py-2.5 text-sm border border-gray-200 rounded-xl focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500 focus:outline-none"
                                 />
                                 <p className="text-[11px] text-gray-400 mt-1">
-                                  Custom name shown on the test series content tile. Defaults to Test Name if empty.
+                                  Custom name shown on test series content tiles. Defaults to Test Name if empty.
                                 </p>
                               </div>
 
@@ -1609,7 +1515,7 @@ export default function CourseControlPanel() {
                                     value={comingSoonQuestions}
                                     onChange={e => setComingSoonQuestions(e.target.value)}
                                     placeholder="e.g. 100"
-                                    className="w-full px-3.5 py-2 text-sm border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 focus:outline-none"
+                                    className="w-full px-3.5 py-2 text-sm border border-gray-200 rounded-xl focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500 focus:outline-none"
                                   />
                                 </div>
                                 <div>
@@ -1622,22 +1528,12 @@ export default function CourseControlPanel() {
                                     value={comingSoonDuration}
                                     onChange={e => setComingSoonDuration(e.target.value)}
                                     placeholder="e.g. 120"
-                                    className="w-full px-3.5 py-2 text-sm border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 focus:outline-none"
+                                    className="w-full px-3.5 py-2 text-sm border border-gray-200 rounded-xl focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500 focus:outline-none"
                                   />
                                 </div>
                               </div>
 
-                              <label className="flex items-center gap-2 cursor-pointer pt-1">
-                                <input
-                                  type="checkbox"
-                                  checked={isFreeTile}
-                                  onChange={e => setIsFreeTile(e.target.checked)}
-                                  className="rounded text-indigo-600 focus:ring-indigo-500 w-4 h-4"
-                                />
-                                <span className="text-xs font-bold text-gray-700">Make this a Free Test (accessible without enrolling)</span>
-                              </label>
-
-                              <div className="pt-2 flex items-center justify-end gap-2 border-t border-gray-100">
+                              <div className="pt-2 flex items-center justify-end gap-2">
                                 <button
                                   type="button"
                                   onClick={() => setShowAddComingSoonModal(false)}
@@ -1648,12 +1544,9 @@ export default function CourseControlPanel() {
                                 <button
                                   type="submit"
                                   disabled={actionLoading}
-                                  className={`px-5 py-2.5 active:scale-95 text-white font-bold rounded-xl text-xs shadow-md transition-all flex items-center gap-1.5 disabled:opacity-50 ${
-                                    tileStatus === 'live' ? 'bg-indigo-600 hover:bg-indigo-700' : 'bg-amber-500 hover:bg-amber-600'
-                                  }`}
+                                  className="px-5 py-2.5 bg-amber-500 hover:bg-amber-600 active:scale-95 text-white font-bold rounded-xl text-xs shadow-md transition-all flex items-center gap-1.5 disabled:opacity-50"
                                 >
-                                  {tileStatus === 'live' ? <Plus size={15} /> : <Clock size={15} />}
-                                  {tileStatus === 'live' ? 'Add Live Test' : 'Add Coming Soon Test'}
+                                  <Clock size={15} /> Add Coming Soon Test
                                 </button>
                               </div>
                             </form>
