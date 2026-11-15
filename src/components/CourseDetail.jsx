@@ -115,12 +115,14 @@ export default function CourseDetail() {
         setCourse(data);
 
         // Check if enrolled and fetch attempts
-        if (userId) {
+        const { data: { session } } = await supabase.auth.getSession();
+        const activeUserId = session?.user?.id || userId;
+        if (activeUserId) {
           const { data: enrollmentData } = await supabase
             .from('prepbuddy_enrollments')
             .select('id')
             .eq('course_id', id)
-            .eq('user_id', userId)
+            .eq('user_id', activeUserId)
             .maybeSingle();
             
           if (enrollmentData) {
@@ -130,7 +132,7 @@ export default function CourseDetail() {
           const { data: attemptsData } = await supabase
             .from('prepbuddy_test_attempts')
             .select('*')
-            .eq('user_id', userId)
+            .eq('user_id', activeUserId)
             .eq('course_id', id);
             
           if (attemptsData) {
@@ -258,9 +260,126 @@ export default function CourseDetail() {
 
   const { requireAuth } = useAuthModal();
 
+  // Auto-enroll handler when returning from Google OAuth sign-in
+  useEffect(() => {
+    if (!course) return;
+
+    let isHandled = false;
+
+    const checkAndAutoEnroll = async (overrideUserId = null) => {
+      if (isHandled || isEnrolled) return;
+
+      const isPending = 
+        sessionStorage.getItem(`pending_course_enroll_${id}`) === 'true' ||
+        localStorage.getItem(`pending_course_enroll_${id}`) === 'true';
+
+      let pendingType = null;
+      if (isPending) {
+        pendingType = 'enroll';
+      } else {
+        const pendingRaw = sessionStorage.getItem('pending_auth_action') || localStorage.getItem('pending_auth_action');
+        if (pendingRaw) {
+          try {
+            const parsed = JSON.parse(pendingRaw);
+            if (parsed.type === 'enroll_course' && parsed.courseId === id) {
+              pendingType = 'enroll';
+            }
+          } catch (e) {}
+        }
+      }
+
+      if (!pendingType) return;
+
+      // Determine active user ID
+      const { data: { session } } = await supabase.auth.getSession();
+      const activeUserId = overrideUserId || session?.user?.id || (UserManager.isLoggedIn() ? UserManager.getUserId() : null);
+
+      if (!activeUserId) {
+        // Not authenticated yet, wait for session
+        return;
+      }
+
+      isHandled = true;
+
+      // Clean up pending markers
+      try {
+        sessionStorage.removeItem(`pending_course_enroll_${id}`);
+        localStorage.removeItem(`pending_course_enroll_${id}`);
+        sessionStorage.removeItem('pending_auth_action');
+        localStorage.removeItem('pending_auth_action');
+      } catch (e) {}
+
+      // Check if already enrolled in DB
+      try {
+        const { data: existingEnrollment } = await supabase
+          .from('prepbuddy_enrollments')
+          .select('id')
+          .eq('course_id', id)
+          .eq('user_id', activeUserId)
+          .maybeSingle();
+
+        if (existingEnrollment) {
+          setIsEnrolled(true);
+          return;
+        }
+
+        const isFreeCourse = Number(course.price) === 0;
+        if (isFreeCourse) {
+          setEnrollLoading(true);
+          const { error } = await supabase
+            .from('prepbuddy_enrollments')
+            .insert([{ user_id: activeUserId, course_id: id }]);
+
+          if (error && !error.message?.includes('duplicate')) {
+            throw error;
+          }
+
+          setIsEnrolled(true);
+          setShowFreeEnrollConfirm(false);
+          setShowPromoDialog(false);
+          setShowFreeEnrollSuccess(true);
+        } else {
+          // Paid course: automatically open the checkout / coupon flow
+          proceedToEnrollmentOrPayment();
+        }
+      } catch (err) {
+        console.error('Error during automatic post-login enrollment:', err);
+      } finally {
+        setEnrollLoading(false);
+      }
+    };
+
+    // Run check immediately
+    checkAndAutoEnroll();
+
+    // Also listen to auth state changes in case the session resolves right after mount
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user?.id) {
+        checkAndAutoEnroll(session.user.id);
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [course, isEnrolled, id]);
+
   const handleBuyClick = () => {
     if (isEnrolled) return;
+
+    // Save pending intent in session and local storage before auth redirect
+    try {
+      sessionStorage.setItem(`pending_course_enroll_${id}`, 'true');
+      localStorage.setItem(`pending_course_enroll_${id}`, 'true');
+    } catch (e) {}
+
     requireAuth(() => {
+      // If already logged in, clear the pending markers immediately
+      try {
+        sessionStorage.removeItem(`pending_course_enroll_${id}`);
+        localStorage.removeItem(`pending_course_enroll_${id}`);
+      } catch (e) {}
+
       const finalPrice = discountedPrice !== null ? discountedPrice : course.price;
       if (finalPrice > 0 && couponStatus !== 'valid') {
         setShowPromoDialog(true);
@@ -272,7 +391,12 @@ export default function CourseDetail() {
       }
     }, {
       title: 'Sign in to Enroll',
-      description: 'Sign in to purchase or enroll in this test series and start taking tests.'
+      description: 'Sign in to purchase or enroll in this test series and start taking tests.',
+      autoAction: {
+        type: 'enroll_course',
+        courseId: id,
+        timestamp: Date.now()
+      }
     });
   };
 
@@ -287,9 +411,12 @@ export default function CourseDetail() {
 
     setEnrollLoading(true);
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const activeUserId = session?.user?.id || UserManager.getUserId();
+
       const { error } = await supabase
         .from('prepbuddy_enrollments')
-        .insert([{ user_id: userId, course_id: id }]);
+        .insert([{ user_id: activeUserId, course_id: id }]);
         
       if (error && !error.message?.includes('duplicate')) throw error;
 

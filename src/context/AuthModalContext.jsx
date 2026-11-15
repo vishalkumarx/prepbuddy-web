@@ -30,7 +30,8 @@ export function AuthModalProvider({ children }) {
     setModalConfig({
       title: config.title || 'Sign in to Continue',
       description: config.description || 'Sign in with your Google account to access tests, save your score, and view performance analytics.',
-      onSuccess: callback || null
+      onSuccess: callback || null,
+      autoAction: config.autoAction || null
     });
     setIsOpen(true);
     return false;
@@ -42,6 +43,13 @@ export function AuthModalProvider({ children }) {
       let redirectUrl = window.location.href;
       if (window.location.pathname === '/profile') {
         redirectUrl = window.location.origin + '/';
+      }
+
+      if (modalConfig.autoAction) {
+        try {
+          sessionStorage.setItem('pending_auth_action', JSON.stringify(modalConfig.autoAction));
+          localStorage.setItem('pending_auth_action', JSON.stringify(modalConfig.autoAction));
+        } catch (e) {}
       }
 
       const { error } = await supabase.auth.signInWithOAuth({
