@@ -1006,13 +1006,6 @@ export default function CourseDetail() {
                         </div>
 
                         <div className="min-w-0 flex-1">
-                          {(Number(res.price) === 0 || res.is_free) && (
-                            <div className="flex items-center gap-1.5 mb-1">
-                              <span className="text-[9px] font-bold bg-green-100 text-green-800 px-1.5 py-0.5 rounded uppercase">
-                                Free
-                              </span>
-                            </div>
-                          )}
                           <h4 className="font-bold text-sm text-gray-900 leading-snug break-words group-hover:text-emerald-900 transition-colors">
                             {res.display_name || res.title}
                           </h4>
