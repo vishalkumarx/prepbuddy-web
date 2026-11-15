@@ -255,6 +255,7 @@ export default function AddCoursePdfModal({ isOpen, onClose, course, onPdfAdded 
           id: 'pdf_' + Math.random().toString(36).substring(2) + '_' + Date.now(),
           type: 'pdf',
           title: title.trim(),
+          display_name: title.trim(),
           description: description.trim(),
           file_url: fileUrl,
           thumbnail_url: thumbnailUrl,

@@ -825,7 +825,7 @@ export default function CourseDetail() {
                               </div>
                               <div className="flex-1 min-w-0 flex flex-col pt-0.5">
                                 <div className="flex items-center gap-2">
-                                  <h4 className={`font-bold text-sm leading-tight ${canTake ? 'text-gray-900 group-hover:text-indigo-900' : 'text-gray-600'}`}>{test.subcategory}</h4>
+                                  <h4 className={`font-bold text-sm leading-tight ${canTake ? 'text-gray-900 group-hover:text-indigo-900' : 'text-gray-600'}`}>{test.display_name || test.subcategory}</h4>
                                   {test.is_free && (
                                     <span className="text-[9px] font-bold bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded-full uppercase tracking-wide flex-shrink-0">Free Test</span>
                                   )}
@@ -981,7 +981,7 @@ export default function CourseDetail() {
                   const isDirectPdf = res.type === 'pdf';
                   const handleItemClick = () => {
                     if (canAccess && res.file_url) {
-                      setViewingPdf({ file_url: res.file_url, title: res.title });
+                      setViewingPdf({ file_url: res.file_url, title: res.display_name || res.title });
                     } else if (isDirectPdf) {
                       handleBuyClick();
                     } else {
@@ -1002,7 +1002,7 @@ export default function CourseDetail() {
                       <div className="flex items-center gap-3 min-w-0 flex-1">
                         <div className="w-14 h-18 rounded-xl overflow-hidden bg-white border border-gray-200/80 shadow-xs flex-shrink-0 relative">
                           {res.thumbnail_url ? (
-                            <img src={res.thumbnail_url} alt={res.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                            <img src={res.thumbnail_url} alt={res.display_name || res.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
                           ) : (
                             <div className="w-full h-full flex flex-col items-center justify-center text-gray-400 p-1 text-center bg-gray-50">
                               <FileText size={20} className="mb-0.5 text-gray-400" />
@@ -1023,7 +1023,7 @@ export default function CourseDetail() {
                             </div>
                           )}
                           <h4 className="font-bold text-sm text-gray-900 leading-snug break-words group-hover:text-emerald-900 transition-colors">
-                            {res.title}
+                            {res.display_name || res.title}
                           </h4>
                           {res.description && (
                             <p className="text-xs text-gray-500 line-clamp-1 mt-0.5">

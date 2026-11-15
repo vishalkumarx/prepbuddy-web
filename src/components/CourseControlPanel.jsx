@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabase';
 import { UserManager } from '../utils/UserManager';
-import { Shield, Search, UserPlus, Trash2, ArrowLeft, RefreshCw, Layers, Tag, Settings, FileText, Languages, Award, Newspaper, Plus, Clock, X, Edit2, Star, Eye, EyeOff, Lock, Unlock, Flag, AlertCircle, CheckCircle, Clock3, Inbox, ShoppingBag, Check, ExternalLink, BookOpen } from 'lucide-react';
+import { Shield, Search, UserPlus, Trash2, ArrowLeft, RefreshCw, Layers, Tag, Settings, FileText, Languages, Award, Newspaper, Plus, Clock, X, Edit2, Star, Eye, EyeOff, Lock, Unlock, Flag, AlertCircle, CheckCircle, Clock3, Inbox, ShoppingBag, Check, ExternalLink, BookOpen, Save } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import CouponManager from './CouponManager';
 import AddCoursePdfModal from './AddCoursePdfModal';
@@ -293,8 +293,15 @@ export default function CourseControlPanel() {
   const [showAddComingSoonModal, setShowAddComingSoonModal] = useState(false);
   const [comingSoonCat, setComingSoonCat] = useState('');
   const [comingSoonSubcat, setComingSoonSubcat] = useState('');
+  const [comingSoonDisplayName, setComingSoonDisplayName] = useState('');
   const [comingSoonQuestions, setComingSoonQuestions] = useState('');
   const [comingSoonDuration, setComingSoonDuration] = useState('');
+
+  // Edit Test Tile Modal State
+  const [editingTile, setEditingTile] = useState(null);
+  const [editDisplayName, setEditDisplayName] = useState('');
+  const [editQuestions, setEditQuestions] = useState('');
+  const [editDuration, setEditDuration] = useState('');
 
   // Link Store Items Modal State
   const [showLinkStoreModal, setShowLinkStoreModal] = useState(false);
@@ -430,6 +437,7 @@ export default function CourseControlPanel() {
       const newTile = {
         category: comingSoonCat.trim(),
         subcategory: comingSoonSubcat.trim(),
+        display_name: comingSoonDisplayName.trim() || null,
         totalQuestions: parsedQuestions,
         duration: parsedDuration,
         time_limit: parsedDuration,
@@ -452,8 +460,41 @@ export default function CourseControlPanel() {
       setCourses(prev => prev.map(c => c.id === data.id ? data : c));
       setShowAddComingSoonModal(false);
       setComingSoonSubcat('');
+      setComingSoonDisplayName('');
     } catch (err) {
       alert('Error adding coming soon test: ' + err.message);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleOpenEditTile = (tile) => {
+    setEditingTile(tile);
+    setEditDisplayName(tile.display_name || '');
+    setEditQuestions(tile.totalQuestions ? String(tile.totalQuestions) : '');
+    setEditDuration(tile.duration ? String(tile.duration) : '');
+  };
+
+  const handleSaveTileEdit = async (e) => {
+    e.preventDefault();
+    if (!editingTile) return;
+
+    setActionLoading(true);
+    try {
+      const parsedQuestions = editQuestions.trim() ? parseInt(editQuestions.trim(), 10) : null;
+      const parsedDuration = editDuration.trim() ? parseInt(editDuration.trim(), 10) : null;
+
+      const updates = {
+        display_name: editDisplayName.trim() || null,
+        totalQuestions: parsedQuestions,
+        duration: parsedDuration,
+        time_limit: parsedDuration
+      };
+
+      await handleUpdateTile(editingTile._idx, updates);
+      setEditingTile(null);
+    } catch (err) {
+      alert('Error updating tile display name: ' + err.message);
     } finally {
       setActionLoading(false);
     }
@@ -1259,8 +1300,13 @@ export default function CourseControlPanel() {
                                           {t.coming_soon ? <Clock size={16} /> : (t.is_unavailable ? <Lock size={16} /> : <FileText size={16} />)}
                                         </div>
                                         <div className="flex-1 min-w-0">
-                                          <div className="flex items-center gap-2">
-                                            <p className={`font-bold text-sm text-gray-900 leading-snug ${t.is_hidden ? 'line-through text-gray-500' : ''}`}>{t.subcategory}</p>
+                                          <div className="flex items-center gap-2 flex-wrap">
+                                            <p className={`font-bold text-sm text-gray-900 leading-snug ${t.is_hidden ? 'line-through text-gray-500' : ''}`}>
+                                              {t.display_name || t.subcategory}
+                                            </p>
+                                            {t.display_name && t.display_name !== t.subcategory && (
+                                              <span className="text-[10px] text-gray-400 font-normal">({t.subcategory})</span>
+                                            )}
                                             {t.is_free && (
                                               <span className="text-[9px] font-bold bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded-full uppercase tracking-wide flex-shrink-0">Free</span>
                                             )}
@@ -1277,6 +1323,15 @@ export default function CourseControlPanel() {
                                           <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mt-0.5">{t.totalQuestions} Qs • {t.duration} min</p>
                                         </div>
                                         <div className="flex items-center gap-1">
+                                          <button
+                                            type="button"
+                                            onClick={() => handleOpenEditTile(t)}
+                                            disabled={actionLoading}
+                                            title="Edit Display Name & Settings"
+                                            className="p-1.5 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+                                          >
+                                            <Edit2 size={13} />
+                                          </button>
                                           <button
                                             onClick={() => handleUpdateTile(t._idx, { coming_soon: !t.coming_soon })}
                                             disabled={actionLoading}
@@ -1397,6 +1452,22 @@ export default function CourseControlPanel() {
                                 />
                               </div>
 
+                              <div>
+                                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
+                                  Display Name on Tile <span className="text-gray-400 font-normal lowercase">(optional)</span>
+                                </label>
+                                <input
+                                  type="text"
+                                  value={comingSoonDisplayName}
+                                  onChange={e => setComingSoonDisplayName(e.target.value)}
+                                  placeholder="e.g. Mock Test 05 (Full Syllabus)"
+                                  className="w-full px-3.5 py-2.5 text-sm border border-gray-200 rounded-xl focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500 focus:outline-none"
+                                />
+                                <p className="text-[11px] text-gray-400 mt-1">
+                                  Custom name shown on test series content tiles. Defaults to Test Name if empty.
+                                </p>
+                              </div>
+
                               <div className="grid grid-cols-2 gap-3">
                                 <div>
                                   <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
@@ -1440,6 +1511,95 @@ export default function CourseControlPanel() {
                                   className="px-5 py-2.5 bg-amber-500 hover:bg-amber-600 active:scale-95 text-white font-bold rounded-xl text-xs shadow-md transition-all flex items-center gap-1.5 disabled:opacity-50"
                                 >
                                   <Clock size={15} /> Add Coming Soon Test
+                                </button>
+                              </div>
+                            </form>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Edit Tile Modal (Display Name, Duration, Questions) */}
+                      {editingTile && (
+                        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+                          <div className="bg-white rounded-3xl w-full max-w-md p-6 shadow-2xl relative animate-in fade-in zoom-in-95">
+                            <div className="flex items-center justify-between pb-3 border-b border-gray-100 mb-4">
+                              <div className="flex items-center gap-2">
+                                <div className="p-2 bg-blue-50 text-blue-600 rounded-xl">
+                                  <Edit2 size={18} />
+                                </div>
+                                <div>
+                                  <h3 className="font-bold text-base text-gray-900 leading-tight">Edit Tile Details</h3>
+                                  <p className="text-xs text-gray-500 truncate max-w-[260px]">{editingTile.subcategory || editingTile.title}</p>
+                                </div>
+                              </div>
+                              <button
+                                onClick={() => setEditingTile(null)}
+                                className="p-1.5 text-gray-400 hover:text-gray-700 rounded-full hover:bg-gray-100 transition-colors"
+                              >
+                                <X size={18} />
+                              </button>
+                            </div>
+
+                            <form onSubmit={handleSaveTileEdit} className="space-y-4">
+                              <div>
+                                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
+                                  Display Name on Tile
+                                </label>
+                                <input
+                                  type="text"
+                                  value={editDisplayName}
+                                  onChange={e => setEditDisplayName(e.target.value)}
+                                  placeholder={editingTile.subcategory || editingTile.title || 'Enter display name'}
+                                  className="w-full px-3.5 py-2.5 text-sm border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 focus:outline-none"
+                                />
+                                <p className="text-[11px] text-gray-400 mt-1">
+                                  Custom name shown on test series content tiles. Leave empty to use default name.
+                                </p>
+                              </div>
+
+                              <div className="grid grid-cols-2 gap-3">
+                                <div>
+                                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
+                                    Questions
+                                  </label>
+                                  <input
+                                    type="number"
+                                    min="0"
+                                    value={editQuestions}
+                                    onChange={e => setEditQuestions(e.target.value)}
+                                    placeholder="e.g. 50"
+                                    className="w-full px-3.5 py-2 text-sm border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 focus:outline-none"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
+                                    Duration (Mins)
+                                  </label>
+                                  <input
+                                    type="number"
+                                    min="0"
+                                    value={editDuration}
+                                    onChange={e => setEditDuration(e.target.value)}
+                                    placeholder="e.g. 60"
+                                    className="w-full px-3.5 py-2 text-sm border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 focus:outline-none"
+                                  />
+                                </div>
+                              </div>
+
+                              <div className="pt-2 flex items-center justify-end gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => setEditingTile(null)}
+                                  className="px-4 py-2.5 rounded-xl text-xs font-bold text-gray-600 hover:bg-gray-100 transition-colors"
+                                >
+                                  Cancel
+                                </button>
+                                <button
+                                  type="submit"
+                                  disabled={actionLoading}
+                                  className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white font-bold rounded-xl text-xs shadow-md transition-all flex items-center gap-1.5 disabled:opacity-50"
+                                >
+                                  <Save size={15} /> Save Changes
                                 </button>
                               </div>
                             </form>

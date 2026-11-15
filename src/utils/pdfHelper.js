@@ -121,3 +121,4 @@ export async function downloadPdf(url, filename = 'document.pdf') {
     window.open(url, '_blank');
   }
 }
+
