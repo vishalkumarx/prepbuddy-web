@@ -748,8 +748,9 @@ export default function CourseDetail() {
                     <div className="grid grid-cols-1 gap-3">
                       {Object.entries(subGroups).sort((a, b) => getMonthWeight(a[0]) - getMonthWeight(b[0])).map(([subGroupName, groupTests]) => {
                         const isSubExpanded = expandedSubgroups[`${cat}::${subGroupName}`];
-                        const singleTest = groupTests.length === 1 ? groupTests[0] : null;
-                        const headerTitle = singleTest?.display_name || subGroupName;
+                        const groupDisplayName = groupTests.find(t => t.group_display_name)?.group_display_name || 
+                                                 groupTests.find(t => t.display_name)?.display_name || null;
+                        const headerTitle = groupDisplayName || subGroupName;
                         return (
                           <div key={subGroupName} id={`subgroup-${cat}-${subGroupName}`} style={{ scrollMarginTop: '80px' }} className="border border-gray-200 rounded-2xl bg-white overflow-hidden shadow-sm transition-all">
                             <div 
@@ -809,7 +810,7 @@ export default function CourseDetail() {
                               </div>
                               <div className="flex-1 min-w-0 flex flex-col pt-0.5">
                                 <div className="flex items-center gap-2">
-                                  <h4 className={`font-bold text-sm leading-tight ${canTake ? 'text-gray-900 group-hover:text-indigo-900' : 'text-gray-600'}`}>{test.display_name || test.subcategory}</h4>
+                                  <h4 className={`font-bold text-sm leading-tight ${canTake ? 'text-gray-900 group-hover:text-indigo-900' : 'text-gray-600'}`}>{test.subcategory}</h4>
                                   {test.is_free && (
                                     <span className="text-[9px] font-bold bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded-full uppercase tracking-wide flex-shrink-0">Free Test</span>
                                   )}

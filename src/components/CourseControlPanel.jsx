@@ -293,55 +293,145 @@ export default function CourseControlPanel() {
     });
   };
 
-  // Manage Display Names for All Added Tests Modal State
-  const [showDisplayNamesModal, setShowDisplayNamesModal] = useState(false);
-  const [displayNamesSearch, setDisplayNamesSearch] = useState('');
-  const [displayNamesDrafts, setDisplayNamesDrafts] = useState({});
-  const [savedRowIds, setSavedRowIds] = useState({});
+  // Edit Grouping Tile Modal State
+  const [editingGroupTile, setEditingGroupTile] = useState(null); // { cat, subGroupName, groupTests }
+  const [editGroupDisplayName, setEditGroupDisplayName] = useState('');
 
-  const openDisplayNamesModal = () => {
-    const drafts = {};
-    (selectedCourse?.linked_tests || []).forEach((t, idx) => {
-      drafts[idx] = t.display_name || '';
-    });
-    setDisplayNamesDrafts(drafts);
-    setDisplayNamesSearch('');
-    setShowDisplayNamesModal(true);
+  const handleOpenEditGroupTile = (cat, subGroupName, groupTests, currentName) => {
+    setEditingGroupTile({ cat, subGroupName, groupTests });
+    setEditGroupDisplayName(currentName || '');
   };
 
-  const handleSaveRowDisplayName = async (realIdx) => {
-    if (!selectedCourse) return;
-    const newName = displayNamesDrafts[realIdx]?.trim() || null;
-    await handleUpdateTile(realIdx, { display_name: newName });
-    setSavedRowIds(prev => ({ ...prev, [realIdx]: true }));
-    setTimeout(() => {
-      setSavedRowIds(prev => ({ ...prev, [realIdx]: false }));
-    }, 2000);
-  };
-
-  const handleSaveAllDisplayNames = async () => {
-    if (!selectedCourse) return;
+  const handleSaveGroupTileEdit = async (e) => {
+    if (e) e.preventDefault();
+    if (!editingGroupTile || !selectedCourse) return;
     setActionLoading(true);
     try {
+      const newName = editGroupDisplayName.trim() || null;
+      const targetIndices = new Set(editingGroupTile.groupTests.map(t => t._idx));
+      
       const updated = (selectedCourse.linked_tests || []).map((t, idx) => {
-        if (t.type === 'pdf') return t;
-        if (displayNamesDrafts[idx] !== undefined) {
-          return { ...t, display_name: displayNamesDrafts[idx]?.trim() || null };
+        if (targetIndices.has(idx)) {
+          return {
+            ...t,
+            group_display_name: newName,
+            display_name: newName
+          };
         }
         return t;
       });
+
       const { data, error } = await supabase
         .from('prepbuddy_test_series')
         .update({ linked_tests: updated })
         .eq('id', selectedCourse.id)
         .select()
         .single();
+
       if (error) throw error;
       setSelectedCourse(data);
       setCourses(prev => prev.map(c => c.id === data.id ? data : c));
-      alert("Display names updated successfully!");
+      setEditingGroupTile(null);
     } catch (err) {
-      alert("Error updating display names: " + err.message);
+      alert('Error updating grouping tile display name: ' + err.message);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  // Manage Grouping Tile Names Modal State
+  const [showDisplayNamesModal, setShowDisplayNamesModal] = useState(false);
+  const [displayNamesSearch, setDisplayNamesSearch] = useState('');
+  const [displayNamesDrafts, setDisplayNamesDrafts] = useState({});
+  const [savedRowIds, setSavedRowIds] = useState({});
+
+  const openDisplayNamesModal = (allGroupingTiles) => {
+    const drafts = {};
+    (allGroupingTiles || []).forEach(tile => {
+      drafts[tile.key] = tile.currentName || '';
+    });
+    setDisplayNamesDrafts(drafts);
+    setDisplayNamesSearch('');
+    setShowDisplayNamesModal(true);
+  };
+
+  const handleSaveGroupDisplayNameRow = async (tileKey, groupTests) => {
+    if (!selectedCourse) return;
+    const newName = displayNamesDrafts[tileKey]?.trim() || null;
+    const targetIndices = new Set(groupTests.map(t => t._idx));
+
+    setActionLoading(true);
+    try {
+      const updated = (selectedCourse.linked_tests || []).map((t, idx) => {
+        if (targetIndices.has(idx)) {
+          return {
+            ...t,
+            group_display_name: newName,
+            display_name: newName
+          };
+        }
+        return t;
+      });
+
+      const { data, error } = await supabase
+        .from('prepbuddy_test_series')
+        .update({ linked_tests: updated })
+        .eq('id', selectedCourse.id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      setSelectedCourse(data);
+      setCourses(prev => prev.map(c => c.id === data.id ? data : c));
+      setSavedRowIds(prev => ({ ...prev, [tileKey]: true }));
+      setTimeout(() => {
+        setSavedRowIds(prev => ({ ...prev, [tileKey]: false }));
+      }, 2000);
+    } catch (err) {
+      alert('Error saving grouping tile name: ' + err.message);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleSaveAllGroupDisplayNames = async (allGroupingTiles) => {
+    if (!selectedCourse) return;
+    setActionLoading(true);
+    try {
+      const nameMap = {};
+      (allGroupingTiles || []).forEach(tile => {
+        if (displayNamesDrafts[tile.key] !== undefined) {
+          nameMap[tile.key] = displayNamesDrafts[tile.key]?.trim() || null;
+        }
+      });
+
+      const updated = (selectedCourse.linked_tests || []).map((t, idx) => {
+        if (t.type === 'pdf') return t;
+        const subGroupName = t.subcategory.includes('-') ? t.subcategory.split('-')[0].trim() : t.subcategory;
+        const key = `${t.category}::${subGroupName}`;
+        if (nameMap[key] !== undefined) {
+          return {
+            ...t,
+            group_display_name: nameMap[key],
+            display_name: nameMap[key]
+          };
+        }
+        return t;
+      });
+
+      const { data, error } = await supabase
+        .from('prepbuddy_test_series')
+        .update({ linked_tests: updated })
+        .eq('id', selectedCourse.id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      setSelectedCourse(data);
+      setCourses(prev => prev.map(c => c.id === data.id ? data : c));
+      alert("Grouping tile display names updated successfully!");
+    } catch (err) {
+      alert("Error updating tile display names: " + err.message);
     } finally {
       setActionLoading(false);
     }
@@ -1106,6 +1196,30 @@ export default function CourseControlPanel() {
                     acc[t.category].push({ ...t, _idx: t._realIdx });
                     return acc;
                   }, {});
+                  const allGroupingTiles = [];
+                  Object.entries(grouped).forEach(([cat, tests]) => {
+                    const subGroups = tests.reduce((acc, test) => {
+                      const subGroupName = test.subcategory.includes('-') 
+                        ? test.subcategory.split('-')[0].trim() 
+                        : test.subcategory;
+                      if (!acc[subGroupName]) acc[subGroupName] = [];
+                      acc[subGroupName].push(test);
+                      return acc;
+                    }, {});
+
+                    Object.entries(subGroups).forEach(([subGroupName, groupTests]) => {
+                      const groupKey = `${cat}::${subGroupName}`;
+                      const groupDisplayName = groupTests.find(t => t.group_display_name)?.group_display_name || 
+                                               groupTests.find(t => t.display_name)?.display_name || '';
+                      allGroupingTiles.push({
+                        key: groupKey,
+                        cat,
+                        subGroupName,
+                        groupTests,
+                        currentName: groupDisplayName
+                      });
+                    });
+                  });
                   const colors = [
                     { bg: 'bg-blue-50/70', border: 'border-blue-100/70', iconBg: 'bg-[#0B2457]', icon: Layers },
                     { bg: 'bg-amber-50/70', border: 'border-amber-100/70', iconBg: 'bg-amber-500', icon: Languages },
@@ -1228,11 +1342,11 @@ export default function CourseControlPanel() {
                         <h3 className="font-bold text-gray-800">Test Tiles</h3>
                         <div className="flex items-center gap-2">
                           <button
-                            onClick={openDisplayNamesModal}
+                            onClick={() => openDisplayNamesModal(allGroupingTiles)}
                             className="bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 font-bold px-3 py-1.5 rounded-lg text-xs flex items-center gap-1.5 transition-colors shadow-2xs"
-                            title="Manage display names of all tests currently added to this course"
+                            title="Manage display names of grouping tiles in this course"
                           >
-                            <Tag size={14} className="text-blue-600" /> Manage Display Names ({linkedTests.length})
+                            <Layers size={14} className="text-blue-600" /> Grouping Tile Names ({allGroupingTiles.length})
                           </button>
                           <button
                             onClick={() => {
@@ -1330,8 +1444,9 @@ export default function CourseControlPanel() {
                                   <div className="grid grid-cols-1 gap-3">
                                     {Object.entries(subGroups).sort((a, b) => getMonthWeight(a[0]) - getMonthWeight(b[0])).map(([subGroupName, groupTests]) => {
                                       const isSubExpanded = expandedSubgroups[`${cat}::${subGroupName}`] !== false;
-                                      const singleTest = groupTests.length === 1 ? groupTests[0] : null;
-                                      const headerTitle = singleTest?.display_name || subGroupName;
+                                      const groupDisplayName = groupTests.find(t => t.group_display_name)?.group_display_name || 
+                                                               groupTests.find(t => t.display_name)?.display_name || null;
+                                      const headerTitle = groupDisplayName || subGroupName;
                                       return (
                                         <div key={subGroupName} className="border border-gray-200 rounded-2xl bg-white overflow-hidden shadow-sm transition-all">
                                           <div 
@@ -1344,8 +1459,8 @@ export default function CourseControlPanel() {
                                               </div>
                                               <div>
                                                 <div className="flex items-center gap-2 flex-wrap">
-                                                  <h4 className="font-bold text-gray-900">{headerTitle}</h4>
-                                                  {singleTest?.display_name && singleTest.display_name !== subGroupName && (
+                                                  <h4 className="font-bold text-gray-900 text-sm sm:text-base">{headerTitle}</h4>
+                                                  {groupDisplayName && groupDisplayName !== subGroupName && (
                                                     <span className="text-[10px] text-gray-400 font-normal">({subGroupName})</span>
                                                   )}
                                                 </div>
@@ -1353,19 +1468,17 @@ export default function CourseControlPanel() {
                                               </div>
                                             </div>
                                             <div className="flex items-center gap-2">
-                                              {singleTest && (
-                                                <button
-                                                  onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    handleOpenEditTile(singleTest);
-                                                  }}
-                                                  disabled={actionLoading}
-                                                  className="p-1.5 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg text-xs font-bold flex items-center gap-1 transition-colors"
-                                                  title="Edit Display Name & Settings"
-                                                >
-                                                  <Edit2 size={12} /> {singleTest.display_name ? 'Edit Name' : 'Set Name'}
-                                                </button>
-                                              )}
+                                              <button
+                                                onClick={(e) => {
+                                                  e.stopPropagation();
+                                                  handleOpenEditGroupTile(cat, subGroupName, groupTests, groupDisplayName);
+                                                }}
+                                                disabled={actionLoading}
+                                                className="p-1.5 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-lg text-xs font-bold flex items-center gap-1 transition-colors border border-blue-200 shadow-2xs"
+                                                title="Edit Grouping Tile Display Name"
+                                              >
+                                                <Edit2 size={12} /> {groupDisplayName ? 'Edit Tile Name' : 'Set Tile Name'}
+                                              </button>
                                               <button
                                                 onClick={(e) => {
                                                   e.stopPropagation();
@@ -1386,108 +1499,84 @@ export default function CourseControlPanel() {
                                           {isSubExpanded && (
                                             <div className="p-3 border-t border-gray-100 bg-gray-50/50 space-y-2">
                                               {groupTests.map((t) => (
-                                      <div key={t._idx} className={`bg-white p-3 rounded-xl border border-gray-100 shadow-sm flex items-center gap-3 ${t.is_hidden ? 'opacity-60' : ''}`}>
-                                        <div className={`p-2 rounded-xl flex-shrink-0 ${t.coming_soon ? 'bg-amber-50 text-amber-500' : (t.is_unavailable ? 'bg-red-50 text-red-500' : 'bg-indigo-50 text-indigo-600')}`}>
-                                          {t.coming_soon ? <Clock size={16} /> : (t.is_unavailable ? <Lock size={16} /> : <FileText size={16} />)}
+                                                <div key={t._idx} className={`bg-white p-3 rounded-xl border border-gray-100 shadow-sm flex items-center gap-3 ${t.is_hidden ? 'opacity-60' : ''}`}>
+                                                  <div className={`p-2 rounded-xl flex-shrink-0 ${t.coming_soon ? 'bg-amber-50 text-amber-500' : (t.is_unavailable ? 'bg-red-50 text-red-500' : 'bg-indigo-50 text-indigo-600')}`}>
+                                                    {t.coming_soon ? <Clock size={16} /> : (t.is_unavailable ? <Lock size={16} /> : <FileText size={16} />)}
+                                                  </div>
+                                                  <div className="flex-1 min-w-0">
+                                                    <div className="flex items-center gap-2 flex-wrap">
+                                                      <p className={`font-bold text-sm text-gray-900 leading-snug ${t.is_hidden ? 'line-through text-gray-500' : ''}`}>
+                                                        {t.subcategory}
+                                                      </p>
+                                                      {t.is_free && (
+                                                        <span className="text-[9px] font-bold bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded-full uppercase tracking-wide flex-shrink-0">Free</span>
+                                                      )}
+                                                      {t.coming_soon && (
+                                                        <span className="text-[9px] font-bold bg-amber-100 text-amber-600 px-1.5 py-0.5 rounded-full uppercase tracking-wide flex-shrink-0">Soon</span>
+                                                      )}
+                                                      {t.is_unavailable && (
+                                                        <span className="text-[9px] font-bold bg-red-100 text-red-600 px-1.5 py-0.5 rounded-full uppercase tracking-wide flex-shrink-0">Unavailable</span>
+                                                      )}
+                                                      {t.is_hidden && (
+                                                        <span className="text-[9px] font-bold bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded-full uppercase tracking-wide flex-shrink-0">Hidden</span>
+                                                      )}
+                                                    </div>
+                                                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mt-0.5">{t.totalQuestions ? `${t.totalQuestions} Qs` : 'Qs auto'} • {t.duration ? `${t.duration} min` : 'Duration auto'}</p>
+                                                  </div>
+                                                  <div className="flex items-center gap-1">
+                                                    <button
+                                                      onClick={() => handleUpdateTile(t._idx, { coming_soon: !t.coming_soon })}
+                                                      disabled={actionLoading}
+                                                      title={t.coming_soon ? "Mark as Released" : "Mark as Coming Soon"}
+                                                      className={`p-1.5 rounded-lg transition-colors font-bold text-[10px] px-2 ${t.coming_soon ? 'text-amber-700 bg-amber-100 hover:bg-amber-200' : 'text-gray-400 hover:text-amber-600 hover:bg-amber-50'}`}
+                                                    >
+                                                      {t.coming_soon ? "SOON" : "Soon?"}
+                                                    </button>
+                                                    <button
+                                                      onClick={() => handleUpdateTile(t._idx, { is_free: !t.is_free })}
+                                                      disabled={actionLoading}
+                                                      title={t.is_free ? "Mark as Paid" : "Mark as Free Test"}
+                                                      className={`p-1.5 rounded-lg transition-colors font-bold text-[10px] px-2 ${t.is_free ? 'text-emerald-700 bg-emerald-100 hover:bg-emerald-200' : 'text-gray-400 hover:text-emerald-600 hover:bg-emerald-50'}`}
+                                                    >
+                                                      {t.is_free ? "FREE" : "Free?"}
+                                                    </button>
+                                                    <button
+                                                      onClick={() => handleUpdateTile(t._idx, { is_unavailable: !t.is_unavailable })}
+                                                      disabled={actionLoading}
+                                                      title={t.is_unavailable ? "Mark as Available" : "Mark as Unavailable"}
+                                                      className={`p-1.5 rounded-lg transition-colors ${t.is_unavailable ? 'text-red-600 bg-red-50 hover:bg-red-100' : 'text-gray-400 hover:text-red-500 hover:bg-gray-50'}`}
+                                                    >
+                                                      {t.is_unavailable ? <Lock size={14} /> : <Unlock size={14} />}
+                                                    </button>
+                                                    <button
+                                                      onClick={() => handleUpdateTile(t._idx, { is_hidden: !t.is_hidden })}
+                                                      disabled={actionLoading}
+                                                      title={t.is_hidden ? "Show Tile" : "Hide Tile"}
+                                                      className={`p-1.5 rounded-lg transition-colors ${t.is_hidden ? 'text-gray-600 bg-gray-200 hover:bg-gray-300' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-50'}`}
+                                                    >
+                                                      {t.is_hidden ? <EyeOff size={14} /> : <Eye size={14} />}
+                                                    </button>
+                                                    <button
+                                                      onClick={() => handleDeleteTile(t._idx)}
+                                                      disabled={actionLoading}
+                                                      title="Remove Tile"
+                                                      className="p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                                    >
+                                                      <X size={14} />
+                                                    </button>
+                                                  </div>
+                                                </div>
+                                              ))}
+                                            </div>
+                                          )}
                                         </div>
-                                        <div className="flex-1 min-w-0">
-                                          <div className="flex items-center gap-2 flex-wrap">
-                                            <span className="text-[10px] font-bold uppercase tracking-wider text-blue-600 bg-blue-50 border border-blue-100 px-1.5 py-0.5 rounded">
-                                              Display Name
-                                            </span>
-                                            <p className={`font-bold text-sm text-gray-900 leading-snug ${t.is_hidden ? 'line-through text-gray-500' : ''}`}>
-                                              {t.display_name ? (
-                                                <span>{t.display_name}</span>
-                                              ) : (
-                                                <span className="text-gray-400 font-normal italic">
-                                                  Not set (using "{t.subcategory}")
-                                                </span>
-                                              )}
-                                            </p>
-                                            {t.is_free && (
-                                              <span className="text-[9px] font-bold bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded-full uppercase tracking-wide flex-shrink-0">Free</span>
-                                            )}
-                                            {t.coming_soon && (
-                                              <span className="text-[9px] font-bold bg-amber-100 text-amber-600 px-1.5 py-0.5 rounded-full uppercase tracking-wide flex-shrink-0">Soon</span>
-                                            )}
-                                            {t.is_unavailable && (
-                                              <span className="text-[9px] font-bold bg-red-100 text-red-600 px-1.5 py-0.5 rounded-full uppercase tracking-wide flex-shrink-0">Unavailable</span>
-                                            )}
-                                            {t.is_hidden && (
-                                              <span className="text-[9px] font-bold bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded-full uppercase tracking-wide flex-shrink-0">Hidden</span>
-                                            )}
-                                          </div>
-                                          <div className="flex items-center gap-2 mt-1 text-[11px] text-gray-400 flex-wrap">
-                                            <span>Original: <strong className="text-gray-600 font-semibold">{t.subcategory}</strong></span>
-                                            <span>•</span>
-                                            <span>{t.totalQuestions ? `${t.totalQuestions} Qs` : 'Qs auto'}</span>
-                                            <span>•</span>
-                                            <span>{t.duration ? `${t.duration} min` : 'Duration auto'}</span>
-                                          </div>
-                                        </div>
-                                        <div className="flex items-center gap-1.5 shrink-0">
-                                          <button
-                                            type="button"
-                                            onClick={() => handleOpenEditTile(t)}
-                                            disabled={actionLoading}
-                                            title="Set or Edit Custom Display Name"
-                                            className="px-2.5 py-1.5 bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-colors shadow-2xs"
-                                          >
-                                            <Edit2 size={12} /> {t.display_name ? 'Edit Name' : 'Set Display Name'}
-                                          </button>
-                                          <button
-                                            onClick={() => handleUpdateTile(t._idx, { coming_soon: !t.coming_soon })}
-                                            disabled={actionLoading}
-                                            title={t.coming_soon ? "Mark as Released" : "Mark as Coming Soon"}
-                                            className={`p-1.5 rounded-lg transition-colors font-bold text-[10px] px-2 ${t.coming_soon ? 'text-amber-700 bg-amber-100 hover:bg-amber-200' : 'text-gray-400 hover:text-amber-600 hover:bg-amber-50'}`}
-                                          >
-                                            {t.coming_soon ? "SOON" : "Soon?"}
-                                          </button>
-                                          <button
-                                            onClick={() => handleUpdateTile(t._idx, { is_free: !t.is_free })}
-                                            disabled={actionLoading}
-                                            title={t.is_free ? "Mark as Paid" : "Mark as Free Test"}
-                                            className={`p-1.5 rounded-lg transition-colors font-bold text-[10px] px-2 ${t.is_free ? 'text-emerald-700 bg-emerald-100 hover:bg-emerald-200' : 'text-gray-400 hover:text-emerald-600 hover:bg-emerald-50'}`}
-                                          >
-                                            {t.is_free ? "FREE" : "Free?"}
-                                          </button>
-                                          <button
-                                            onClick={() => handleUpdateTile(t._idx, { is_unavailable: !t.is_unavailable })}
-                                            disabled={actionLoading}
-                                            title={t.is_unavailable ? "Mark as Available" : "Mark as Unavailable"}
-                                            className={`p-1.5 rounded-lg transition-colors ${t.is_unavailable ? 'text-red-600 bg-red-50 hover:bg-red-100' : 'text-gray-400 hover:text-red-500 hover:bg-gray-50'}`}
-                                          >
-                                            {t.is_unavailable ? <Lock size={14} /> : <Unlock size={14} />}
-                                          </button>
-                                          <button
-                                            onClick={() => handleUpdateTile(t._idx, { is_hidden: !t.is_hidden })}
-                                            disabled={actionLoading}
-                                            title={t.is_hidden ? "Show Tile" : "Hide Tile"}
-                                            className={`p-1.5 rounded-lg transition-colors ${t.is_hidden ? 'text-gray-600 bg-gray-200 hover:bg-gray-300' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-50'}`}
-                                          >
-                                            {t.is_hidden ? <EyeOff size={14} /> : <Eye size={14} />}
-                                          </button>
-                                          <button
-                                            onClick={() => handleDeleteTile(t._idx)}
-                                            disabled={actionLoading}
-                                            title="Remove Tile"
-                                            className="p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                                          >
-                                            <X size={14} />
-                                          </button>
-                                        </div>
-                                      </div>
-                                    ))}
+                                      );
+                                    })}
                                   </div>
-                                )}
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
+                                </div>
+                              );
+                            })}
+                          </div>
                         </>
                       )}
                       {/* Add Test Tile Modal (Live Test or Coming Soon) */}
@@ -1729,18 +1818,81 @@ export default function CourseControlPanel() {
                         </div>
                       )}
 
-                      {/* Manage Display Names Modal for All Added Tests */}
+                      {/* Edit Grouping Tile Modal */}
+                      {editingGroupTile && (
+                        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+                          <div className="bg-white rounded-3xl w-full max-w-md p-6 shadow-2xl relative animate-in fade-in zoom-in-95">
+                            <div className="flex items-center justify-between pb-3 border-b border-gray-100 mb-4">
+                              <div className="flex items-center gap-2">
+                                <div className="p-2 bg-blue-50 text-blue-600 rounded-xl">
+                                  <Layers size={18} />
+                                </div>
+                                <div>
+                                  <h3 className="font-bold text-base text-gray-900 leading-tight">Edit Grouping Tile Name</h3>
+                                  <p className="text-xs text-gray-500">
+                                    {editingGroupTile.cat} &rsaquo; {editingGroupTile.subGroupName} ({editingGroupTile.groupTests.length} {editingGroupTile.groupTests.length === 1 ? 'test' : 'tests'})
+                                  </p>
+                                </div>
+                              </div>
+                              <button
+                                onClick={() => setEditingGroupTile(null)}
+                                className="p-1.5 text-gray-400 hover:text-gray-700 rounded-full hover:bg-gray-100 transition-colors"
+                              >
+                                <X size={18} />
+                              </button>
+                            </div>
+
+                            <form onSubmit={handleSaveGroupTileEdit} className="space-y-4">
+                              <div>
+                                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
+                                  Grouping Tile Display Name
+                                </label>
+                                <input
+                                  type="text"
+                                  value={editGroupDisplayName}
+                                  onChange={e => setEditGroupDisplayName(e.target.value)}
+                                  placeholder={editingGroupTile.subGroupName || 'Enter tile display name'}
+                                  className="w-full px-3.5 py-2.5 text-sm border border-blue-200 bg-blue-50/20 rounded-xl focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 focus:outline-none font-semibold text-gray-900"
+                                  autoFocus
+                                />
+                                <p className="text-[11px] text-gray-400 mt-1">
+                                  Students see this name on the main topic tile. Individual expanded tests will retain their own titles. Leave empty to use default ({editingGroupTile.subGroupName}).
+                                </p>
+                              </div>
+
+                              <div className="pt-2 flex items-center justify-end gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => setEditingGroupTile(null)}
+                                  className="px-4 py-2.5 rounded-xl text-xs font-bold text-gray-600 hover:bg-gray-100 transition-colors"
+                                >
+                                  Cancel
+                                </button>
+                                <button
+                                  type="submit"
+                                  disabled={actionLoading}
+                                  className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white font-bold rounded-xl text-xs shadow-md transition-all flex items-center gap-1.5 disabled:opacity-50"
+                                >
+                                  <Save size={15} /> Save Tile Name
+                                </button>
+                              </div>
+                            </form>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Manage Grouping Tile Names Modal */}
                       {showDisplayNamesModal && (
                         <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
                           <div className="bg-white rounded-3xl w-full max-w-2xl p-6 shadow-2xl relative animate-in fade-in zoom-in-95 max-h-[90vh] flex flex-col">
                             <div className="flex items-center justify-between pb-4 border-b border-gray-100">
                               <div className="flex items-center gap-2.5">
                                 <div className="p-2.5 bg-blue-50 text-blue-600 rounded-2xl">
-                                  <Tag size={22} />
+                                  <Layers size={22} />
                                 </div>
                                 <div>
-                                  <h3 className="font-bold text-lg text-gray-900 leading-tight">Display Names for Already Added Tests</h3>
-                                  <p className="text-xs text-gray-500">Edit the title students see for each test already in this course.</p>
+                                  <h3 className="font-bold text-lg text-gray-900 leading-tight">Grouping Tile Display Names</h3>
+                                  <p className="text-xs text-gray-500">Edit the display name shown on each grouping tile. Expanded test series will show their individual titles.</p>
                                 </div>
                               </div>
                               <button
@@ -1757,7 +1909,7 @@ export default function CourseControlPanel() {
                                 <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                                 <input
                                   type="text"
-                                  placeholder="Search added tests by name or category..."
+                                  placeholder="Search grouping tiles..."
                                   value={displayNamesSearch}
                                   onChange={(e) => setDisplayNamesSearch(e.target.value)}
                                   className="w-full pl-9 pr-3 py-2 text-xs border border-gray-200 rounded-xl bg-gray-50/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
@@ -1765,7 +1917,7 @@ export default function CourseControlPanel() {
                               </div>
                               <button
                                 type="button"
-                                onClick={handleSaveAllDisplayNames}
+                                onClick={() => handleSaveAllGroupDisplayNames(allGroupingTiles)}
                                 disabled={actionLoading}
                                 className="px-4 py-2 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white font-bold rounded-xl text-xs shadow-xs transition-all flex items-center gap-1.5 shrink-0 disabled:opacity-50"
                               >
@@ -1773,50 +1925,47 @@ export default function CourseControlPanel() {
                               </button>
                             </div>
 
-                            {/* Test List Table */}
+                            {/* Tile List */}
                             <div className="flex-1 overflow-y-auto py-2 divide-y divide-gray-100">
-                              {linkedTests.filter(t => {
+                              {allGroupingTiles.filter(tile => {
                                 if (!displayNamesSearch.trim()) return true;
                                 const q = displayNamesSearch.toLowerCase();
-                                return (t.category || '').toLowerCase().includes(q) ||
-                                       (t.subcategory || '').toLowerCase().includes(q) ||
-                                       (t.display_name || '').toLowerCase().includes(q);
+                                return (tile.cat || '').toLowerCase().includes(q) ||
+                                       (tile.subGroupName || '').toLowerCase().includes(q) ||
+                                       (tile.currentName || '').toLowerCase().includes(q);
                               }).length === 0 ? (
-                                <p className="text-center text-xs text-gray-400 py-8 italic">No tests found matching search.</p>
+                                <p className="text-center text-xs text-gray-400 py-8 italic">No grouping tiles found.</p>
                               ) : (
-                                linkedTests.filter(t => {
+                                allGroupingTiles.filter(tile => {
                                   if (!displayNamesSearch.trim()) return true;
                                   const q = displayNamesSearch.toLowerCase();
-                                  return (t.category || '').toLowerCase().includes(q) ||
-                                         (t.subcategory || '').toLowerCase().includes(q) ||
-                                         (t.display_name || '').toLowerCase().includes(q);
-                                }).map(t => {
-                                  const isSaved = savedRowIds[t._idx];
+                                  return (tile.cat || '').toLowerCase().includes(q) ||
+                                         (tile.subGroupName || '').toLowerCase().includes(q) ||
+                                         (tile.currentName || '').toLowerCase().includes(q);
+                                }).map(tile => {
+                                  const isSaved = savedRowIds[tile.key];
                                   return (
-                                    <div key={t._idx} className="py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-gray-50/70 p-2 rounded-xl transition-colors">
+                                    <div key={tile.key} className="py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-gray-50/70 p-2.5 rounded-xl transition-colors">
                                       <div className="flex-1 min-w-0">
                                         <div className="flex items-center gap-2 mb-1 flex-wrap">
                                           <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-gray-100 text-gray-600">
-                                            {t.category}
+                                            {tile.cat}
                                           </span>
                                           <span className="text-xs text-gray-500 font-medium">
-                                            Original: <strong className="text-gray-700">{t.subcategory}</strong>
+                                            Original: <strong className="text-gray-700">{tile.subGroupName}</strong> ({tile.groupTests.length} {tile.groupTests.length === 1 ? 'test' : 'tests'})
                                           </span>
-                                          {t.coming_soon && (
-                                            <span className="text-[9px] font-bold bg-amber-100 text-amber-700 px-1.5 py-0.2 rounded">Coming Soon</span>
-                                          )}
                                         </div>
                                         <div className="flex items-center gap-2">
                                           <input
                                             type="text"
-                                            value={displayNamesDrafts[t._idx] ?? (t.display_name || '')}
-                                            onChange={(e) => setDisplayNamesDrafts(prev => ({ ...prev, [t._idx]: e.target.value }))}
-                                            placeholder={`Default: ${t.subcategory}`}
+                                            value={displayNamesDrafts[tile.key] ?? (tile.currentName || '')}
+                                            onChange={(e) => setDisplayNamesDrafts(prev => ({ ...prev, [tile.key]: e.target.value }))}
+                                            placeholder={`Default: ${tile.subGroupName}`}
                                             className="flex-1 px-3 py-1.5 text-xs border border-blue-200 bg-blue-50/20 focus:bg-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 font-semibold text-gray-900"
                                           />
                                           <button
                                             type="button"
-                                            onClick={() => handleSaveRowDisplayName(t._idx)}
+                                            onClick={() => handleSaveGroupDisplayNameRow(tile.key, tile.groupTests)}
                                             disabled={actionLoading}
                                             className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1 shrink-0 ${
                                               isSaved
@@ -1835,7 +1984,7 @@ export default function CourseControlPanel() {
                               )}
                             </div>
                             <div className="pt-3 border-t border-gray-100 flex items-center justify-between text-xs text-gray-400">
-                              <span>Leave display name empty to use original subcategory name.</span>
+                              <span>Leave empty to use original topic name. Individual tests inside remain untouched.</span>
                               <button
                                 onClick={() => setShowDisplayNamesModal(false)}
                                 className="px-4 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-bold transition-colors"
